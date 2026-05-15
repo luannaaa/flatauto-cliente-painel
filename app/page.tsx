@@ -10,6 +10,7 @@ type CadastroBase = {
   email: string
   senha: string
   tipo: TipoConta
+  empresa?: boolean
 }
 
 const imagens = {
@@ -77,6 +78,7 @@ export default function Home() {
     email: "",
     senha: "",
     tipo: "cliente",
+    empresa: false,
   })
 
 
@@ -100,7 +102,11 @@ export default function Home() {
       return
     }
 
-    window.location.href = "/cliente"
+    // IMPORTANTE:
+    // Antes estava usando window.location.href = "/cliente".
+    // Isso fazia abrir outra página e pedir login de novo.
+    // Agora entra direto no painel dentro da mesma tela.
+    setScreen("painelCliente")
   }
 
   function finalizarCadastroVisual() {
@@ -114,7 +120,8 @@ export default function Home() {
       return
     }
 
-    window.location.href = "/cliente"
+    // Cliente entra direto no painel sem pedir login de novo
+    setScreen("painelCliente")
   }
 
   function salvarTipoGoogle(tipo: "cliente" | "motorista") {
@@ -476,6 +483,7 @@ function CadastroForm({
   const [email, setEmail] = useState("")
   const [senha, setSenha] = useState("")
   const [tipo, setTipo] = useState<TipoConta>("cliente")
+  const [empresa, setEmpresa] = useState(false)
   const [loading, setLoading] = useState(false)
   const [mensagem, setMensagem] = useState("")
 
@@ -504,6 +512,7 @@ function CadastroForm({
       email,
       senha,
       tipo: "cliente",
+      empresa,
     })
   }
 
@@ -534,7 +543,10 @@ function CadastroForm({
 
         <button
           type="button"
-          onClick={() => setTipo("motorista")}
+          onClick={() => {
+            setTipo("motorista")
+            setEmpresa(false)
+          }}
           className={`h-16 rounded-xl border text-lg font-bold transition ${
             tipo === "motorista"
               ? "border-[#ffc400] bg-[#ffc400] text-black shadow-[0_0_25px_rgba(255,196,0,0.45)]"
@@ -566,6 +578,21 @@ function CadastroForm({
         className={`mt-4 ${inputClass}`}
         placeholder="Crie uma senha"
       />
+
+      {tipo === "cliente" && (
+        <button
+          type="button"
+          onClick={() => setEmpresa(!empresa)}
+          className={`mt-4 flex h-14 w-full items-center justify-between rounded-xl border px-5 text-left font-bold ${
+            empresa
+              ? "border-[#ffc400] bg-[#ffc400]/10 text-[#ffc400]"
+              : "border-white/20 bg-black/40 text-white/70"
+          }`}
+        >
+          <span>Tenho empresa</span>
+          <span>{empresa ? "Sim" : "Não"}</span>
+        </button>
+      )}
 
       {mensagem && (
         <p className="mt-4 text-center text-sm font-bold text-[#ffc400]">{mensagem}</p>
@@ -605,30 +632,70 @@ function CadastroClienteCompleto({
   onCancelar: () => void
   onCadastroFinalizado: () => void
 }) {
+  const ehEmpresa = Boolean(dadosBase.empresa)
+
   const [nome, setNome] = useState(dadosBase.nome)
+  const [nomeEmpresa, setNomeEmpresa] = useState("")
+  const [endereco, setEndereco] = useState("")
+  const [documento, setDocumento] = useState("")
+  const [nomeResponsavel, setNomeResponsavel] = useState(dadosBase.nome)
   const [telefone, setTelefone] = useState("")
-  const [empresa, setEmpresa] = useState("")
-  const [cidadeRegiao, setCidadeRegiao] = useState("")
+  const [tipoFrete, setTipoFrete] = useState("")
+  const [tipoCarga, setTipoCarga] = useState("")
   const [origemFrete, setOrigemFrete] = useState("")
   const [destinoEntrega, setDestinoEntrega] = useState("")
-  const [tipoCarga, setTipoCarga] = useState("")
+  const [observacoes, setObservacoes] = useState("")
   const [documentoCliente, setDocumentoCliente] = useState<File | null>(null)
 
   const [loading, setLoading] = useState(false)
   const [mensagem, setMensagem] = useState("")
 
+  const opcoesTipoCarga = [
+    ["mercadorias", "Mercadorias"],
+    ["alimentos", "Alimentos"],
+    ["equipamentos", "Equipamentos"],
+    ["mudancas-moveis", "Mudanças e móveis"],
+    ["eletrodomesticos", "Eletrodomésticos"],
+    ["itens-frageis", "Itens frágeis"],
+    ["outros", "Outros"],
+  ]
+
+  const opcoesTipoFrete = [
+    ["moto", "Moto"],
+    ["carro", "Carro"],
+    ["van", "Van"],
+    ["caminhao", "Caminhão"],
+  ]
+
   async function finalizarCadastroCliente() {
     setMensagem("")
 
-    if (!nome || !telefone || !cidadeRegiao || !origemFrete || !destinoEntrega || !tipoCarga) {
-      setMensagem("Preencha os dados principais do cliente.")
-      return
+    if (ehEmpresa) {
+      if (
+        !nomeEmpresa ||
+        !endereco ||
+        !documento ||
+        !nomeResponsavel ||
+        !telefone ||
+        !tipoFrete ||
+        !tipoCarga ||
+        !origemFrete ||
+        !destinoEntrega
+      ) {
+        setMensagem("Preencha os dados principais da empresa.")
+        return
+      }
+    } else {
+      if (!nome || !endereco || !documento || !telefone || !tipoFrete || !tipoCarga || !destinoEntrega) {
+        setMensagem("Preencha os dados principais do cliente.")
+        return
+      }
     }
 
     setLoading(true)
 
     setTimeout(() => {
-      setMensagem("Cadastro de cliente criado com sucesso! Banco entra depois.")
+      setMensagem("Cadastro criado com sucesso! Banco entra depois.")
       setLoading(false)
       setTimeout(() => {
         onCadastroFinalizado()
@@ -647,7 +714,7 @@ function CadastroClienteCompleto({
       <div className="absolute inset-0 z-0 bg-black/20" />
       <div className="absolute inset-0 z-0 bg-gradient-to-b from-black/90 via-black/70 to-black md:bg-gradient-to-r md:from-black/45 md:via-black/30 md:to-black/80" />
 
-      {/* CLIENTE MOBILE APROVADO */}
+      {/* CLIENTE MOBILE */}
       <section className="relative z-10 block min-h-screen overflow-y-auto px-6 py-8 md:hidden">
         <div className="mx-auto flex max-w-[430px] flex-col">
           <img
@@ -658,11 +725,11 @@ function CadastroClienteCompleto({
 
           <div className="mt-7 text-center">
             <h1 className="text-[30px] font-bold leading-tight">
-              Vamos completar seu cadastro
+              {ehEmpresa ? "Cadastro de Empresa" : "Cadastro de Cliente"}
             </h1>
 
             <p className="mt-2 text-[17px] leading-relaxed text-white/65">
-              Escolha o tipo de conta e preencha seus dados
+              Preencha seus dados para solicitar fretes com agilidade
             </p>
           </div>
 
@@ -675,7 +742,9 @@ function CadastroClienteCompleto({
                 <img src={imagens.nomePerfil} alt="" className="h-8 w-8 object-contain" />
               </div>
 
-              <p className="mt-4 text-xl font-bold text-white">Cliente</p>
+              <p className="mt-4 text-xl font-bold text-white">
+                {ehEmpresa ? "Empresa" : "Cliente"}
+              </p>
               <p className="mt-2 text-sm leading-relaxed text-white/70">
                 Contrate fretes com segurança
               </p>
@@ -706,102 +775,165 @@ function CadastroClienteCompleto({
 
           <div className="flex items-center gap-4">
             <div className="flex h-14 w-14 items-center justify-center rounded-full border border-[#ffc400]/45 bg-[#ffc400]/10">
-              <img src={imagens.documento} alt="" className="h-7 w-7 object-contain" />
+              <img
+                src={ehEmpresa ? imagens.empresaCliente : imagens.documento}
+                alt=""
+                className="h-7 w-7 object-contain"
+              />
             </div>
 
             <div>
               <h2 className="text-[22px] font-bold leading-tight">
-                Complete seu perfil de cliente
+                {ehEmpresa ? "Complete o cadastro da empresa" : "Complete seu perfil de cliente"}
               </h2>
               <p className="mt-1 text-sm text-white/60">
-                Informe seus dados para solicitar fretes com agilidade
+                Informe seus dados para continuar
               </p>
             </div>
           </div>
 
           <div className="mt-6 space-y-3">
-            <MobileDriverInput
-              icon={imagens.nomePerfil}
-              placeholder="Nome completo"
-              value={nome}
-              onChange={setNome}
-            />
+            {ehEmpresa ? (
+              <>
+                <MobileDriverInput
+                  icon={imagens.empresaCliente}
+                  placeholder="Nome Empresa"
+                  value={nomeEmpresa}
+                  onChange={setNomeEmpresa}
+                />
 
-            <MobileDriverInput
-              icon={imagens.telefoneWhatsapp}
-              placeholder="Telefone / WhatsApp"
-              value={telefone}
-              onChange={setTelefone}
-            />
+                <MobileDriverInput
+                  icon={imagens.regiao}
+                  placeholder="Endereço completo"
+                  value={endereco}
+                  onChange={setEndereco}
+                />
 
-            <MobileDriverInput
-              icon={imagens.empresaCliente}
-              placeholder="Empresa (opcional)"
-              value={empresa}
-              onChange={setEmpresa}
-            />
+                <MobileDriverInput
+                  icon={imagens.documento}
+                  placeholder="Documento (CPF ou Cartão CNPJ)"
+                  value={documento}
+                  onChange={setDocumento}
+                />
 
-            <MobileClienteSelect
-              icon={imagens.regiao}
-              value={cidadeRegiao}
-              onChange={setCidadeRegiao}
-              placeholder="Cidade / Região"
-              options={[
-                ["sao-paulo-sp", "São Paulo / SP"],
-                ["recife-pe", "Recife / PE"],
-                ["rio-de-janeiro-rj", "Rio de Janeiro / RJ"],
-                ["belo-horizonte-mg", "Belo Horizonte / MG"],
-                ["curitiba-pr", "Curitiba / PR"],
-                ["outra", "Outra região"],
-              ]}
-            />
+                <MobileDriverInput
+                  icon={imagens.nomePerfil}
+                  placeholder="Nome Responsável"
+                  value={nomeResponsavel}
+                  onChange={setNomeResponsavel}
+                />
 
-            <MobileClienteSelect
-              icon={imagens.origemFrete}
-              value={origemFrete}
-              onChange={setOrigemFrete}
-              placeholder="Origem do frete"
-              options={[
-                ["minha-cidade", "Minha cidade"],
-                ["outra-cidade", "Outra cidade"],
-                ["retirada-empresa", "Retirada em empresa"],
-                ["retirada-residencia", "Retirada em residência"],
-              ]}
-            />
+                <MobileDriverInput
+                  icon={imagens.telefoneWhatsapp}
+                  placeholder="Telefone / WhatsApp"
+                  value={telefone}
+                  onChange={setTelefone}
+                />
 
-            <MobileClienteSelect
-              icon={imagens.destinoEntrega}
-              value={destinoEntrega}
-              onChange={setDestinoEntrega}
-              placeholder="Destino da entrega"
-              options={[
-                ["mesma-cidade", "Mesma cidade"],
-                ["outra-cidade", "Outra cidade"],
-                ["outro-estado", "Outro estado"],
-                ["varios-destinos", "Vários destinos"],
-              ]}
-            />
+                <MobileClienteSelect
+                  icon={imagens.modeloCaminhao}
+                  value={tipoFrete}
+                  onChange={setTipoFrete}
+                  placeholder="Tipo de frete"
+                  options={opcoesTipoFrete}
+                />
 
-            <MobileClienteSelect
-              icon={imagens.tipoCarga}
-              value={tipoCarga}
-              onChange={setTipoCarga}
-              placeholder="Tipo de carga"
-              options={[
-                ["mudanca", "Mudança"],
-                ["mercadoria", "Mercadoria"],
-                ["moveis", "Móveis"],
-                ["alimentos", "Alimentos"],
-                ["equipamentos", "Equipamentos"],
-                ["outros", "Outros"],
-              ]}
-            />
+                <MobileClienteSelect
+                  icon={imagens.tipoCarga}
+                  value={tipoCarga}
+                  onChange={setTipoCarga}
+                  placeholder="Tipo de carga"
+                  options={opcoesTipoCarga}
+                />
+
+                <MobileDriverInput
+                  icon={imagens.origemFrete}
+                  placeholder="Origem do frete"
+                  value={origemFrete}
+                  onChange={setOrigemFrete}
+                />
+
+                <MobileDriverInput
+                  icon={imagens.destinoEntrega}
+                  placeholder="Destino da entrega"
+                  value={destinoEntrega}
+                  onChange={setDestinoEntrega}
+                />
+
+                <MobileDriverInput
+                  icon={imagens.documento}
+                  placeholder="Observações da carga/operação"
+                  value={observacoes}
+                  onChange={setObservacoes}
+                />
+              </>
+            ) : (
+              <>
+                <MobileDriverInput
+                  icon={imagens.nomePerfil}
+                  placeholder="Nome completo"
+                  value={nome}
+                  onChange={setNome}
+                />
+
+                <MobileDriverInput
+                  icon={imagens.regiao}
+                  placeholder="Endereço completo"
+                  value={endereco}
+                  onChange={setEndereco}
+                />
+
+                <MobileDriverInput
+                  icon={imagens.documento}
+                  placeholder="Documento (CPF ou CNPJ)"
+                  value={documento}
+                  onChange={setDocumento}
+                />
+
+                <MobileDriverInput
+                  icon={imagens.telefoneWhatsapp}
+                  placeholder="Telefone / WhatsApp"
+                  value={telefone}
+                  onChange={setTelefone}
+                />
+
+                <MobileClienteSelect
+                  icon={imagens.modeloCaminhao}
+                  value={tipoFrete}
+                  onChange={setTipoFrete}
+                  placeholder="Tipo de frete"
+                  options={opcoesTipoFrete}
+                />
+
+                <MobileClienteSelect
+                  icon={imagens.tipoCarga}
+                  value={tipoCarga}
+                  onChange={setTipoCarga}
+                  placeholder="Tipo de carga"
+                  options={opcoesTipoCarga}
+                />
+
+                <MobileDriverInput
+                  icon={imagens.destinoEntrega}
+                  placeholder="Destino da entrega"
+                  value={destinoEntrega}
+                  onChange={setDestinoEntrega}
+                />
+
+                <MobileDriverInput
+                  icon={imagens.documento}
+                  placeholder="Observações da carga/operação"
+                  value={observacoes}
+                  onChange={setObservacoes}
+                />
+              </>
+            )}
           </div>
 
           <div className="mt-6">
             <MobileUploadCard
               icon={imagens.documento}
-              title="Documento / CPF ou CNPJ"
+              title="Documento"
               text="Envie seu documento para validar seu cadastro"
               file={documentoCliente}
               onChange={setDocumentoCliente}
@@ -821,7 +953,7 @@ function CadastroClienteCompleto({
             className="mt-8 flex h-16 w-full items-center justify-center gap-3 rounded-xl bg-[#ffc400] text-[19px] font-black text-black shadow-[0_0_35px_rgba(255,196,0,0.55)]"
           >
             <span className="text-2xl">💾</span>
-            {loading ? "Salvando..." : "Salvar cadastro de cliente"}
+            {loading ? "Salvando..." : "Salvar cadastro"}
           </button>
 
           <button
@@ -834,7 +966,7 @@ function CadastroClienteCompleto({
         </div>
       </section>
 
-      {/* CLIENTE WEB NOVO */}
+      {/* CLIENTE WEB */}
       <header className="relative z-10 hidden h-[86px] items-center justify-between border-b border-white/10 px-8 md:flex">
         <button
           type="button"
@@ -898,10 +1030,12 @@ function CadastroClienteCompleto({
         <section className="flex items-center justify-center px-[4vw] py-9">
           <div className="w-full max-w-[960px] rounded-xl border border-white/20 bg-[#080b0f]/82 p-8 shadow-[0_0_70px_rgba(0,0,0,0.88)] backdrop-blur-md">
             <div className="mb-7 flex items-center gap-5">
-              <IconBox icon={imagens.nomePerfil} active />
+              <IconBox icon={ehEmpresa ? imagens.empresaCliente : imagens.nomePerfil} active />
 
               <div>
-                <h2 className="text-[32px] font-bold leading-none">Cadastro de Cliente</h2>
+                <h2 className="text-[32px] font-bold leading-none">
+                  {ehEmpresa ? "Cadastro de Empresa" : "Cadastro de Cliente"}
+                </h2>
                 <p className="mt-2 text-lg text-white/75">
                   Preencha seus dados para criar sua conta
                 </p>
@@ -909,101 +1043,181 @@ function CadastroClienteCompleto({
             </div>
 
             <div className="space-y-5">
-              <DriverField
-                icon={imagens.nomePerfil}
-                label="Nome completo"
-                placeholder="Digite seu nome completo"
-                value={nome}
-                onChange={setNome}
-                dots
-              />
+              {ehEmpresa ? (
+                <>
+                  <DriverField
+                    icon={imagens.empresaCliente}
+                    label="Nome Empresa"
+                    placeholder="Digite o nome da empresa"
+                    value={nomeEmpresa}
+                    onChange={setNomeEmpresa}
+                    dots
+                  />
 
-              <DriverField
-                icon={imagens.telefoneWhatsapp}
-                label="Telefone / WhatsApp"
-                placeholder="Digite seu telefone"
-                value={telefone}
-                onChange={setTelefone}
-                dots
-              />
+                  <DriverField
+                    icon={imagens.regiao}
+                    label="Endereço completo"
+                    placeholder="Digite o endereço completo"
+                    value={endereco}
+                    onChange={setEndereco}
+                    dots
+                  />
 
-              <DriverField
-                icon={imagens.empresaCliente}
-                label="Empresa"
-                placeholder="Nome da empresa (opcional)"
-                value={empresa}
-                onChange={setEmpresa}
-                dots
-              />
+                  <DriverField
+                    icon={imagens.documento}
+                    label="Documento (CPF ou Cartão CNPJ)"
+                    placeholder="Digite CPF ou CNPJ"
+                    value={documento}
+                    onChange={setDocumento}
+                    dots
+                  />
 
-              <ClienteSelect
-                icon={imagens.regiao}
-                label="Cidade / Região"
-                value={cidadeRegiao}
-                onChange={setCidadeRegiao}
-                placeholder="Selecione sua região"
-                dots
-                options={[
-                  ["sao-paulo-sp", "São Paulo / SP"],
-                  ["recife-pe", "Recife / PE"],
-                  ["rio-de-janeiro-rj", "Rio de Janeiro / RJ"],
-                  ["belo-horizonte-mg", "Belo Horizonte / MG"],
-                  ["curitiba-pr", "Curitiba / PR"],
-                  ["outra", "Outra região"],
-                ]}
-              />
+                  <DriverField
+                    icon={imagens.nomePerfil}
+                    label="Nome Responsável"
+                    placeholder="Digite o nome do responsável"
+                    value={nomeResponsavel}
+                    onChange={setNomeResponsavel}
+                    dots
+                  />
 
-              <ClienteSelect
-                icon={imagens.origemFrete}
-                label="Origem do frete"
-                value={origemFrete}
-                onChange={setOrigemFrete}
-                placeholder="Selecione a origem"
-                dots
-                options={[
-                  ["minha-cidade", "Minha cidade"],
-                  ["outra-cidade", "Outra cidade"],
-                  ["empresa", "Retirada em empresa"],
-                  ["residencia", "Retirada em residência"],
-                  ["fazenda", "Fazenda / área rural"],
-                ]}
-              />
+                  <DriverField
+                    icon={imagens.telefoneWhatsapp}
+                    label="Telefone / WhatsApp"
+                    placeholder="Digite seu telefone"
+                    value={telefone}
+                    onChange={setTelefone}
+                    dots
+                  />
 
-              <ClienteSelect
-                icon={imagens.destinoEntrega}
-                label="Destino da entrega"
-                value={destinoEntrega}
-                onChange={setDestinoEntrega}
-                placeholder="Selecione o destino"
-                dots
-                options={[
-                  ["mesma-cidade", "Mesma cidade"],
-                  ["outra-cidade", "Outra cidade"],
-                  ["outro-estado", "Outro estado"],
-                  ["varios-destinos", "Vários destinos"],
-                ]}
-              />
+                  <ClienteSelect
+                    icon={imagens.modeloCaminhao}
+                    label="Tipo de frete"
+                    value={tipoFrete}
+                    onChange={setTipoFrete}
+                    placeholder="Selecione o tipo de frete"
+                    dots
+                    options={opcoesTipoFrete}
+                  />
 
-              <ClienteSelect
-                icon={imagens.tipoCarga}
-                label="Tipo de carga"
-                value={tipoCarga}
-                onChange={setTipoCarga}
-                placeholder="Selecione o tipo de carga"
-                dots
-                options={[
-                  ["mudanca", "Mudança"],
-                  ["mercadoria", "Mercadoria"],
-                  ["moveis", "Móveis"],
-                  ["alimentos", "Alimentos"],
-                  ["equipamentos", "Equipamentos"],
-                  ["outros", "Outros"],
-                ]}
-              />
+                  <ClienteSelect
+                    icon={imagens.tipoCarga}
+                    label="Tipo de carga"
+                    value={tipoCarga}
+                    onChange={setTipoCarga}
+                    placeholder="Selecione o tipo de carga"
+                    dots
+                    options={opcoesTipoCarga}
+                  />
+
+                  <DriverField
+                    icon={imagens.origemFrete}
+                    label="Origem do frete"
+                    placeholder="Digite a origem do frete"
+                    value={origemFrete}
+                    onChange={setOrigemFrete}
+                    dots
+                  />
+
+                  <DriverField
+                    icon={imagens.destinoEntrega}
+                    label="Destino da entrega"
+                    placeholder="Digite o destino da entrega"
+                    value={destinoEntrega}
+                    onChange={setDestinoEntrega}
+                    dots
+                  />
+
+                  <DriverField
+                    icon={imagens.documento}
+                    label="Observações"
+                    placeholder="Descreva as particularidades da carga/operação"
+                    value={observacoes}
+                    onChange={setObservacoes}
+                    dots
+                  />
+                </>
+              ) : (
+                <>
+                  <DriverField
+                    icon={imagens.nomePerfil}
+                    label="Nome completo"
+                    placeholder="Digite seu nome completo"
+                    value={nome}
+                    onChange={setNome}
+                    dots
+                  />
+
+                  <DriverField
+                    icon={imagens.regiao}
+                    label="Endereço completo"
+                    placeholder="Digite seu endereço completo"
+                    value={endereco}
+                    onChange={setEndereco}
+                    dots
+                  />
+
+                  <DriverField
+                    icon={imagens.documento}
+                    label="Documento (CPF ou CNPJ)"
+                    placeholder="Digite CPF ou CNPJ"
+                    value={documento}
+                    onChange={setDocumento}
+                    dots
+                  />
+
+                  <DriverField
+                    icon={imagens.telefoneWhatsapp}
+                    label="Telefone / WhatsApp"
+                    placeholder="Digite seu telefone"
+                    value={telefone}
+                    onChange={setTelefone}
+                    dots
+                  />
+
+                  <ClienteSelect
+                    icon={imagens.modeloCaminhao}
+                    label="Tipo de frete"
+                    value={tipoFrete}
+                    onChange={setTipoFrete}
+                    placeholder="Selecione o tipo de frete"
+                    dots
+                    options={opcoesTipoFrete}
+                  />
+
+                  <ClienteSelect
+                    icon={imagens.tipoCarga}
+                    label="Tipo de carga"
+                    value={tipoCarga}
+                    onChange={setTipoCarga}
+                    placeholder="Selecione o tipo de carga"
+                    dots
+                    options={opcoesTipoCarga}
+                  />
+
+                  <DriverField
+                    icon={imagens.destinoEntrega}
+                    label="Destino da entrega"
+                    placeholder="Digite o destino da entrega"
+                    value={destinoEntrega}
+                    onChange={setDestinoEntrega}
+                    dots
+                  />
+
+                  <DriverField
+                    icon={imagens.documento}
+                    label="Observações"
+                    placeholder="Descreva as particularidades da carga/operação"
+                    value={observacoes}
+                    onChange={setObservacoes}
+                    dots
+                  />
+                </>
+              )}
 
               <DriverUpload
                 icon={imagens.documento}
-                label="Documento / CPF ou CNPJ"
+                label="Documento"
                 placeholder="Envie seu documento"
                 file={documentoCliente}
                 onChange={setDocumentoCliente}
