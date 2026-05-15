@@ -679,7 +679,6 @@ function CadastroClienteCompleto({
         !telefone ||
         !tipoFrete ||
         !tipoCarga ||
-        !origemFrete ||
         !destinoEntrega
       ) {
         setMensagem("Preencha os dados principais da empresa.")
@@ -844,13 +843,6 @@ function CadastroClienteCompleto({
                   onChange={setTipoCarga}
                   placeholder="Tipo de carga"
                   options={opcoesTipoCarga}
-                />
-
-                <MobileDriverInput
-                  icon={imagens.origemFrete}
-                  placeholder="Origem do frete"
-                  value={origemFrete}
-                  onChange={setOrigemFrete}
                 />
 
                 <MobileDriverInput
@@ -1108,15 +1100,6 @@ function CadastroClienteCompleto({
                     placeholder="Selecione o tipo de carga"
                     dots
                     options={opcoesTipoCarga}
-                  />
-
-                  <DriverField
-                    icon={imagens.origemFrete}
-                    label="Origem do frete"
-                    placeholder="Digite a origem do frete"
-                    value={origemFrete}
-                    onChange={setOrigemFrete}
-                    dots
                   />
 
                   <DriverField
