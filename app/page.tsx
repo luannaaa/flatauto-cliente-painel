@@ -407,6 +407,16 @@ function LoginForm({
         return
       }
 
+      if (
+        email.trim().toLowerCase() === "luanacat249@gmail.com" &&
+        senha.trim() === "12345678"
+      ) {
+        setMensagem("Login de empresa liberado para teste.")
+        setLoading(false)
+        window.location.href = "/empresa"
+        return
+      }
+
       setMensagem("Login liberado sem banco por enquanto.")
       setLoading(false)
       onLoginSuccess()
