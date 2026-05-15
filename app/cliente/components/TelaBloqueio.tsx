@@ -1,107 +1,93 @@
 "use client"
 
-export default function TelaBloqueio({ onVoltar }: { onVoltar: () => void }) {
+export default function TelaBloqueio({
+  onVoltar,
+  onEntrarEmpresa,
+}: {
+  onVoltar: () => void
+  onEntrarEmpresa?: () => void
+}) {
   return (
-    <main className="min-h-screen bg-[#020303] text-white flex items-center justify-center px-4">
+    <main className="min-h-screen bg-[#020303] text-white flex items-center justify-center px-4 py-8">
       <section className="w-full max-w-[1080px]">
         <img
           src="/logo.png"
-          className="mb-5 h-[125px] w-[380px] object-contain object-left"
+          alt="FlatAuto"
+          className="mb-5 h-[125px] w-[380px] object-contain object-left drop-shadow-[0_0_35px_rgba(255,196,0,0.55)]"
         />
 
-        <div className="grid overflow-hidden rounded-2xl border border-white/15 bg-black/35 shadow-[0_0_80px_rgba(0,0,0,0.9)] md:grid-cols-2">
+        <div className="grid overflow-hidden rounded-2xl border border-white/15 bg-black/45 shadow-[0_0_80px_rgba(0,0,0,0.9)] backdrop-blur-md md:grid-cols-2">
           <div className="border-b border-white/15 p-6 md:border-b-0 md:border-r md:p-9">
-            <h1 className="max-w-[360px] text-[30px] font-black leading-tight md:text-[33px]">
-              Ops! Essa área só está disponível no aplicativo.
-            </h1>
-
-            <p className="mt-5 max-w-[450px] text-[16px] leading-relaxed text-white/75">
-              Por segurança e para garantir a melhor experiência, o acesso é permitido apenas pelo app{" "}
-              <span className="font-bold text-[#ffc400]">FlatAuto.</span>
-            </p>
-
-            <div className="my-5 h-px w-full bg-white/15" />
-
-            <p className="text-[17px] font-bold">
-              Escaneie o QR Code e baixe agora:
-            </p>
-
-            <div className="mt-5 flex flex-col gap-5 sm:flex-row sm:items-center">
-              <div className="grid h-[135px] w-[135px] grid-cols-7 grid-rows-7 gap-[3px] rounded-lg bg-white p-2">
-                {Array.from({ length: 49 }).map((_, i) => (
-                  <span
-                    key={i}
-                    className={
-                      [
-                        0, 1, 2, 7, 14, 15, 16,
-                        4, 5, 6, 13, 20, 19, 18,
-                        28, 35, 42, 43, 44, 36, 30,
-                        10, 12, 17, 22, 24, 26, 31, 33, 38, 40, 45, 48,
-                      ].includes(i)
-                        ? "bg-black"
-                        : "bg-white"
-                    }
-                  />
-                ))}
-              </div>
-
-              <div className="flex flex-col gap-3">
-                <img
-                  src="/googleplay-removebg-preview.png"
-                  className="h-[62px] w-[215px] object-contain"
-                />
-
-                <img
-                  src="/app_story-removebg-preview.png"
-                  className="h-[62px] w-[215px] object-contain"
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="flex flex-col items-center justify-center p-6 text-center md:p-9">
-            <div className="relative mb-5 flex h-[135px] w-[170px] items-center justify-center">
-              <div className="absolute inset-0 rounded-full bg-[#ffc400]/20 blur-3xl" />
-              <div className="absolute h-[90px] w-[90px] rounded-full bg-[#ffc400]/15 blur-2xl" />
+            <div className="flex h-16 w-16 items-center justify-center rounded-xl border border-[#ffc400]/40 bg-[#ffc400]/10">
               <img
                 src="/block_pc.png"
-                className="relative z-10 h-[125px] w-[165px] object-contain drop-shadow-[0_0_22px_rgba(255,196,0,0.45)]"
+                alt=""
+                className="h-10 w-10 object-contain"
               />
             </div>
 
-            <h2 className="max-w-[400px] text-[29px] font-black leading-tight md:text-[33px]">
-              Acesso pelo computador bloqueado
-            </h2>
+            <h1 className="mt-6 max-w-[430px] text-[30px] font-black leading-tight md:text-[34px]">
+              Acesso pelo computador bloqueado para cliente comum.
+            </h1>
 
-            <p className="mt-5 max-w-[440px] text-[17px] leading-relaxed text-white/70">
-              Você pode criar sua conta pelo site, mas para entrar precisa usar o aplicativo.
+            <p className="mt-5 max-w-[470px] text-[16px] leading-relaxed text-white/75">
+              Por segurança, clientes comuns acessam a plataforma pelo aplicativo.
+              Empresas podem acessar normalmente pelo computador ou pelo celular.
+            </p>
+
+            <div className="my-6 h-px w-full bg-white/15" />
+
+            <p className="text-[17px] font-bold text-white">
+              Você está entrando como empresa?
             </p>
 
             <button
+              type="button"
+              onClick={onEntrarEmpresa}
+              className="mt-5 h-14 w-full rounded-xl bg-[#ffc400] text-lg font-black text-black shadow-[0_0_30px_rgba(255,196,0,0.45)]"
+            >
+              Entrar como empresa
+            </button>
+
+            <button
+              type="button"
               onClick={onVoltar}
-              className="mt-7 text-[19px] font-bold text-[#ffc400]"
+              className="mt-4 h-12 w-full rounded-xl border border-[#ffc400] text-base font-bold text-[#ffc400]"
             >
               Voltar para o login
             </button>
           </div>
-        </div>
 
-        <div className="mt-5 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div className="flex items-center gap-3">
-            <img
-              src="/confianca.png"
-              className="h-[62px] w-[62px] object-contain"
-            />
+          <div className="flex flex-col items-center justify-center p-6 text-center md:p-9">
+            <div className="flex h-24 w-24 items-center justify-center rounded-2xl border border-[#ffc400]/40 bg-[#ffc400]/10">
+              <img
+                src="/empresa_cliente.png"
+                className="h-14 w-14 object-contain"
+                alt=""
+              />
+            </div>
 
-            <p className="max-w-[270px] text-[14px] leading-relaxed text-white/60">
-              A sua plataforma de fretes com segurança, praticidade e confiança.
+            <h2 className="mt-6 text-[28px] font-black">
+              Empresa liberada no computador
+            </h2>
+
+            <p className="mt-4 max-w-[390px] text-white/70">
+              O acesso empresarial terá um painel próprio, com entregas, status,
+              motoristas, veículos, financeiro e relatórios.
             </p>
-          </div>
 
-          <button className="flex h-[46px] items-center gap-2 rounded-xl border border-[#ffc400] px-4 text-[15px] font-bold text-[#ffc400]">
-            <img src="/suport1.png" className="h-5 w-5 object-contain" />
-            Precisa de ajuda?
-          </button>
+            <div className="mt-7 w-full max-w-[390px] rounded-xl border border-white/10 bg-white/[0.04] p-5 text-left">
+              <p className="font-bold text-[#ffc400]">Cliente comum</p>
+              <p className="mt-1 text-sm text-white/60">
+                Bloqueado no computador. Usa pelo app.
+              </p>
+
+              <p className="mt-4 font-bold text-[#ffc400]">Empresa</p>
+              <p className="mt-1 text-sm text-white/60">
+                Liberada no computador e no celular.
+              </p>
+            </div>
+          </div>
         </div>
       </section>
     </main>
