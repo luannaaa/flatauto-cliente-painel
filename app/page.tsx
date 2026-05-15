@@ -397,31 +397,31 @@ function LoginForm({
   function entrarComEmail() {
     if (loading) return
 
-    setLoading(true)
+    const emailLimpo = email.trim().toLowerCase()
+    const senhaLimpa = senha.trim()
+
     setMensagem("")
 
+    if (!emailLimpo || !senhaLimpa) {
+      setMensagem("Digite e-mail e senha para testar.")
+      return
+    }
+
+    // Login fixo temporário para empresa testar no PC e no celular
+    if (emailLimpo === "luanacat249@gmail.com" && senhaLimpa === "12345678") {
+      window.location.href = "/empresa"
+      return
+    }
+
+    setLoading(true)
+
     setTimeout(() => {
-      if (!email.trim() || !senha.trim()) {
-        setMensagem("Digite e-mail e senha para testar.")
-        setLoading(false)
-        return
-      }
-
-      if (
-        email.trim().toLowerCase() === "luanacat249@gmail.com" &&
-        senha.trim() === "12345678"
-      ) {
-        setMensagem("Login de empresa liberado para teste.")
-        setLoading(false)
-        window.location.href = "/empresa"
-        return
-      }
-
       setMensagem("Login liberado sem banco por enquanto.")
       setLoading(false)
       onLoginSuccess()
     }, 400)
   }
+
 
   const inputClass =
     "h-16 w-full rounded-lg border border-white/20 bg-[#070a0d]/85 px-5 text-lg text-white outline-none placeholder:text-gray-400"
