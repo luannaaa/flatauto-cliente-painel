@@ -1,5 +1,7 @@
 "use client"
 
+import { useState } from "react"
+
 export default function TelaBloqueio({
   onVoltar,
   onEntrarEmpresa,
@@ -7,6 +9,36 @@ export default function TelaBloqueio({
   onVoltar: () => void
   onEntrarEmpresa?: () => void
 }) {
+  const [email, setEmail] = useState("")
+  const [senha, setSenha] = useState("")
+  const [mensagem, setMensagem] = useState("")
+
+  function entrarComoEmpresaTeste() {
+    const emailLimpo = email.trim().toLowerCase()
+    const senhaLimpa = senha.trim()
+
+    setMensagem("")
+
+    if (
+      emailLimpo === "luanacat249@gmail.com" &&
+      senhaLimpa === "12345678"
+    ) {
+      window.location.href = "/empresa"
+      return
+    }
+
+    setMensagem("E-mail ou senha da empresa incorretos.")
+  }
+
+  function irParaEmpresa() {
+    if (onEntrarEmpresa) {
+      onEntrarEmpresa()
+      return
+    }
+
+    window.location.href = "/empresa"
+  }
+
   return (
     <main className="min-h-screen bg-[#020303] text-white flex items-center justify-center px-4 py-8">
       <section className="w-full max-w-[1080px]">
@@ -38,21 +70,52 @@ export default function TelaBloqueio({
             <div className="my-6 h-px w-full bg-white/15" />
 
             <p className="text-[17px] font-bold text-white">
-              Você está entrando como empresa?
+              Entrar como empresa de teste
             </p>
+
+            <div className="mt-4 space-y-3">
+              <input
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                placeholder="E-mail da empresa"
+                className="h-14 w-full rounded-xl border border-white/15 bg-[#10151b] px-4 text-white outline-none placeholder:text-white/40 focus:border-[#ffc400]"
+              />
+
+              <input
+                value={senha}
+                onChange={(event) => setSenha(event.target.value)}
+                placeholder="Senha da empresa"
+                type="password"
+                className="h-14 w-full rounded-xl border border-white/15 bg-[#10151b] px-4 text-white outline-none placeholder:text-white/40 focus:border-[#ffc400]"
+              />
+            </div>
+
+            {mensagem && (
+              <p className="mt-3 text-sm font-bold text-[#ffc400]">
+                {mensagem}
+              </p>
+            )}
 
             <button
               type="button"
-              onClick={onEntrarEmpresa}
+              onClick={entrarComoEmpresaTeste}
               className="mt-5 h-14 w-full rounded-xl bg-[#ffc400] text-lg font-black text-black shadow-[0_0_30px_rgba(255,196,0,0.45)]"
             >
-              Entrar como empresa
+              Acessar painel empresa
+            </button>
+
+            <button
+              type="button"
+              onClick={irParaEmpresa}
+              className="mt-4 h-12 w-full rounded-xl border border-[#ffc400] text-base font-bold text-[#ffc400]"
+            >
+              Ir para empresa sem cadastro
             </button>
 
             <button
               type="button"
               onClick={onVoltar}
-              className="mt-4 h-12 w-full rounded-xl border border-[#ffc400] text-base font-bold text-[#ffc400]"
+              className="mt-4 h-12 w-full rounded-xl border border-white/15 text-base font-bold text-white/80"
             >
               Voltar para o login
             </button>
@@ -85,6 +148,16 @@ export default function TelaBloqueio({
               <p className="mt-4 font-bold text-[#ffc400]">Empresa</p>
               <p className="mt-1 text-sm text-white/60">
                 Liberada no computador e no celular.
+              </p>
+
+              <p className="mt-4 text-sm font-bold text-white">
+                Login de teste:
+              </p>
+              <p className="mt-1 text-sm text-white/60">
+                luanacat249@gmail.com
+              </p>
+              <p className="text-sm text-white/60">
+                12345678
               </p>
             </div>
           </div>
