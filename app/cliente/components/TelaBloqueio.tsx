@@ -26,11 +26,7 @@ export default function TelaBloqueio({
             />
 
             <div className="flex h-16 w-16 items-center justify-center rounded-xl border border-[#ffc400]/40 bg-[#ffc400]/10">
-              <img
-                src="/block_pc.png"
-                alt=""
-                className="h-10 w-10 object-contain"
-              />
+              <img src="/block_pc.png" alt="" className="h-10 w-10 object-contain" />
             </div>
 
             <h1 className="mt-7 max-w-[430px] text-[32px] font-black leading-tight md:text-[38px]">
@@ -45,33 +41,33 @@ export default function TelaBloqueio({
             <button
               type="button"
               onClick={onVoltar}
-              className="mt-8 h-14 w-full rounded-xl border border-[#ffc400] bg-transparent text-lg font-bold text-[#ffc400] transition hover:bg-[#ffc400] hover:text-black"
+              className="mt-8 h-14 w-full rounded-xl border border-[#ffc400] bg-transparent text-lg font-bold text-[#ffc400]"
             >
               Voltar para o login
             </button>
           </div>
 
           <div className="flex flex-col items-center justify-center p-7 text-center md:p-10">
-            <div className="flex h-28 w-28 items-center justify-center rounded-2xl border border-[#ffc400]/40 bg-[#ffc400]/10 shadow-[0_0_35px_rgba(255,196,0,0.18)]">
+            <div className="rounded-2xl border border-[#ffc400]/40 bg-white p-4 shadow-[0_0_35px_rgba(255,196,0,0.25)]">
               <img
-                src="/googleplay-removebg-preview.png"
-                alt=""
-                className="h-16 w-16 object-contain"
+                src="/qrcode.png"
+                alt="QR Code do aplicativo"
+                className="h-40 w-40 object-contain"
               />
             </div>
 
             <h2 className="mt-7 text-[28px] font-black">
-              Acesse pelo aplicativo
+              Acesse pelo celular
             </h2>
 
             <p className="mt-4 max-w-[390px] text-white/65">
-              Baixe ou abra o app FlatAuto no celular para continuar usando como cliente.
+              Escaneie o QR Code com a câmera do celular para acessar o aplicativo FlatAuto.
             </p>
 
             <div className="mt-8 rounded-xl border border-white/10 bg-white/[0.04] p-5 text-left">
               <p className="font-bold text-[#ffc400]">Cliente comum</p>
               <p className="mt-1 text-sm text-white/60">
-                Acesso pelo app no celular.
+                Acesso liberado pelo app no celular.
               </p>
 
               <p className="mt-4 font-bold text-[#ffc400]">Empresa</p>
