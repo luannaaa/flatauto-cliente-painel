@@ -402,18 +402,13 @@ function LoginForm({
 
     setMensagem("")
 
-    // LOGIN EMPRESA TESTE
-    // Esse login entra direto no painel da empresa no PC e no celular
+    // LOGIN FIXO DA EMPRESA PARA TESTE
+    // Funciona no computador e no celular.
     if (
       emailLimpo === "luanacat249@gmail.com" &&
       senhaLimpa === "12345678"
     ) {
-      setMensagem("Entrando como empresa...")
-
-      setTimeout(() => {
-        window.location.href = "/empresa"
-      }, 300)
-
+      window.location.href = "/empresa"
       return
     }
 
