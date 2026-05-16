@@ -2,10 +2,8 @@
 
 export default function TelaBloqueio({
   onVoltar,
-  onEntrarEmpresa,
 }: {
   onVoltar: () => void
-  onEntrarEmpresa?: () => void
 }) {
   return (
     <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-black px-5 py-8 text-white">
@@ -78,7 +76,7 @@ export default function TelaBloqueio({
 
               <p className="mt-4 font-bold text-[#ffc400]">Empresa</p>
               <p className="mt-1 text-sm text-white/60">
-                O login empresarial de teste deve ser feito direto na tela inicial de login.
+                Use o e-mail e senha de empresa na tela principal de login.
               </p>
             </div>
           </div>
