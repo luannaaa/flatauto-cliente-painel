@@ -7,19 +7,18 @@ type Tema = "dark" | "light"
 
 const icones = {
   logoEmpresa: "/empresa_logo.png",
-  logoEmpresa2: "/empresa_loga.png",
-  logoNormal: "/logo.png",
-  dashboard: "/des.png",
+  dashboard: "/inicio.png",
   entregas: "/tipo_carga.png",
-  motorista: "/motorista_proximo.png",
-  veiculos: "/modelo_caminhao.png",
+  motorista: "/prefil_preto.png",
+  veiculos: "/caminhao_preto.png",
   clientes: "/cliente_empresa.png",
   crm: "/CRM.png",
-  financeiro: "/financeiro.png",
-  relatorios: "/status_frete.png",
-  mapa: "/destino_entrega.png",
+  financeiro: "/finaceiro.png",
+  relatorios: "/documento.png",
+  mapa: "/regiao.png",
   analytics: "/analyt.png",
   configuracao: "/configuracao.png",
+  sair: "/saida.png",
   notificacao: "/notificacao.png",
   concluido: "/concluido.png",
   andamento: "/caminhao_azul.png",
@@ -27,7 +26,6 @@ const icones = {
   dinheiro: "/dinheiro.png",
   pdf: "/PDF.png",
   excel: "/excel.png",
-  sair: "/saida.png",
   mapaBrasil: "/brasil_mapa.png",
 }
 
@@ -64,7 +62,7 @@ export default function PainelEmpresa() {
     pagina: claro ? "bg-[#f6f0df] text-[#111]" : "bg-[#020507] text-white",
     sidebar: claro ? "bg-white/82 border-[#dfd0a5]" : "bg-[#030506]/94 border-white/10",
     card: claro ? "border-[#dfd0a5] bg-white/90 shadow-[0_16px_45px_rgba(80,60,20,0.11)]" : "border-white/10 bg-[#10171b]/88 shadow-[0_18px_45px_rgba(0,0,0,0.30)]",
-    card2: claro ? "bg-[#f7f0dc] border-[#dfd0a5]" : "bg-white/[0.045] border-white/10",
+    card2: claro ? "border-[#dfd0a5] bg-[#f7f0dc]" : "border-white/10 bg-white/[0.045]",
     textoFraco: claro ? "text-black/55" : "text-white/58",
     linha: claro ? "border-[#dfd0a5]" : "border-white/10",
   }), [claro])
@@ -81,7 +79,6 @@ export default function PainelEmpresa() {
         <MenuLateral ui={ui} tema={tema} setTema={setTema} />
         <section className="min-w-0 px-7 py-6">
           <Topo periodo={periodo} setPeriodo={setPeriodo} ui={ui} />
-
           <div className="mt-6 grid grid-cols-5 gap-4">
             <Indicador ui={ui} titulo="Total de Entregas" valor="128" detalhe="↑ 18% vs período anterior" icone={icones.dashboard} tamanhoIcone="h-8 w-8" />
             <Indicador ui={ui} titulo="Concluídas" valor="96" detalhe="75% do total" icone={icones.concluido} tamanhoIcone="h-9 w-9" />
@@ -92,9 +89,7 @@ export default function PainelEmpresa() {
 
           <div className="mt-5 grid grid-cols-[0.86fr_1.34fr_0.58fr] gap-5">
             <Card ui={ui} titulo="Entregas por Período" acao="7 dias"><GraficoLinha /></Card>
-            <Card ui={ui} titulo="CRM - Pipeline de Negócios">
-              {crmConectado ? <CRM ui={ui} /> : <ConectarCRM ui={ui} onClick={() => setCrmConectado(true)} />}
-            </Card>
+            <Card ui={ui} titulo="CRM - Pipeline de Negócios">{crmConectado ? <CRM ui={ui} /> : <ConectarCRM ui={ui} onClick={() => setCrmConectado(true)} />}</Card>
             <Card ui={ui} titulo="Exportar Relatórios"><Exportar ui={ui} /></Card>
           </div>
 
@@ -113,7 +108,7 @@ export default function PainelEmpresa() {
         <div className="mx-auto max-w-[430px]">
           <header className="flex items-center justify-between">
             <button className="text-3xl">☰</button>
-            <LogoEmpresa className="h-[74px] w-[225px] object-contain" />
+            <LogoMarcaMobile />
             <button className="relative">
               <img src={icones.notificacao} alt="" className="h-8 w-8 object-contain" />
               <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-[#ffc400]" />
@@ -159,8 +154,16 @@ export default function PainelEmpresa() {
   )
 }
 
-function LogoEmpresa({ className }: { className: string }) {
-  return <img src={icones.logoEmpresa2} onError={(e) => { e.currentTarget.src = icones.logoEmpresa }} alt="FlatAuto Empresa" className={className} />
+function LogoMarcaMobile() {
+  return (
+    <div className="flex items-center gap-3">
+      <img src={icones.logoEmpresa} alt="FlatAuto" className="h-12 w-12 object-contain" />
+      <div>
+        <p className="text-[20px] font-black leading-none tracking-wide">FLAT<span className="text-[#ffc400]">AUTO</span></p>
+        <p className="mt-1 text-[10px] font-bold tracking-[0.2em] text-[#ffc400]">EMPRESA</p>
+      </div>
+    </div>
+  )
 }
 
 function Topo({ periodo, setPeriodo, ui }: any) {
@@ -197,10 +200,17 @@ function MenuLateral({ ui, tema, setTema }: any) {
 
   return (
     <aside className={`border-r px-5 py-7 backdrop-blur-xl ${ui.sidebar}`}>
-      <LogoEmpresa className="h-[92px] w-[245px] object-contain object-left drop-shadow-[0_0_22px_rgba(255,196,0,0.20)]" />
-      <nav className="mt-7 space-y-2">
+      <div className="flex items-center gap-3">
+        <img src={icones.logoEmpresa} alt="FlatAuto" className="h-14 w-14 object-contain" />
+        <div>
+          <p className="text-[21px] font-black leading-none tracking-wide">FLAT<span className="text-[#ffc400]">AUTO</span></p>
+          <p className="mt-1 text-xs font-bold tracking-[0.18em] text-[#ffc400]">EMPRESA</p>
+        </div>
+      </div>
+
+      <nav className="mt-9 space-y-2">
         {menu.map((item) => (
-          <button key={item.texto} className={`flex min-h-[52px] w-full items-center gap-4 rounded-2xl px-4 text-left font-bold transition ${item.ativo ? "bg-[#ffc400] text-black shadow-[0_0_30px_rgba(255,196,0,0.24)]" : "opacity-75 hover:bg-white/[0.06] hover:opacity-100"}`}>
+          <button key={item.texto} className={`flex min-h-[52px] w-full items-center gap-4 rounded-2xl px-4 text-left font-bold transition ${item.ativo ? "bg-[#ffc400] text-black shadow-[0_0_28px_rgba(255,196,0,0.22)]" : "text-white/75 hover:bg-white/[0.06] hover:text-[#ffc400]"}`}>
             <img src={item.icone} alt="" className={`${item.size} shrink-0 object-contain`} />
             <span className="flex-1">{item.texto}</span>
             {item.badge && <span className="rounded-md border border-[#ffc400]/70 px-2 py-0.5 text-[10px] text-[#ffc400]">{item.badge}</span>}
@@ -210,9 +220,7 @@ function MenuLateral({ ui, tema, setTema }: any) {
 
       <div className={`mt-8 rounded-2xl border p-4 ${ui.card}`}>
         <div className="flex items-center gap-3">
-          <div className="flex h-14 w-14 items-center justify-center rounded-full border border-[#ffc400]/70 bg-[#ffc400]/10">
-            <img src={icones.entregas} alt="" className="h-9 w-9 object-contain" />
-          </div>
+          <img src={icones.entregas} alt="" className="h-9 w-9 object-contain" />
           <div>
             <p className="text-sm font-bold leading-tight">Transportes Silva LTDA</p>
             <p className={`mt-1 text-xs ${ui.textoFraco}`}>Plano Empresarial</p>
@@ -221,7 +229,8 @@ function MenuLateral({ ui, tema, setTema }: any) {
       </div>
 
       <button className={`mt-4 flex h-14 w-full items-center justify-center gap-3 rounded-2xl border font-bold ${ui.card2}`}>
-        <img src={icones.sair} alt="" className="h-6 w-6 object-contain" /> Sair
+        <img src={icones.sair} alt="" className="h-6 w-6 object-contain" />
+        Sair
       </button>
 
       <div className={`mt-8 flex items-center justify-between rounded-full border p-2 ${ui.card2}`}>
@@ -256,9 +265,7 @@ function Indicador({ titulo, valor, detalhe, icone, tamanhoIcone, ui, azul, verm
           <p className={`${mobile ? "text-xs" : "text-sm"} ${ui.textoFraco}`}>{titulo}</p>
           <p className={`${mobile ? "mt-3 text-[32px]" : "mt-4 text-[34px]"} font-black leading-none`}>{valor}</p>
         </div>
-        <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-[#ffc400]/20 bg-[#ffc400]/12">
-          <img src={icone} alt="" className={`${tamanhoIcone} object-contain`} />
-        </div>
+        <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-[#ffc400]/20 bg-[#ffc400]/12"><img src={icone} alt="" className={`${tamanhoIcone} object-contain`} /></div>
       </div>
       <p className={`relative mt-4 text-sm ${cor}`}>{detalhe}</p>
     </div>
@@ -270,21 +277,12 @@ function GraficoLinha({ mobile = false }: { mobile?: boolean }) {
     <div className={`${mobile ? "h-[190px]" : "h-[260px]"} relative`}>
       <div className="absolute inset-0 rounded-2xl bg-[linear-gradient(rgba(255,255,255,0.04)_1px,transparent_1px)] bg-[size:100%_52px]" />
       <svg viewBox="0 0 700 260" className="relative h-full w-full overflow-visible">
-        <defs>
-          <linearGradient id="graficoAreaEmpresa" x1="0" x2="0" y1="0" y2="1">
-            <stop offset="0%" stopColor="#ffc400" stopOpacity="0.55" />
-            <stop offset="100%" stopColor="#ffc400" stopOpacity="0.03" />
-          </linearGradient>
-        </defs>
+        <defs><linearGradient id="graficoAreaEmpresa" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stopColor="#ffc400" stopOpacity="0.55" /><stop offset="100%" stopColor="#ffc400" stopOpacity="0.03" /></linearGradient></defs>
         <path d="M30 215 L130 160 L230 190 L330 128 L430 62 L530 118 L630 52 L630 230 L30 230 Z" fill="url(#graficoAreaEmpresa)" />
         <polyline points="30,215 130,160 230,190 330,128 430,62 530,118 630,52" fill="none" stroke="#ffc400" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" />
-        {[30, 130, 230, 330, 430, 530, 630].map((x, i) => (
-          <circle key={x} cx={x} cy={[215, 160, 190, 128, 62, 118, 52][i]} r="8" fill="#ffc400" />
-        ))}
+        {[30, 130, 230, 330, 430, 530, 630].map((x, i) => <circle key={x} cx={x} cy={[215, 160, 190, 128, 62, 118, 52][i]} r="8" fill="#ffc400" />)}
       </svg>
-      <div className="-mt-4 grid grid-cols-7 text-center text-xs opacity-55">
-        {["12/05", "13/05", "14/05", "15/05", "16/05", "17/05", "18/05"].map((d) => <span key={d}>{d}</span>)}
-      </div>
+      <div className="-mt-4 grid grid-cols-7 text-center text-xs opacity-55">{["12/05", "13/05", "14/05", "15/05", "16/05", "17/05", "18/05"].map((d) => <span key={d}>{d}</span>)}</div>
     </div>
   )
 }
@@ -292,9 +290,7 @@ function GraficoLinha({ mobile = false }: { mobile?: boolean }) {
 function ConectarCRM({ ui, onClick, mobile }: any) {
   return (
     <div className={`flex ${mobile ? "flex-col" : "items-center"} gap-4 rounded-2xl border p-5 ${ui.card2}`}>
-      <div className="flex h-[76px] w-[76px] shrink-0 items-center justify-center rounded-2xl border border-[#ffc400]/35 bg-[#ffc400]/10">
-        <img src={icones.crm} alt="" className="h-12 w-12 object-contain" />
-      </div>
+      <div className="flex h-[76px] w-[76px] shrink-0 items-center justify-center rounded-2xl border border-[#ffc400]/35 bg-[#ffc400]/10"><img src={icones.crm} alt="" className="h-12 w-12 object-contain" /></div>
       <div className="flex-1">
         <h3 className="text-lg font-black">Conecte seu CRM</h3>
         <p className={`mt-2 text-sm ${ui.textoFraco}`}>Integre seu CRM para visualizar leads, negociações e oportunidades direto no painel.</p>
@@ -309,19 +305,8 @@ function CRM({ ui, mobile }: any) {
     <div className={`grid ${mobile ? "grid-cols-3 overflow-x-auto" : "grid-cols-4"} gap-3`}>
       {crmColunas.map((coluna) => (
         <div key={coluna.nome} className={`min-w-[132px] rounded-xl border p-3 ${coluna.cor}`}>
-          <div className="mb-3 flex items-center justify-between">
-            <h3 className="text-sm font-black">{coluna.nome}</h3>
-            <span className="rounded-full bg-[#ffc400]/20 px-2 text-xs text-[#ffc400]">{coluna.total}</span>
-          </div>
-          <div className="space-y-2">
-            {coluna.itens.slice(0, mobile ? 1 : 2).map((item) => (
-              <div key={item.nome} className={`rounded-lg border p-3 ${ui.card2}`}>
-                <p className="text-xs font-bold">{item.nome}</p>
-                <p className={`mt-1 text-[11px] ${ui.textoFraco}`}>{item.local}</p>
-                <p className="mt-2 text-xs font-bold">{item.valor}</p>
-              </div>
-            ))}
-          </div>
+          <div className="mb-3 flex items-center justify-between"><h3 className="text-sm font-black">{coluna.nome}</h3><span className="rounded-full bg-[#ffc400]/20 px-2 text-xs text-[#ffc400]">{coluna.total}</span></div>
+          <div className="space-y-2">{coluna.itens.slice(0, mobile ? 1 : 2).map((item) => <div key={item.nome} className={`rounded-lg border p-3 ${ui.card2}`}><p className="text-xs font-bold">{item.nome}</p><p className={`mt-1 text-[11px] ${ui.textoFraco}`}>{item.local}</p><p className="mt-2 text-xs font-bold">{item.valor}</p></div>)}</div>
         </div>
       ))}
     </div>
@@ -332,11 +317,7 @@ function Exportar({ ui }: any) {
   return (
     <div>
       <p className={`text-sm ${ui.textoFraco}`}>Gere relatórios personalizados por cliente ou geral da operação.</p>
-      <select className={`mt-4 h-11 w-full rounded-xl border px-3 text-sm outline-none ${ui.card2}`}>
-        <option>Relatório Geral</option>
-        <option>Por Cliente</option>
-        <option>Financeiro</option>
-      </select>
+      <select className={`mt-4 h-11 w-full rounded-xl border px-3 text-sm outline-none ${ui.card2}`}><option>Relatório Geral</option><option>Por Cliente</option><option>Financeiro</option></select>
       <div className="mt-5 grid grid-cols-2 gap-3">
         <button className="flex h-12 items-center justify-center gap-2 rounded-xl bg-[#ffc400] font-black text-black"><img src={icones.pdf} alt="" className="h-7 w-7" />PDF</button>
         <button className="flex h-12 items-center justify-center gap-2 rounded-xl bg-green-600 font-black text-white"><img src={icones.excel} alt="" className="h-7 w-7" />Excel</button>
@@ -350,23 +331,12 @@ function MapaBrasil({ ui, mobile }: any) {
     <div className={`grid ${mobile ? "grid-cols-1" : "grid-cols-[1fr_0.9fr]"} gap-4`}>
       <div className={`relative h-[260px] overflow-hidden rounded-2xl border ${ui.card2}`}>
         <img src={icones.mapaBrasil} alt="Mapa do Brasil" className="absolute inset-0 h-full w-full object-contain opacity-90" onError={(e) => { e.currentTarget.style.display = "none" }} />
-
-        {/* Pontos temporários. Depois o backend gera isso com base nos destinos reais. */}
-        {destinos.map((destino) => (
-          <span key={destino.cidade} title={destino.cidade} className="absolute h-3.5 w-3.5 rounded-full bg-[#ffc400] shadow-[0_0_22px_#ffc400]" style={{ left: destino.left, top: destino.top }} />
-        ))}
-
+        {destinos.map((destino) => <span key={destino.cidade} title={destino.cidade} className="absolute h-3.5 w-3.5 rounded-full bg-[#ffc400] shadow-[0_0_22px_#ffc400]" style={{ left: destino.left, top: destino.top }} />)}
         <div className="absolute left-4 top-4 rounded-xl bg-black/45 px-3 py-2 text-xs text-white">Mapa do Brasil</div>
       </div>
-
       <div className="space-y-2">
         <p className={`text-sm font-bold ${ui.textoFraco}`}>Top Destinos</p>
-        {destinos.map((destino) => (
-          <div key={destino.cidade} className="flex items-center justify-between text-sm">
-            <span>{destino.cidade}</span>
-            <strong>{destino.total}</strong>
-          </div>
-        ))}
+        {destinos.map((destino) => <div key={destino.cidade} className="flex items-center justify-between text-sm"><span>{destino.cidade}</span><strong>{destino.total}</strong></div>)}
         <button className="pt-1 text-sm font-bold text-[#ffc400]">Ver mapa completo</button>
       </div>
     </div>
@@ -374,80 +344,23 @@ function MapaBrasil({ ui, mobile }: any) {
 }
 
 function Financeiro({ ui, mobile }: any) {
-  const itens = [
-    ["Faturamento Bruto", "R$ 24.560,00", "↑ 22% vs mês anterior", "text-green-400"],
-    ["Repasse Motorista", "R$ 8.340,00", "34% do bruto", "text-red-400"],
-    ["Despesas", "R$ 5.420,00", "22% do líquido", "text-red-400"],
-    ["Faturamento Líquido", "R$ 10.800,00", "↑ 18% vs mês anterior", "text-green-400"],
-    ["Lucro Líquido", "R$ 4.380,00", "↑ 26% vs mês anterior", "text-green-400"],
-  ]
-
-  return (
-    <div className={`grid ${mobile ? "grid-cols-1" : "grid-cols-5"} gap-3`}>
-      {itens.map(([titulo, valor, detalhe, cor]) => (
-        <div key={titulo} className={`rounded-xl border p-4 ${ui.card2}`}>
-          <p className={`text-xs ${ui.textoFraco}`}>{titulo}</p>
-          <p className="mt-3 text-[22px] font-black">{valor}</p>
-          <p className={`mt-2 text-xs ${cor}`}>{detalhe}</p>
-        </div>
-      ))}
-    </div>
-  )
+  const itens = [["Faturamento Bruto", "R$ 24.560,00", "↑ 22% vs mês anterior", "text-green-400"], ["Repasse Motorista", "R$ 8.340,00", "34% do bruto", "text-red-400"], ["Despesas", "R$ 5.420,00", "22% do líquido", "text-red-400"], ["Faturamento Líquido", "R$ 10.800,00", "↑ 18% vs mês anterior", "text-green-400"], ["Lucro Líquido", "R$ 4.380,00", "↑ 26% vs mês anterior", "text-green-400"]]
+  return <div className={`grid ${mobile ? "grid-cols-1" : "grid-cols-5"} gap-3`}>{itens.map(([titulo, valor, detalhe, cor]) => <div key={titulo} className={`rounded-xl border p-4 ${ui.card2}`}><p className={`text-xs ${ui.textoFraco}`}>{titulo}</p><p className="mt-3 text-[22px] font-black">{valor}</p><p className={`mt-2 text-xs ${cor}`}>{detalhe}</p></div>)}</div>
 }
 
 function Tabela({ ui }: any) {
   return (
     <div className="overflow-x-auto">
       <table className="w-full min-w-[980px] text-left text-sm">
-        <thead>
-          <tr className={`border-b ${ui.linha} ${ui.textoFraco}`}>
-            <th className="pb-4">ID</th>
-            <th className="pb-4">Data</th>
-            <th className="pb-4">Cliente</th>
-            <th className="pb-4">Origem</th>
-            <th className="pb-4">Destino</th>
-            <th className="pb-4">Motorista</th>
-            <th className="pb-4">Valor</th>
-            <th className="pb-4">Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          {entregas.map((entrega) => (
-            <tr key={entrega.id} className={`border-b ${ui.linha}`}>
-              <td className="py-4">{entrega.id}</td>
-              <td>{entrega.data}</td>
-              <td>{entrega.cliente}</td>
-              <td>{entrega.origem}</td>
-              <td>{entrega.destino}</td>
-              <td>{entrega.motorista}</td>
-              <td>{entrega.valor}</td>
-              <td><Status status={entrega.status} /></td>
-            </tr>
-          ))}
-        </tbody>
+        <thead><tr className={`border-b ${ui.linha} ${ui.textoFraco}`}><th className="pb-4">ID</th><th className="pb-4">Data</th><th className="pb-4">Cliente</th><th className="pb-4">Origem</th><th className="pb-4">Destino</th><th className="pb-4">Motorista</th><th className="pb-4">Valor</th><th className="pb-4">Status</th></tr></thead>
+        <tbody>{entregas.map((entrega) => <tr key={entrega.id} className={`border-b ${ui.linha}`}><td className="py-4">{entrega.id}</td><td>{entrega.data}</td><td>{entrega.cliente}</td><td>{entrega.origem}</td><td>{entrega.destino}</td><td>{entrega.motorista}</td><td>{entrega.valor}</td><td><Status status={entrega.status} /></td></tr>)}</tbody>
       </table>
     </div>
   )
 }
 
 function ListaMobile({ ui }: any) {
-  return (
-    <div className="space-y-3">
-      {entregas.map((entrega) => (
-        <div key={entrega.id} className={`rounded-xl border p-4 ${ui.card2}`}>
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <p className={`text-sm ${ui.textoFraco}`}>{entrega.id} • {entrega.data}</p>
-              <p className="mt-1 font-bold">{entrega.cliente}</p>
-              <p className={`mt-1 text-sm ${ui.textoFraco}`}>{entrega.origem} → {entrega.destino}</p>
-              <p className="mt-2 text-sm font-bold">{entrega.valor}</p>
-            </div>
-            <Status status={entrega.status} />
-          </div>
-        </div>
-      ))}
-    </div>
-  )
+  return <div className="space-y-3">{entregas.map((entrega) => <div key={entrega.id} className={`rounded-xl border p-4 ${ui.card2}`}><div className="flex items-start justify-between gap-3"><div><p className={`text-sm ${ui.textoFraco}`}>{entrega.id} • {entrega.data}</p><p className="mt-1 font-bold">{entrega.cliente}</p><p className={`mt-1 text-sm ${ui.textoFraco}`}>{entrega.origem} → {entrega.destino}</p><p className="mt-2 text-sm font-bold">{entrega.valor}</p></div><Status status={entrega.status} /></div></div>)}</div>
 }
 
 function Status({ status }: { status: StatusEntrega }) {
@@ -456,10 +369,5 @@ function Status({ status }: { status: StatusEntrega }) {
 }
 
 function NavMobile({ icone, texto, ativo }: any) {
-  return (
-    <button className="flex flex-col items-center gap-1">
-      <img src={icone} alt="" className="h-7 w-7 object-contain" />
-      <span className={`text-[11px] ${ativo ? "text-[#ffc400]" : "opacity-55"}`}>{texto}</span>
-    </button>
-  )
+  return <button className="flex flex-col items-center gap-1"><img src={icone} alt="" className="h-7 w-7 object-contain" /><span className={`text-[11px] ${ativo ? "text-[#ffc400]" : "opacity-55"}`}>{texto}</span></button>
 }
