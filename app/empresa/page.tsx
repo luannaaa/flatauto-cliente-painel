@@ -1,31 +1,35 @@
 "use client"
 
 import { useMemo, useState } from "react"
+import {
+  Home,
+  Truck,
+  UserRound,
+  UsersRound,
+  Car,
+  BarChart3,
+  Wallet,
+  FileText,
+  MapPinned,
+  Settings,
+  LogOut,
+  Bell,
+  CalendarDays,
+  Plus,
+  CheckCircle2,
+  XCircle,
+  Package,
+  DollarSign,
+  Download,
+  Menu,
+  MoreHorizontal,
+} from "lucide-react"
 
-type StatusEntrega = "Concluída" | "Em Andamento" | "Cancelada"
 type Tema = "dark" | "light"
+type StatusEntrega = "Concluída" | "Em Andamento" | "Cancelada"
 
-const icones = {
+const imagens = {
   logoEmpresa: "/empresa_logo.png",
-  dashboard: "/inicio.png",
-  entregas: "/tipo_carga.png",
-  motorista: "/prefil_preto.png",
-  veiculos: "/caminhao_preto.png",
-  clientes: "/cliente_empresa.png",
-  crm: "/CRM.png",
-  financeiro: "/finaceiro.png",
-  relatorios: "/documento.png",
-  mapa: "/regiao.png",
-  analytics: "/analyt.png",
-  configuracao: "/configuracao.png",
-  sair: "/saida.png",
-  notificacao: "/notificacao.png",
-  concluido: "/concluido.png",
-  andamento: "/caminhao_azul.png",
-  cancelado: "/cancelado.png",
-  dinheiro: "/dinheiro.png",
-  pdf: "/PDF.png",
-  excel: "/excel.png",
   mapaBrasil: "/brasil_mapa.png",
 }
 
@@ -38,11 +42,11 @@ const entregas = [
 ]
 
 const destinos = [
-  { cidade: "São Paulo - SP", total: 42, left: "61%", top: "66%" },
-  { cidade: "Campinas - SP", total: 18, left: "58%", top: "64%" },
-  { cidade: "Ribeirão Preto - SP", total: 12, left: "56%", top: "59%" },
-  { cidade: "Sorocaba - SP", total: 10, left: "59%", top: "69%" },
-  { cidade: "Santos - SP", total: 8, left: "63%", top: "71%" },
+  { cidade: "São Paulo - SP", total: 42 },
+  { cidade: "Campinas - SP", total: 18 },
+  { cidade: "Ribeirão Preto - SP", total: 12 },
+  { cidade: "Sorocaba - SP", total: 10 },
+  { cidade: "Santos - SP", total: 8 },
 ]
 
 const crmColunas = [
@@ -55,7 +59,6 @@ const crmColunas = [
 export default function PainelEmpresa() {
   const [tema, setTema] = useState<Tema>("dark")
   const [periodo, setPeriodo] = useState("12/05/2026 - 18/05/2026")
-  const [crmConectado, setCrmConectado] = useState(false)
   const claro = tema === "light"
 
   const ui = useMemo(() => ({
@@ -80,73 +83,60 @@ export default function PainelEmpresa() {
         <section className="min-w-0 px-7 py-6">
           <Topo periodo={periodo} setPeriodo={setPeriodo} ui={ui} />
           <div className="mt-6 grid grid-cols-5 gap-4">
-            <Indicador ui={ui} titulo="Total de Entregas" valor="128" detalhe="↑ 18% vs período anterior" icone={icones.dashboard} tamanhoIcone="h-8 w-8" />
-            <Indicador ui={ui} titulo="Concluídas" valor="96" detalhe="75% do total" icone={icones.concluido} tamanhoIcone="h-9 w-9" />
-            <Indicador ui={ui} titulo="Em Andamento" valor="18" detalhe="14% do total" icone={icones.andamento} tamanhoIcone="h-9 w-9" azul />
-            <Indicador ui={ui} titulo="Canceladas" valor="14" detalhe="11% do total" icone={icones.cancelado} tamanhoIcone="h-9 w-9" vermelho />
-            <Indicador ui={ui} titulo="Receita Líquida" valor="R$ 16.220,00" detalhe="↑ 26% vs período anterior" icone={icones.dinheiro} tamanhoIcone="h-9 w-9" />
+            <Indicador ui={ui} titulo="Total de Entregas" valor="128" detalhe="↑ 18% vs período anterior" icon={<Package />} />
+            <Indicador ui={ui} titulo="Concluídas" valor="96" detalhe="75% do total" icon={<CheckCircle2 />} verde />
+            <Indicador ui={ui} titulo="Em Andamento" valor="18" detalhe="14% do total" icon={<Truck />} azul />
+            <Indicador ui={ui} titulo="Canceladas" valor="14" detalhe="11% do total" icon={<XCircle />} vermelho />
+            <Indicador ui={ui} titulo="Receita Líquida" valor="R$ 16.220,00" detalhe="↑ 26% vs período anterior" icon={<DollarSign />} />
           </div>
-
           <div className="mt-5 grid grid-cols-[0.86fr_1.34fr_0.58fr] gap-5">
             <Card ui={ui} titulo="Entregas por Período" acao="7 dias"><GraficoLinha /></Card>
-            <Card ui={ui} titulo="CRM - Pipeline de Negócios">{crmConectado ? <CRM ui={ui} /> : <ConectarCRM ui={ui} onClick={() => setCrmConectado(true)} />}</Card>
+            <Card ui={ui} titulo="CRM - Pipeline de Negócios"><CRM ui={ui} /></Card>
             <Card ui={ui} titulo="Exportar Relatórios"><Exportar ui={ui} /></Card>
           </div>
-
           <div className="mt-5 grid grid-cols-[1.25fr_0.75fr] gap-5">
             <Card ui={ui} titulo="Resumo Financeiro" acao="Este mês"><Financeiro ui={ui} /></Card>
             <Card ui={ui} titulo="Entregas por Destino" acao="Mapa Brasil"><MapaBrasil ui={ui} /></Card>
           </div>
-
-          <div className="mt-5">
-            <Card ui={ui} titulo="Entregas Recentes" acao="Ver todas"><Tabela ui={ui} /></Card>
-          </div>
+          <div className="mt-5"><Card ui={ui} titulo="Entregas Recentes" acao="Ver todas"><Tabela ui={ui} /></Card></div>
         </section>
       </section>
 
       <section className="relative min-h-screen px-4 pb-28 pt-5 xl:hidden">
         <div className="mx-auto max-w-[430px]">
           <header className="flex items-center justify-between">
-            <button className="text-3xl">☰</button>
-            <LogoMarcaMobile />
-            <button className="relative">
-              <img src={icones.notificacao} alt="" className="h-8 w-8 object-contain" />
-              <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-[#ffc400]" />
-            </button>
+            <button className="text-white/80"><Menu size={28} /></button>
+            <LogoMarca compacto />
+            <button className="relative text-white/80"><Bell size={24} /><span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-[#ffc400]" /></button>
           </header>
-
           <div className="mt-7">
             <h1 className="text-[25px] font-black leading-tight">Olá, Transportes Silva LTDA 👋</h1>
             <p className={`mt-2 text-sm ${ui.textoFraco}`}>Acompanhe sua operação em tempo real.</p>
             <p className={`mt-1 text-xs ${ui.textoFraco}`}>Última atualização: 18/05/2026 16:42</p>
           </div>
-
           <div className="mt-5 grid grid-cols-[1fr_auto] gap-3">
-            <input value={periodo} onChange={(e) => setPeriodo(e.target.value)} className={`h-12 rounded-xl border px-3 text-sm outline-none ${ui.card2}`} />
-            <button className="h-12 rounded-xl bg-[#ffc400] px-4 font-black text-black">+ Nova</button>
+            <div className={`flex h-12 items-center gap-2 rounded-xl border px-3 text-sm ${ui.card2}`}><CalendarDays size={18} /><input value={periodo} onChange={(e) => setPeriodo(e.target.value)} className="min-w-0 flex-1 bg-transparent outline-none" /></div>
+            <button className="flex h-12 items-center gap-1 rounded-xl bg-[#ffc400] px-4 font-black text-black"><Plus size={18} />Nova</button>
           </div>
-
           <div className="mt-5 grid grid-cols-2 gap-3">
-            <Indicador ui={ui} titulo="Total de Entregas" valor="128" detalhe="↑ 18%" icone={icones.dashboard} tamanhoIcone="h-8 w-8" mobile />
-            <Indicador ui={ui} titulo="Concluídas" valor="96" detalhe="75% do total" icone={icones.concluido} tamanhoIcone="h-9 w-9" mobile />
-            <Indicador ui={ui} titulo="Em Andamento" valor="18" detalhe="14% do total" icone={icones.andamento} tamanhoIcone="h-9 w-9" azul mobile />
-            <Indicador ui={ui} titulo="Canceladas" valor="14" detalhe="11% do total" icone={icones.cancelado} tamanhoIcone="h-9 w-9" vermelho mobile />
+            <Indicador ui={ui} titulo="Total de Entregas" valor="128" detalhe="↑ 18%" icon={<Package />} mobile />
+            <Indicador ui={ui} titulo="Concluídas" valor="96" detalhe="75% do total" icon={<CheckCircle2 />} verde mobile />
+            <Indicador ui={ui} titulo="Em Andamento" valor="18" detalhe="14% do total" icon={<Truck />} azul mobile />
+            <Indicador ui={ui} titulo="Canceladas" valor="14" detalhe="11% do total" icon={<XCircle />} vermelho mobile />
           </div>
-
           <div className="mt-4"><Card ui={ui} titulo="Entregas por Período" acao="7 dias"><GraficoLinha mobile /></Card></div>
-          <div className="mt-4"><Card ui={ui} titulo="CRM - Pipeline" acao={crmConectado ? "Ver tudo" : "Conectar"}>{crmConectado ? <CRM ui={ui} mobile /> : <ConectarCRM ui={ui} onClick={() => setCrmConectado(true)} mobile />}</Card></div>
+          <div className="mt-4"><Card ui={ui} titulo="CRM - Pipeline" acao="Ver tudo"><CRM ui={ui} mobile /></Card></div>
           <div className="mt-4"><Card ui={ui} titulo="Entregas por Destino"><MapaBrasil ui={ui} mobile /></Card></div>
           <div className="mt-4"><Card ui={ui} titulo="Resumo Financeiro" acao="Este mês"><Financeiro ui={ui} mobile /></Card></div>
           <div className="mt-4"><Card ui={ui} titulo="Entregas Recentes"><ListaMobile ui={ui} /></Card></div>
         </div>
-
         <nav className={`fixed bottom-0 left-0 right-0 border-t px-5 py-3 backdrop-blur-2xl ${ui.card2}`}>
           <div className="mx-auto flex max-w-[430px] items-center justify-between">
-            <NavMobile icone={icones.dashboard} texto="Dashboard" ativo />
-            <NavMobile icone={icones.entregas} texto="Entregas" />
-            <button className="flex h-16 w-16 items-center justify-center rounded-full bg-[#ffc400] text-4xl font-black text-black shadow-[0_0_45px_rgba(255,196,0,0.45)]">+</button>
-            <NavMobile icone={icones.motorista} texto="Motoristas" />
-            <NavMobile icone={icones.configuracao} texto="Mais" />
+            <NavMobile icon={<Home />} texto="Dashboard" ativo />
+            <NavMobile icon={<Truck />} texto="Entregas" />
+            <button className="flex h-16 w-16 items-center justify-center rounded-full bg-[#ffc400] text-black shadow-[0_0_45px_rgba(255,196,0,0.45)]"><Plus size={34} strokeWidth={2.8} /></button>
+            <NavMobile icon={<UserRound />} texto="Motoristas" />
+            <NavMobile icon={<MoreHorizontal />} texto="Mais" />
           </div>
         </nav>
       </section>
@@ -154,193 +144,43 @@ export default function PainelEmpresa() {
   )
 }
 
-function LogoMarcaMobile() {
-  return (
-    <div className="flex items-center gap-3">
-      <img src={icones.logoEmpresa} alt="FlatAuto" className="h-12 w-12 object-contain" />
-      <div>
-        <p className="text-[20px] font-black leading-none tracking-wide">FLAT<span className="text-[#ffc400]">AUTO</span></p>
-        <p className="mt-1 text-[10px] font-bold tracking-[0.2em] text-[#ffc400]">EMPRESA</p>
-      </div>
-    </div>
-  )
+function LogoMarca({ compacto = false }: { compacto?: boolean }) {
+  return <div className="flex items-center gap-3"><img src={imagens.logoEmpresa} alt="FlatAuto" className={`${compacto ? "h-11 w-11" : "h-14 w-14"} object-contain drop-shadow-[0_0_18px_rgba(255,196,0,0.25)]`} /><div><p className={`${compacto ? "text-[18px]" : "text-[21px]"} font-black leading-none tracking-wide`}>FLAT<span className="text-[#ffc400]">AUTO</span></p><p className={`${compacto ? "text-[9px]" : "text-xs"} mt-1 font-bold tracking-[0.18em] text-[#ffc400]`}>EMPRESA</p></div></div>
 }
 
 function Topo({ periodo, setPeriodo, ui }: any) {
-  return (
-    <header className="flex items-start justify-between gap-6">
-      <div>
-        <h1 className="text-[36px] font-black leading-tight tracking-[-0.035em]">Olá, Transportes Silva LTDA 👋</h1>
-        <p className={`mt-2 text-[16px] ${ui.textoFraco}`}>Acompanhe o desempenho da sua operação em tempo real.</p>
-        <p className={`mt-1 text-[13px] ${ui.textoFraco}`}>Última atualização: 18/05/2026 16:42</p>
-      </div>
-      <div className="flex items-center gap-4">
-        <input value={periodo} onChange={(e) => setPeriodo(e.target.value)} className={`h-12 w-[245px] rounded-xl border px-5 text-sm outline-none ${ui.card2}`} />
-        <button className="h-12 rounded-xl bg-[#ffc400] px-7 font-black text-black shadow-[0_0_28px_rgba(255,196,0,0.38)]">+ Nova Entrega</button>
-        <button className={`flex h-12 w-12 items-center justify-center rounded-xl border ${ui.card2}`}><img src={icones.notificacao} alt="" className="h-7 w-7 object-contain" /></button>
-      </div>
-    </header>
-  )
+  return <header className="flex items-start justify-between gap-6"><div><h1 className="text-[36px] font-black leading-tight tracking-[-0.035em]">Olá, Transportes Silva LTDA 👋</h1><p className={`mt-2 text-[16px] ${ui.textoFraco}`}>Acompanhe o desempenho da sua operação em tempo real.</p><p className={`mt-1 text-[13px] ${ui.textoFraco}`}>Última atualização: 18/05/2026 16:42</p></div><div className="flex items-center gap-4"><div className={`flex h-12 w-[255px] items-center gap-3 rounded-xl border px-4 text-sm ${ui.card2}`}><CalendarDays size={18} /><input value={periodo} onChange={(e) => setPeriodo(e.target.value)} className="min-w-0 flex-1 bg-transparent outline-none" /></div><button className="flex h-12 items-center gap-2 rounded-xl bg-[#ffc400] px-7 font-black text-black shadow-[0_0_28px_rgba(255,196,0,0.38)]"><Plus size={18} />Nova Entrega</button><button className={`relative flex h-12 w-12 items-center justify-center rounded-xl border ${ui.card2}`}><Bell size={21} /><span className="absolute right-3 top-3 h-2 w-2 rounded-full bg-[#ffc400]" /></button></div></header>
 }
 
 function MenuLateral({ ui, tema, setTema }: any) {
-  const menu = [
-    { texto: "Dashboard", icone: icones.dashboard, ativo: true, size: "h-5 w-5" },
-    { texto: "Entregas", icone: icones.entregas, size: "h-6 w-6" },
-    { texto: "Motoristas", icone: icones.motorista, size: "h-6 w-6" },
-    { texto: "Veículos", icone: icones.veiculos, size: "h-6 w-6" },
-    { texto: "Clientes", icone: icones.clientes, size: "h-6 w-6" },
-    { texto: "CRM", icone: icones.crm, size: "h-7 w-7" },
-    { texto: "Financeiro", icone: icones.financeiro, size: "h-7 w-7" },
-    { texto: "Relatórios", icone: icones.relatorios, size: "h-6 w-6" },
-    { texto: "Mapa", icone: icones.mapa, size: "h-6 w-6" },
-    { texto: "Analytics", icone: icones.analytics, size: "h-7 w-7", badge: "IA" },
-    { texto: "Configurações", icone: icones.configuracao, size: "h-6 w-6" },
-  ]
-
-  return (
-    <aside className={`border-r px-5 py-7 backdrop-blur-xl ${ui.sidebar}`}>
-      <div className="flex items-center gap-3">
-        <img src={icones.logoEmpresa} alt="FlatAuto" className="h-14 w-14 object-contain" />
-        <div>
-          <p className="text-[21px] font-black leading-none tracking-wide">FLAT<span className="text-[#ffc400]">AUTO</span></p>
-          <p className="mt-1 text-xs font-bold tracking-[0.18em] text-[#ffc400]">EMPRESA</p>
-        </div>
-      </div>
-
-      <nav className="mt-9 space-y-2">
-        {menu.map((item) => (
-          <button key={item.texto} className={`flex min-h-[52px] w-full items-center gap-4 rounded-2xl px-4 text-left font-bold transition ${item.ativo ? "bg-[#ffc400] text-black shadow-[0_0_28px_rgba(255,196,0,0.22)]" : "text-white/75 hover:bg-white/[0.06] hover:text-[#ffc400]"}`}>
-            <img src={item.icone} alt="" className={`${item.size} shrink-0 object-contain`} />
-            <span className="flex-1">{item.texto}</span>
-            {item.badge && <span className="rounded-md border border-[#ffc400]/70 px-2 py-0.5 text-[10px] text-[#ffc400]">{item.badge}</span>}
-          </button>
-        ))}
-      </nav>
-
-      <div className={`mt-8 rounded-2xl border p-4 ${ui.card}`}>
-        <div className="flex items-center gap-3">
-          <img src={icones.entregas} alt="" className="h-9 w-9 object-contain" />
-          <div>
-            <p className="text-sm font-bold leading-tight">Transportes Silva LTDA</p>
-            <p className={`mt-1 text-xs ${ui.textoFraco}`}>Plano Empresarial</p>
-          </div>
-        </div>
-      </div>
-
-      <button className={`mt-4 flex h-14 w-full items-center justify-center gap-3 rounded-2xl border font-bold ${ui.card2}`}>
-        <img src={icones.sair} alt="" className="h-6 w-6 object-contain" />
-        Sair
-      </button>
-
-      <div className={`mt-8 flex items-center justify-between rounded-full border p-2 ${ui.card2}`}>
-        <span className="px-4 text-xs font-bold">TEMA</span>
-        <button onClick={() => setTema("dark")} className={`h-9 w-9 rounded-full ${tema === "dark" ? "bg-[#ffc400] text-black" : ""}`}>☀</button>
-        <button onClick={() => setTema("light")} className={`h-9 w-9 rounded-full ${tema === "light" ? "bg-[#ffc400] text-black" : ""}`}>◐</button>
-      </div>
-    </aside>
-  )
+  const menu = [{ texto: "Dashboard", icon: <Home />, ativo: true }, { texto: "Entregas", icon: <Truck /> }, { texto: "Motoristas", icon: <UserRound /> }, { texto: "Veículos", icon: <Car /> }, { texto: "Clientes", icon: <UsersRound /> }, { texto: "CRM", icon: <BarChart3 /> }, { texto: "Financeiro", icon: <Wallet /> }, { texto: "Relatórios", icon: <FileText /> }, { texto: "Mapa", icon: <MapPinned /> }, { texto: "Analytics", icon: <BarChart3 />, badge: "IA" }, { texto: "Configurações", icon: <Settings /> }]
+  return <aside className={`border-r px-5 py-7 backdrop-blur-xl ${ui.sidebar}`}><LogoMarca /><nav className="mt-9 space-y-2">{menu.map((item) => <button key={item.texto} className={`group flex min-h-[52px] w-full items-center gap-4 rounded-2xl px-4 text-left font-bold transition ${item.ativo ? "bg-[#ffc400] text-black shadow-[0_0_28px_rgba(255,196,0,0.22)]" : "text-white/75 hover:bg-white/[0.06] hover:text-[#ffc400]"}`}><span className="flex h-6 w-6 shrink-0 items-center justify-center">{item.icon}</span><span className="flex-1">{item.texto}</span>{item.badge && <span className="rounded-md border border-[#ffc400]/70 px-2 py-0.5 text-[10px] text-[#ffc400]">{item.badge}</span>}</button>)}</nav><div className={`mt-8 rounded-2xl border p-4 ${ui.card}`}><div className="flex items-center gap-3"><div className="text-[#ffc400]"><Package size={35} /></div><div><p className="text-sm font-bold leading-tight">Transportes Silva LTDA</p><p className={`mt-1 text-xs ${ui.textoFraco}`}>Plano Empresarial</p></div></div></div><button className={`mt-4 flex h-14 w-full items-center justify-center gap-3 rounded-2xl border font-bold ${ui.card2}`}><LogOut size={22} />Sair</button><div className={`mt-8 flex items-center justify-between rounded-full border p-2 ${ui.card2}`}><span className="px-4 text-xs font-bold">TEMA</span><button onClick={() => setTema("dark")} className={`flex h-9 w-9 items-center justify-center rounded-full ${tema === "dark" ? "bg-[#ffc400] text-black" : ""}`}>☀</button><button onClick={() => setTema("light")} className={`flex h-9 w-9 items-center justify-center rounded-full ${tema === "light" ? "bg-[#ffc400] text-black" : ""}`}>◐</button></div></aside>
 }
 
 function Card({ titulo, acao, children, ui }: any) {
-  return (
-    <section className={`relative overflow-hidden rounded-[26px] border p-5 backdrop-blur-xl ${ui.card}`}>
-      <div className="pointer-events-none absolute -right-10 -top-10 h-28 w-28 rounded-full bg-[#ffc400]/10 blur-[38px]" />
-      <div className="relative mb-5 flex items-center justify-between">
-        <h2 className="font-black">{titulo}</h2>
-        {acao && <button className={`rounded-lg border px-3 py-2 text-sm text-[#ffc400] ${ui.card2}`}>{acao}</button>}
-      </div>
-      <div className="relative">{children}</div>
-    </section>
-  )
+  return <section className={`relative overflow-hidden rounded-[26px] border p-5 backdrop-blur-xl ${ui.card}`}><div className="pointer-events-none absolute -right-10 -top-10 h-28 w-28 rounded-full bg-[#ffc400]/10 blur-[38px]" /><div className="relative mb-5 flex items-center justify-between"><h2 className="font-black">{titulo}</h2>{acao && <button className={`rounded-lg border px-3 py-2 text-sm text-[#ffc400] ${ui.card2}`}>{acao}</button>}</div><div className="relative">{children}</div></section>
 }
 
-function Indicador({ titulo, valor, detalhe, icone, tamanhoIcone, ui, azul, vermelho, mobile }: any) {
-  const cor = vermelho ? "text-red-400" : azul ? "text-sky-400" : "text-green-400"
-  return (
-    <div className={`relative overflow-hidden rounded-[24px] border ${ui.card} ${mobile ? "p-4" : "p-5"}`}>
-      <div className="absolute -right-5 -top-5 h-20 w-20 rounded-full bg-[#ffc400]/10 blur-[28px]" />
-      <div className="relative flex justify-between gap-3">
-        <div>
-          <p className={`${mobile ? "text-xs" : "text-sm"} ${ui.textoFraco}`}>{titulo}</p>
-          <p className={`${mobile ? "mt-3 text-[32px]" : "mt-4 text-[34px]"} font-black leading-none`}>{valor}</p>
-        </div>
-        <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-[#ffc400]/20 bg-[#ffc400]/12"><img src={icone} alt="" className={`${tamanhoIcone} object-contain`} /></div>
-      </div>
-      <p className={`relative mt-4 text-sm ${cor}`}>{detalhe}</p>
-    </div>
-  )
+function Indicador({ titulo, valor, detalhe, icon, ui, azul, vermelho, verde, mobile }: any) {
+  const corTexto = vermelho ? "text-red-400" : azul ? "text-sky-400" : "text-green-400"
+  const corIcone = vermelho ? "text-red-500" : azul ? "text-sky-400" : verde ? "text-lime-400" : "text-[#ffc400]"
+  return <div className={`relative overflow-hidden rounded-[24px] border ${ui.card} ${mobile ? "p-4" : "p-5"}`}><div className="absolute -right-5 -top-5 h-20 w-20 rounded-full bg-[#ffc400]/10 blur-[28px]" /><div className="relative flex justify-between gap-3"><div><p className={`${mobile ? "text-xs" : "text-sm"} ${ui.textoFraco}`}>{titulo}</p><p className={`${mobile ? "mt-3 text-[32px]" : "mt-4 text-[34px]"} font-black leading-none`}>{valor}</p></div><div className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] ${corIcone}`}>{icon}</div></div><p className={`relative mt-4 text-sm ${corTexto}`}>{detalhe}</p></div>
 }
 
 function GraficoLinha({ mobile = false }: { mobile?: boolean }) {
-  return (
-    <div className={`${mobile ? "h-[190px]" : "h-[260px]"} relative`}>
-      <div className="absolute inset-0 rounded-2xl bg-[linear-gradient(rgba(255,255,255,0.04)_1px,transparent_1px)] bg-[size:100%_52px]" />
-      <svg viewBox="0 0 700 260" className="relative h-full w-full overflow-visible">
-        <defs><linearGradient id="graficoAreaEmpresa" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stopColor="#ffc400" stopOpacity="0.55" /><stop offset="100%" stopColor="#ffc400" stopOpacity="0.03" /></linearGradient></defs>
-        <path d="M30 215 L130 160 L230 190 L330 128 L430 62 L530 118 L630 52 L630 230 L30 230 Z" fill="url(#graficoAreaEmpresa)" />
-        <polyline points="30,215 130,160 230,190 330,128 430,62 530,118 630,52" fill="none" stroke="#ffc400" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" />
-        {[30, 130, 230, 330, 430, 530, 630].map((x, i) => <circle key={x} cx={x} cy={[215, 160, 190, 128, 62, 118, 52][i]} r="8" fill="#ffc400" />)}
-      </svg>
-      <div className="-mt-4 grid grid-cols-7 text-center text-xs opacity-55">{["12/05", "13/05", "14/05", "15/05", "16/05", "17/05", "18/05"].map((d) => <span key={d}>{d}</span>)}</div>
-    </div>
-  )
-}
-
-function ConectarCRM({ ui, onClick, mobile }: any) {
-  return (
-    <div className={`flex ${mobile ? "flex-col" : "items-center"} gap-4 rounded-2xl border p-5 ${ui.card2}`}>
-      <div className="flex h-[76px] w-[76px] shrink-0 items-center justify-center rounded-2xl border border-[#ffc400]/35 bg-[#ffc400]/10"><img src={icones.crm} alt="" className="h-12 w-12 object-contain" /></div>
-      <div className="flex-1">
-        <h3 className="text-lg font-black">Conecte seu CRM</h3>
-        <p className={`mt-2 text-sm ${ui.textoFraco}`}>Integre seu CRM para visualizar leads, negociações e oportunidades direto no painel.</p>
-      </div>
-      <button onClick={onClick} className="h-12 rounded-xl bg-[#ffc400] px-5 font-black text-black">Conectar CRM</button>
-    </div>
-  )
+  return <div className={`${mobile ? "h-[190px]" : "h-[260px]"} relative`}><div className="absolute inset-0 rounded-2xl bg-[linear-gradient(rgba(255,255,255,0.04)_1px,transparent_1px)] bg-[size:100%_52px]" /><svg viewBox="0 0 700 260" className="relative h-full w-full overflow-visible"><defs><linearGradient id="graficoAreaEmpresa" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stopColor="#ffc400" stopOpacity="0.55" /><stop offset="100%" stopColor="#ffc400" stopOpacity="0.03" /></linearGradient></defs><path d="M30 215 L130 160 L230 190 L330 128 L430 62 L530 118 L630 52 L630 230 L30 230 Z" fill="url(#graficoAreaEmpresa)" /><polyline points="30,215 130,160 230,190 330,128 430,62 530,118 630,52" fill="none" stroke="#ffc400" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" />{[30, 130, 230, 330, 430, 530, 630].map((x, i) => <circle key={x} cx={x} cy={[215, 160, 190, 128, 62, 118, 52][i]} r="8" fill="#ffc400" />)}</svg><div className="-mt-4 grid grid-cols-7 text-center text-xs opacity-55">{["12/05", "13/05", "14/05", "15/05", "16/05", "17/05", "18/05"].map((d) => <span key={d}>{d}</span>)}</div></div>
 }
 
 function CRM({ ui, mobile }: any) {
-  return (
-    <div className={`grid ${mobile ? "grid-cols-3 overflow-x-auto" : "grid-cols-4"} gap-3`}>
-      {crmColunas.map((coluna) => (
-        <div key={coluna.nome} className={`min-w-[132px] rounded-xl border p-3 ${coluna.cor}`}>
-          <div className="mb-3 flex items-center justify-between"><h3 className="text-sm font-black">{coluna.nome}</h3><span className="rounded-full bg-[#ffc400]/20 px-2 text-xs text-[#ffc400]">{coluna.total}</span></div>
-          <div className="space-y-2">{coluna.itens.slice(0, mobile ? 1 : 2).map((item) => <div key={item.nome} className={`rounded-lg border p-3 ${ui.card2}`}><p className="text-xs font-bold">{item.nome}</p><p className={`mt-1 text-[11px] ${ui.textoFraco}`}>{item.local}</p><p className="mt-2 text-xs font-bold">{item.valor}</p></div>)}</div>
-        </div>
-      ))}
-    </div>
-  )
+  return <div className={`grid ${mobile ? "grid-cols-3 overflow-x-auto" : "grid-cols-4"} gap-3`}>{crmColunas.map((coluna) => <div key={coluna.nome} className={`min-w-[132px] rounded-xl border p-3 ${coluna.cor}`}><div className="mb-3 flex items-center justify-between"><h3 className="text-sm font-black">{coluna.nome}</h3><span className="rounded-full bg-[#ffc400]/20 px-2 text-xs text-[#ffc400]">{coluna.total}</span></div><div className="space-y-2">{coluna.itens.slice(0, mobile ? 1 : 2).map((item) => <div key={item.nome} className={`rounded-lg border p-3 ${ui.card2}`}><p className="text-xs font-bold">{item.nome}</p><p className={`mt-1 text-[11px] ${ui.textoFraco}`}>{item.local}</p><p className="mt-2 text-xs font-bold">{item.valor}</p></div>)}</div></div>)}</div>
 }
 
 function Exportar({ ui }: any) {
-  return (
-    <div>
-      <p className={`text-sm ${ui.textoFraco}`}>Gere relatórios personalizados por cliente ou geral da operação.</p>
-      <select className={`mt-4 h-11 w-full rounded-xl border px-3 text-sm outline-none ${ui.card2}`}><option>Relatório Geral</option><option>Por Cliente</option><option>Financeiro</option></select>
-      <div className="mt-5 grid grid-cols-2 gap-3">
-        <button className="flex h-12 items-center justify-center gap-2 rounded-xl bg-[#ffc400] font-black text-black"><img src={icones.pdf} alt="" className="h-7 w-7" />PDF</button>
-        <button className="flex h-12 items-center justify-center gap-2 rounded-xl bg-green-600 font-black text-white"><img src={icones.excel} alt="" className="h-7 w-7" />Excel</button>
-      </div>
-    </div>
-  )
+  return <div><p className={`text-sm ${ui.textoFraco}`}>Gere relatórios personalizados por cliente ou geral da operação.</p><select className={`mt-4 h-11 w-full rounded-xl border px-3 text-sm outline-none ${ui.card2}`}><option>Relatório Geral</option><option>Por Cliente</option><option>Financeiro</option></select><div className="mt-5 grid grid-cols-2 gap-3"><button className="flex h-12 items-center justify-center gap-2 rounded-xl bg-[#ffc400] font-black text-black"><Download size={18} />PDF</button><button className="flex h-12 items-center justify-center gap-2 rounded-xl bg-green-600 font-black text-white"><FileText size={18} />Excel</button></div></div>
 }
 
 function MapaBrasil({ ui, mobile }: any) {
-  return (
-    <div className={`grid ${mobile ? "grid-cols-1" : "grid-cols-[1fr_0.9fr]"} gap-4`}>
-      <div className={`relative h-[260px] overflow-hidden rounded-2xl border ${ui.card2}`}>
-        <img src={icones.mapaBrasil} alt="Mapa do Brasil" className="absolute inset-0 h-full w-full object-contain opacity-90" onError={(e) => { e.currentTarget.style.display = "none" }} />
-        {destinos.map((destino) => <span key={destino.cidade} title={destino.cidade} className="absolute h-3.5 w-3.5 rounded-full bg-[#ffc400] shadow-[0_0_22px_#ffc400]" style={{ left: destino.left, top: destino.top }} />)}
-        <div className="absolute left-4 top-4 rounded-xl bg-black/45 px-3 py-2 text-xs text-white">Mapa do Brasil</div>
-      </div>
-      <div className="space-y-2">
-        <p className={`text-sm font-bold ${ui.textoFraco}`}>Top Destinos</p>
-        {destinos.map((destino) => <div key={destino.cidade} className="flex items-center justify-between text-sm"><span>{destino.cidade}</span><strong>{destino.total}</strong></div>)}
-        <button className="pt-1 text-sm font-bold text-[#ffc400]">Ver mapa completo</button>
-      </div>
-    </div>
-  )
+  return <div className={`grid ${mobile ? "grid-cols-1" : "grid-cols-[1fr_0.9fr]"} gap-4`}><div className={`relative h-[260px] overflow-hidden rounded-2xl border ${ui.card2}`}><img src={imagens.mapaBrasil} alt="Mapa do Brasil" className="absolute inset-0 h-full w-full object-contain opacity-90" onError={(e) => { e.currentTarget.style.display = "none" }} /><div className="absolute left-4 top-4 rounded-xl bg-black/45 px-3 py-2 text-xs text-white">Mapa do Brasil</div></div><div className="space-y-2"><p className={`text-sm font-bold ${ui.textoFraco}`}>Top Destinos</p>{destinos.map((destino) => <div key={destino.cidade} className="flex items-center justify-between text-sm"><span>{destino.cidade}</span><strong>{destino.total}</strong></div>)}<button className="pt-1 text-sm font-bold text-[#ffc400]">Ver mapa completo</button></div></div>
 }
 
 function Financeiro({ ui, mobile }: any) {
@@ -349,14 +189,7 @@ function Financeiro({ ui, mobile }: any) {
 }
 
 function Tabela({ ui }: any) {
-  return (
-    <div className="overflow-x-auto">
-      <table className="w-full min-w-[980px] text-left text-sm">
-        <thead><tr className={`border-b ${ui.linha} ${ui.textoFraco}`}><th className="pb-4">ID</th><th className="pb-4">Data</th><th className="pb-4">Cliente</th><th className="pb-4">Origem</th><th className="pb-4">Destino</th><th className="pb-4">Motorista</th><th className="pb-4">Valor</th><th className="pb-4">Status</th></tr></thead>
-        <tbody>{entregas.map((entrega) => <tr key={entrega.id} className={`border-b ${ui.linha}`}><td className="py-4">{entrega.id}</td><td>{entrega.data}</td><td>{entrega.cliente}</td><td>{entrega.origem}</td><td>{entrega.destino}</td><td>{entrega.motorista}</td><td>{entrega.valor}</td><td><Status status={entrega.status} /></td></tr>)}</tbody>
-      </table>
-    </div>
-  )
+  return <div className="overflow-x-auto"><table className="w-full min-w-[980px] text-left text-sm"><thead><tr className={`border-b ${ui.linha} ${ui.textoFraco}`}><th className="pb-4">ID</th><th className="pb-4">Data</th><th className="pb-4">Cliente</th><th className="pb-4">Origem</th><th className="pb-4">Destino</th><th className="pb-4">Motorista</th><th className="pb-4">Valor</th><th className="pb-4">Status</th></tr></thead><tbody>{entregas.map((entrega) => <tr key={entrega.id} className={`border-b ${ui.linha}`}><td className="py-4">{entrega.id}</td><td>{entrega.data}</td><td>{entrega.cliente}</td><td>{entrega.origem}</td><td>{entrega.destino}</td><td>{entrega.motorista}</td><td>{entrega.valor}</td><td><Status status={entrega.status} /></td></tr>)}</tbody></table></div>
 }
 
 function ListaMobile({ ui }: any) {
@@ -368,6 +201,6 @@ function Status({ status }: { status: StatusEntrega }) {
   return <span className={`rounded-md px-3 py-1 text-xs font-bold text-white ${classe}`}>{status}</span>
 }
 
-function NavMobile({ icone, texto, ativo }: any) {
-  return <button className="flex flex-col items-center gap-1"><img src={icone} alt="" className="h-7 w-7 object-contain" /><span className={`text-[11px] ${ativo ? "text-[#ffc400]" : "opacity-55"}`}>{texto}</span></button>
+function NavMobile({ icon, texto, ativo }: any) {
+  return <button className={`flex flex-col items-center gap-1 ${ativo ? "text-[#ffc400]" : "text-white/55"}`}><span className="flex h-7 w-7 items-center justify-center">{icon}</span><span className="text-[11px]">{texto}</span></button>
 }
