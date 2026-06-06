@@ -1,6 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
+import Link from "next/link"
 import {
   Home,
   Truck,
@@ -141,11 +142,11 @@ export default function PainelEmpresa() {
 
         <nav className={`fixed bottom-0 left-0 right-0 border-t px-5 py-3 backdrop-blur-2xl ${ui.card2}`}>
           <div className="mx-auto flex max-w-[430px] items-center justify-between">
-            <NavMobile icon={<Home />} texto="Dashboard" ativo claro={claro} />
-            <NavMobile icon={<Truck />} texto="Entregas" claro={claro} />
-            <button className="flex h-16 w-16 items-center justify-center rounded-full bg-[#ffc400] text-black shadow-[0_0_45px_rgba(255,196,0,0.45)]"><Plus size={34} strokeWidth={2.8} /></button>
-            <NavMobile icon={<UserRound />} texto="Motoristas" claro={claro} />
-            <NavMobile icon={<MoreHorizontal />} texto="Mais" claro={claro} />
+            <NavMobile icon={<Home />} texto="Dashboard" href="/empresa" ativo claro={claro} />
+            <NavMobile icon={<Truck />} texto="Entregas" href="/empresa/entregas" claro={claro} />
+            <Link href="/empresa/entregas" className="flex h-16 w-16 items-center justify-center rounded-full bg-[#ffc400] text-black shadow-[0_0_45px_rgba(255,196,0,0.45)]"><Plus size={34} strokeWidth={2.8} /></Link>
+            <NavMobile icon={<UserRound />} texto="Motoristas" href="/empresa/motoristas" claro={claro} />
+            <NavMobile icon={<MoreHorizontal />} texto="Mais" href="/empresa/configuracoes" claro={claro} />
           </div>
         </nav>
       </section>
@@ -162,8 +163,70 @@ function Topo({ periodo, setPeriodo, ui }: any) {
 }
 
 function MenuLateral({ ui, tema, setTema }: any) {
-  const menu = [{ texto: "Dashboard", icon: <Home />, ativo: true }, { texto: "Entregas", icon: <Truck /> }, { texto: "Motoristas", icon: <UserRound /> }, { texto: "Veículos", icon: <Car /> }, { texto: "Clientes", icon: <UsersRound /> }, { texto: "CRM", icon: <BarChart3 /> }, { texto: "Financeiro", icon: <Wallet /> }, { texto: "Relatórios", icon: <FileText /> }, { texto: "Mapa", icon: <MapPinned /> }, { texto: "Analytics", icon: <BarChart3 />, badge: "IA" }, { texto: "Configurações", icon: <Settings /> }]
-  return <aside className={`border-r px-5 py-7 backdrop-blur-xl ${ui.sidebar}`}><LogoMarca /><nav className="mt-9 space-y-2">{menu.map((item) => <button key={item.texto} className={`group flex min-h-[52px] w-full items-center gap-4 rounded-2xl px-4 text-left font-bold transition ${item.ativo ? "bg-[#ffc400] text-black shadow-[0_0_28px_rgba(255,196,0,0.22)]" : ui.menuInativo}`}><span className="flex h-6 w-6 shrink-0 items-center justify-center">{item.icon}</span><span className="flex-1">{item.texto}</span>{item.badge && <span className="rounded-md border border-[#ffc400]/70 px-2 py-0.5 text-[10px] text-[#ffc400]">{item.badge}</span>}</button>)}</nav><div className={`mt-8 rounded-2xl border p-4 ${ui.card}`}><div className="flex items-center gap-3"><div className="text-[#ffc400]"><Package size={35} /></div><div><p className="text-sm font-bold leading-tight">Transportes Silva LTDA</p><p className={`mt-1 text-xs ${ui.textoFraco}`}>Plano Empresarial</p></div></div></div><button className={`mt-4 flex h-14 w-full items-center justify-center gap-3 rounded-2xl border font-bold ${ui.card2}`}><LogOut size={22} />Sair</button><div className={`mt-8 flex items-center justify-between rounded-full border p-2 ${ui.card2}`}><span className="px-4 text-xs font-bold">TEMA</span><button onClick={() => setTema("dark")} className={`flex h-9 w-9 items-center justify-center rounded-full ${tema === "dark" ? "bg-[#ffc400] text-black" : ""}`}>☀</button><button onClick={() => setTema("light")} className={`flex h-9 w-9 items-center justify-center rounded-full ${tema === "light" ? "bg-[#ffc400] text-black" : ""}`}>◐</button></div></aside>
+  const menu = [
+    { texto: "Dashboard", href: "/empresa", icon: <Home />, ativo: true },
+    { texto: "Entregas", href: "/empresa/entregas", icon: <Truck /> },
+    { texto: "Motoristas", href: "/empresa/motoristas", icon: <UserRound /> },
+    { texto: "Veículos", href: "/empresa/veiculos", icon: <Car /> },
+    { texto: "Clientes", href: "/empresa/clientes", icon: <UsersRound /> },
+    { texto: "CRM", href: "/empresa/crm", icon: <BarChart3 /> },
+    { texto: "Financeiro", href: "/empresa/financeiro", icon: <Wallet /> },
+    { texto: "Relatórios", href: "/empresa/relatorios", icon: <FileText /> },
+    { texto: "Mapa", href: "/empresa/mapa", icon: <MapPinned /> },
+    { texto: "Analytics", href: "/empresa/analytics", icon: <BarChart3 />, badge: "IA" },
+    { texto: "Configurações", href: "/empresa/configuracoes", icon: <Settings /> },
+  ]
+
+  return (
+    <aside className={`border-r px-5 py-7 backdrop-blur-xl ${ui.sidebar}`}>
+      <Link href="/empresa">
+        <LogoMarca />
+      </Link>
+
+      <nav className="mt-9 space-y-2">
+        {menu.map((item) => (
+          <Link
+            key={item.texto}
+            href={item.href}
+            className={`group flex min-h-[52px] w-full items-center gap-4 rounded-2xl px-4 text-left font-bold transition ${
+              item.ativo
+                ? "bg-[#ffc400] text-black shadow-[0_0_28px_rgba(255,196,0,0.22)]"
+                : ui.menuInativo
+            }`}
+          >
+            <span className="flex h-6 w-6 shrink-0 items-center justify-center">{item.icon}</span>
+            <span className="flex-1">{item.texto}</span>
+            {item.badge && (
+              <span className="rounded-md border border-[#ffc400]/70 px-2 py-0.5 text-[10px] text-[#ffc400]">
+                {item.badge}
+              </span>
+            )}
+          </Link>
+        ))}
+      </nav>
+
+      <div className={`mt-8 rounded-2xl border p-4 ${ui.card}`}>
+        <div className="flex items-center gap-3">
+          <div className="text-[#ffc400]"><Package size={35} /></div>
+          <div>
+            <p className="text-sm font-bold leading-tight">Transportes Silva LTDA</p>
+            <p className={`mt-1 text-xs ${ui.textoFraco}`}>Plano Empresarial</p>
+          </div>
+        </div>
+      </div>
+
+      <Link href="/" className={`mt-4 flex h-14 w-full items-center justify-center gap-3 rounded-2xl border font-bold ${ui.card2}`}>
+        <LogOut size={22} />
+        Sair
+      </Link>
+
+      <div className={`mt-8 flex items-center justify-between rounded-full border p-2 ${ui.card2}`}>
+        <span className="px-4 text-xs font-bold">TEMA</span>
+        <button onClick={() => setTema("dark")} className={`flex h-9 w-9 items-center justify-center rounded-full ${tema === "dark" ? "bg-[#ffc400] text-black" : ""}`}>☀</button>
+        <button onClick={() => setTema("light")} className={`flex h-9 w-9 items-center justify-center rounded-full ${tema === "light" ? "bg-[#ffc400] text-black" : ""}`}>◐</button>
+      </div>
+    </aside>
+  )
 }
 
 function Card({ titulo, acao, children, ui }: any) {
@@ -226,6 +289,14 @@ function Status({ status }: { status: StatusEntrega }) {
   return <span className={`rounded-md px-3 py-1 text-xs font-bold text-white ${classe}`}>{status}</span>
 }
 
-function NavMobile({ icon, texto, ativo, claro }: any) {
-  return <button className={`flex flex-col items-center gap-1 ${ativo ? "text-[#ffc400]" : claro ? "text-black/55" : "text-white/55"}`}><span className="flex h-7 w-7 items-center justify-center">{icon}</span><span className="text-[11px]">{texto}</span></button>
+function NavMobile({ icon, texto, ativo, claro, href = "/empresa" }: any) {
+  return (
+    <Link
+      href={href}
+      className={`flex flex-col items-center gap-1 ${ativo ? "text-[#ffc400]" : claro ? "text-black/55" : "text-white/55"}`}
+    >
+      <span className="flex h-7 w-7 items-center justify-center">{icon}</span>
+      <span className="text-[11px]">{texto}</span>
+    </Link>
+  )
 }
