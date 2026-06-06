@@ -33,20 +33,22 @@ export default function MarcarFrete() {
           <button onClick={voltarPainel} className="text-[18px] font-bold text-[#ffc400]">
             ← Voltar
           </button>
-          <h1 className="text-[22px] font-black">Marcar frete</h1>
+          <h1 className="text-[22px] font-black">Agendar frete</h1>
           <div className="w-[62px]" />
         </header>
 
         <section className="mt-8 rounded-[26px] border border-[#ffc400]/25 bg-[#080808] p-5">
-          <h2 className="text-[28px] font-black leading-tight">Agendar nova corrida</h2>
+          <h2 className="text-[28px] font-black leading-tight">Agendar nova entrega</h2>
           <p className="mt-2 text-[15px] leading-relaxed text-white/55">
-            Preencha os dados do frete para encontrar o caminhão ideal.
+            Preencha os dados da entrega para encontrar o frete ideal.
           </p>
         </section>
 
         <section className="mt-6 space-y-4">
           <Campo label="Local de saída" placeholder="Digite o endereço de origem" />
+          <Campo label="CEP de origem" placeholder="Digite o CEP de origem" />
           <Campo label="Destino final" placeholder="Digite o endereço de entrega" />
+          <Campo label="CEP de destino" placeholder="Digite o CEP de destino" />
 
           <button
             onClick={() => setSegundaParada(!segundaParada)}
@@ -64,6 +66,21 @@ export default function MarcarFrete() {
           <Campo label="Peso aproximado" placeholder="Ex: 800 kg" />
           <Campo label="Tipo da carga" placeholder="Ex: móveis, caixas, material de obra" />
           <Campo label="Tipo de caminhão" placeholder="Ex: pequeno, médio, grande" />
+
+          <div className="rounded-[22px] border border-white/10 bg-[#080808] p-4">
+            <label className="mb-3 block text-[15px] font-bold text-white/80">Importar nota fiscal</label>
+            <div className="flex min-h-[86px] flex-col items-center justify-center rounded-[16px] border border-dashed border-[#ffc400]/35 bg-black px-4 py-5 text-center">
+              <p className="text-[15px] font-bold text-[#ffc400]">Selecionar arquivo da nota</p>
+              <p className="mt-2 text-[13px] leading-relaxed text-white/45">
+                Envie a nota fiscal em PDF ou imagem. A leitura automática dos dados será conectada depois.
+              </p>
+              <input
+                type="file"
+                accept=".pdf,.jpg,.jpeg,.png"
+                className="mt-4 w-full cursor-pointer rounded-[14px] border border-white/10 bg-[#080808] px-3 py-3 text-[13px] text-white file:mr-3 file:rounded-[10px] file:border-0 file:bg-[#ffc400] file:px-3 file:py-2 file:font-bold file:text-black"
+              />
+            </div>
+          </div>
 
           <div className="rounded-[22px] border border-white/10 bg-[#080808] p-4">
             <label className="mb-3 block text-[15px] font-bold text-white/80">Observações</label>
