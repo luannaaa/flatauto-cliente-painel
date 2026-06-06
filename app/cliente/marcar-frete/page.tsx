@@ -29,38 +29,36 @@ export default function MarcarFrete() {
   const [lendoNota, setLendoNota] = useState(false)
   const [textoNota, setTextoNota] = useState("")
   const [sugestoesOrigem, setSugestoesOrigem] = useState<any[]>([])
-const [carregandoEndereco, setCarregandoEndereco] = useState(false)
-
-const [latitudeOrigem, setLatitudeOrigem] = useState("")
-const [longitudeOrigem, setLongitudeOrigem] = useState("")
+  const [carregandoEndereco, setCarregandoEndereco] = useState(false)
+  const [latitudeOrigem, setLatitudeOrigem] = useState("")
+  const [longitudeOrigem, setLongitudeOrigem] = useState("")
 
   function voltarPainel() {
     window.location.replace("/cliente")
   }
+
   async function buscarEndereco(valor: string) {
-  setLocalSaida(valor)
+    setLocalSaida(valor)
 
-  if (valor.length < 3) {
-    setSugestoesOrigem([])
-    return
+    if (valor.length < 3) {
+      setSugestoesOrigem([])
+      return
+    }
+
+    try {
+      setCarregandoEndereco(true)
+
+      const resposta = await fetch(`/api/localizacao?q=${encodeURIComponent(valor)}`)
+      const dados = await resposta.json()
+
+      setSugestoesOrigem(dados || [])
+    } catch (erro) {
+      console.error("Erro localização:", erro)
+    } finally {
+      setCarregandoEndereco(false)
+    }
   }
 
-  try {
-    setCarregandoEndereco(true)
-
-    const resposta = await fetch(
-      `/api/localizacao?q=${encodeURIComponent(valor)}`
-    )
-
-    const dados = await resposta.json()
-
-    setSugestoesOrigem(dados || [])
-  } catch (erro) {
-    console.error("Erro localização:", erro)
-  } finally {
-    setCarregandoEndereco(false)
-  }
-}
   async function lerNotaFiscal(event: ChangeEvent<HTMLInputElement>) {
     const arquivo = event.target.files?.[0]
     if (!arquivo) return
@@ -117,37 +115,38 @@ const [longitudeOrigem, setLongitudeOrigem] = useState("")
         </section>
 
         <section className="mt-6 space-y-4">
-          
-  <Campo
-    label="Local de saída"
-    placeholder="Digite o endereço de origem"
-    value={localSaida}
-    onChange={buscarEndereco}
-  />
+          <div>
+            <Campo
+              label="Local de saída"
+              placeholder="Digite o endereço de origem"
+              value={localSaida}
+              onChange={buscarEndereco}
+            />
 
-  {carregandoEndereco && (
-    <p className="mt-2 text-sm font-bold text-[#ffc400]">Buscando endereço...</p>
-  )}
+            {carregandoEndereco && (
+              <p className="mt-2 text-sm font-bold text-[#ffc400]">Buscando endereço...</p>
+            )}
 
-  {sugestoesOrigem.length > 0 && (
-    <div className="mt-2 overflow-hidden rounded-[18px] border border-[#ffc400]/25 bg-[#080808]">
-      {sugestoesOrigem.map((item, index) => (
-        <button
-          key={index}
-          type="button"
-          onClick={() => {
-            setLocalSaida(item.display_name || "")
-            setLatitudeOrigem(item.lat || "")
-            setLongitudeOrigem(item.lon || "")
-            setSugestoesOrigem([])
-          }}
-          className="w-full border-b border-white/10 px-4 py-3 text-left text-sm text-white/80 last:border-b-0"
-        >
-          📍 {item.display_name}
-        </button>
-      ))}
-    </div>
-  )}
+            {sugestoesOrigem.length > 0 && (
+              <div className="mt-2 overflow-hidden rounded-[18px] border border-[#ffc400]/25 bg-[#080808]">
+                {sugestoesOrigem.map((item, index) => (
+                  <button
+                    key={index}
+                    type="button"
+                    onClick={() => {
+                      setLocalSaida(item.display_name || "")
+                      setLatitudeOrigem(item.lat || "")
+                      setLongitudeOrigem(item.lon || "")
+                      setSugestoesOrigem([])
+                    }}
+                    className="w-full border-b border-white/10 px-4 py-3 text-left text-sm text-white/80 last:border-b-0"
+                  >
+                    📍 {item.display_name}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
 
           <Campo label="CEP de origem" placeholder="Digite o CEP de origem" value={cepOrigem} onChange={setCepOrigem} />
           <Campo label="Destino final" placeholder="Digite o endereço de entrega" value={destinoFinal} onChange={setDestinoFinal} />
@@ -164,11 +163,36 @@ const [longitudeOrigem, setLongitudeOrigem] = useState("")
 
           <Campo label="Data de coleta" type="date" />
           <Campo label="Data de entrega" type="date" />
-          <Campo label="Horário que o caminhão vai chegar" type="time" />
-          <Campo label="Horário que o caminhão vai sair" type="time" />
+          <Campo label="Horário da chegada" type="time" />
+          <Campo label="Horário da retirada da mercadoria" type="time" />
           <Campo label="Peso aproximado" placeholder="Ex: 800 kg" />
-          <Campo label="Tipo da carga" placeholder="Ex: móveis, caixas, material de obra" />
-          <Campo label="Tipo de caminhão" placeholder="Ex: pequeno, médio, grande" />
+
+          <SelectCampo
+            label="Tipo da carga"
+            placeholder="Selecione o tipo de carga"
+            options={[
+              "Móveis",
+              "Caixas",
+              "Material de obra",
+              "Eletrodomésticos",
+              "Mercadorias",
+              "Carga frágil",
+              "Outros",
+            ]}
+          />
+
+          <SelectCampo
+            label="Tipo de veículo"
+            placeholder="Selecione o tipo de veículo"
+            options={[
+              "Carro utilitário",
+              "Fiorino / pequeno utilitário",
+              "Van",
+              "VUC",
+              "Caminhão pequeno",
+              "Caminhão médio",
+            ]}
+          />
 
           <div className="rounded-[22px] border border-white/10 bg-[#080808] p-4">
             <label className="mb-3 block text-[15px] font-bold text-white/80">Importar nota fiscal</label>
@@ -246,6 +270,36 @@ function Campo({
         onChange={(e) => onChange?.(e.target.value)}
         className="h-[52px] w-full rounded-[16px] border border-white/10 bg-black px-4 text-white outline-none placeholder:text-white/35 focus:border-[#ffc400]/60"
       />
+    </div>
+  )
+}
+
+function SelectCampo({
+  label,
+  placeholder,
+  options,
+}: {
+  label: string
+  placeholder: string
+  options: string[]
+}) {
+  return (
+    <div className="rounded-[22px] border border-white/10 bg-[#080808] p-4">
+      <label className="mb-3 block text-[15px] font-bold text-white/80">{label}</label>
+      <select
+        defaultValue=""
+        className="h-[52px] w-full rounded-[16px] border border-white/10 bg-black px-4 text-white outline-none focus:border-[#ffc400]/60"
+      >
+        <option value="" disabled>
+          {placeholder}
+        </option>
+
+        {options.map((option) => (
+          <option key={option} value={option} className="bg-black text-white">
+            {option}
+          </option>
+        ))}
+      </select>
     </div>
   )
 }
