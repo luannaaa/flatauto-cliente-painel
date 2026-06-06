@@ -14,14 +14,19 @@ type Cliente = {
 }
 
 const STORAGE_CLIENTE = "flatauto_cliente_logado"
-const STORAGE_MODO = "flatauto_cliente_modo_painel"
+
+const CLIENTE_PADRAO: Cliente = {
+  nome: "Cliente",
+  email: "cliente@email.com",
+  senha: "",
+  tipo: "cliente",
+}
 
 export default function ClientePage() {
-  const [tela, setTela] = useState<Tela>("login")
+  const [tela, setTela] = useState<Tela>("painel")
   const [tipoConta, setTipoConta] = useState<TipoConta>("cliente")
-
   const [clienteSalvo, setClienteSalvo] = useState<Cliente | null>(null)
-  const [usuarioLogado, setUsuarioLogado] = useState<Cliente | null>(null)
+  const [usuarioLogado, setUsuarioLogado] = useState<Cliente | null>(CLIENTE_PADRAO)
 
   const [nome, setNome] = useState("")
   const [email, setEmail] = useState("")
@@ -30,7 +35,16 @@ export default function ClientePage() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
-    const deveAbrirPainel = params.get("painel") === "1" || localStorage.getItem(STORAGE_MODO) === "1"
+    const saiu = params.get("sair") === "1"
+
+    if (saiu) {
+      localStorage.removeItem(STORAGE_CLIENTE)
+      setUsuarioLogado(null)
+      setTela("login")
+      setCarregou(true)
+      return
+    }
+
     const clienteGuardado = localStorage.getItem(STORAGE_CLIENTE)
 
     if (clienteGuardado) {
@@ -39,25 +53,19 @@ export default function ClientePage() {
         setClienteSalvo(cliente)
         setUsuarioLogado(cliente)
         setTela("painel")
-        localStorage.setItem(STORAGE_MODO, "1")
       } catch {
-        localStorage.removeItem(STORAGE_CLIENTE)
+        localStorage.setItem(STORAGE_CLIENTE, JSON.stringify(CLIENTE_PADRAO))
+        setUsuarioLogado(CLIENTE_PADRAO)
+        setTela("painel")
       }
-    } else if (deveAbrirPainel) {
-      const clienteTemporario: Cliente = {
-        nome: "Cliente",
-        email: "cliente@email.com",
-        senha: "",
-        tipo: "cliente",
-      }
-
-      setClienteSalvo(clienteTemporario)
-      setUsuarioLogado(clienteTemporario)
+    } else {
+      localStorage.setItem(STORAGE_CLIENTE, JSON.stringify(CLIENTE_PADRAO))
+      setClienteSalvo(CLIENTE_PADRAO)
+      setUsuarioLogado(CLIENTE_PADRAO)
       setTela("painel")
-      localStorage.setItem(STORAGE_CLIENTE, JSON.stringify(clienteTemporario))
-      localStorage.setItem(STORAGE_MODO, "1")
     }
 
+    window.history.replaceState(null, "", "/cliente")
     setCarregou(true)
   }, [])
 
@@ -69,11 +77,10 @@ export default function ClientePage() {
 
   function salvarLogin(cliente: Cliente) {
     localStorage.setItem(STORAGE_CLIENTE, JSON.stringify(cliente))
-    localStorage.setItem(STORAGE_MODO, "1")
     setClienteSalvo(cliente)
     setUsuarioLogado(cliente)
     setTela("painel")
-    window.history.replaceState(null, "", "/cliente?painel=1")
+    window.history.replaceState(null, "", "/cliente")
   }
 
   function criarConta() {
@@ -98,28 +105,22 @@ export default function ClientePage() {
       return
     }
 
-    if (clienteSalvo) {
-      salvarLogin(clienteSalvo)
-      return
-    }
-
-    const clienteTemporario: Cliente = {
+    const clienteParaEntrar: Cliente = clienteSalvo || {
       nome: nome || "Cliente",
       email,
       senha,
       tipo: "cliente",
     }
 
-    salvarLogin(clienteTemporario)
+    salvarLogin(clienteParaEntrar)
   }
 
   function sair() {
     localStorage.removeItem(STORAGE_CLIENTE)
-    localStorage.removeItem(STORAGE_MODO)
     setUsuarioLogado(null)
     limparCampos()
     setTela("login")
-    window.history.replaceState(null, "", "/cliente")
+    window.history.replaceState(null, "", "/cliente?sair=1")
   }
 
   if (!carregou) {
