@@ -1,0 +1,5 @@
+"use client"
+
+export default function MapaPage() {
+  return <div>Mapa</div>
+}
