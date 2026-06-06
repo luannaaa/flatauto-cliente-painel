@@ -78,7 +78,7 @@ export default function PainelClienteMobile({ nomeCompleto }: PainelClienteMobil
           </h1>
 
           <p className="mt-3 max-w-[330px] text-[17px] leading-relaxed text-white/60">
-            Encontre o caminhão ideal para suas entregas com praticidade.
+             Encontre o frete ideal para suas entregas com praticidade e segurança.
           </p>
         </section>
 
