@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, type ChangeEvent } from "react"
 
 function useVoltarCelularParaPainel() {
   useEffect(() => {
@@ -20,10 +20,52 @@ function useVoltarCelularParaPainel() {
 
 export default function MarcarFrete() {
   useVoltarCelularParaPainel()
+
   const [segundaParada, setSegundaParada] = useState(false)
+  const [localSaida, setLocalSaida] = useState("")
+  const [cepOrigem, setCepOrigem] = useState("")
+  const [destinoFinal, setDestinoFinal] = useState("")
+  const [cepDestino, setCepDestino] = useState("")
+  const [lendoNota, setLendoNota] = useState(false)
+  const [textoNota, setTextoNota] = useState("")
 
   function voltarPainel() {
     window.location.replace("/cliente")
+  }
+
+  async function lerNotaFiscal(event: ChangeEvent<HTMLInputElement>) {
+    const arquivo = event.target.files?.[0]
+    if (!arquivo) return
+
+    setLendoNota(true)
+    setTextoNota("")
+
+    try {
+      const formData = new FormData()
+      formData.append("arquivo", arquivo)
+
+      const resposta = await fetch("/api/ler-nota", {
+        method: "POST",
+        body: formData,
+      })
+
+      const dados = await resposta.json()
+
+      if (!resposta.ok) {
+        alert(dados.erro || "Erro ao ler a nota fiscal.")
+        return
+      }
+
+      setLocalSaida(dados.localSaida || "")
+      setCepOrigem(dados.cepOrigem || "")
+      setDestinoFinal(dados.destinoFinal || "")
+      setCepDestino(dados.cepDestino || "")
+      setTextoNota(dados.textoEncontrado || "")
+    } catch {
+      alert("Erro ao conectar com o backend da nota fiscal.")
+    } finally {
+      setLendoNota(false)
+    }
   }
 
   return (
@@ -45,10 +87,10 @@ export default function MarcarFrete() {
         </section>
 
         <section className="mt-6 space-y-4">
-          <Campo label="Local de saída" placeholder="Digite o endereço de origem" />
-          <Campo label="CEP de origem" placeholder="Digite o CEP de origem" />
-          <Campo label="Destino final" placeholder="Digite o endereço de entrega" />
-          <Campo label="CEP de destino" placeholder="Digite o CEP de destino" />
+          <Campo label="Local de saída" placeholder="Digite o endereço de origem" value={localSaida} onChange={setLocalSaida} />
+          <Campo label="CEP de origem" placeholder="Digite o CEP de origem" value={cepOrigem} onChange={setCepOrigem} />
+          <Campo label="Destino final" placeholder="Digite o endereço de entrega" value={destinoFinal} onChange={setDestinoFinal} />
+          <Campo label="CEP de destino" placeholder="Digite o CEP de destino" value={cepDestino} onChange={setCepDestino} />
 
           <button
             onClick={() => setSegundaParada(!segundaParada)}
@@ -69,17 +111,38 @@ export default function MarcarFrete() {
 
           <div className="rounded-[22px] border border-white/10 bg-[#080808] p-4">
             <label className="mb-3 block text-[15px] font-bold text-white/80">Importar nota fiscal</label>
+
             <div className="flex min-h-[86px] flex-col items-center justify-center rounded-[16px] border border-dashed border-[#ffc400]/35 bg-black px-4 py-5 text-center">
-              <p className="text-[15px] font-bold text-[#ffc400]">Selecionar arquivo da nota</p>
-              <p className="mt-2 text-[13px] leading-relaxed text-white/45">
-                Envie a nota fiscal em PDF ou imagem. A leitura automática dos dados será conectada depois.
+              <p className="text-[15px] font-bold text-[#ffc400]">
+                {lendoNota ? "Lendo nota fiscal..." : "Selecionar arquivo da nota"}
               </p>
+
+              <p className="mt-2 text-[13px] leading-relaxed text-white/45">
+                Envie a nota fiscal. O sistema vai tentar puxar CEP, origem e destino automaticamente.
+              </p>
+
+              {lendoNota && (
+                <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-white/10">
+                  <div className="h-full w-full animate-pulse rounded-full bg-[#ffc400]" />
+                </div>
+              )}
+
               <input
                 type="file"
-                accept=".pdf,.jpg,.jpeg,.png"
+                accept=".jpg,.jpeg,.png,.pdf"
+                onChange={lerNotaFiscal}
                 className="mt-4 w-full cursor-pointer rounded-[14px] border border-white/10 bg-[#080808] px-3 py-3 text-[13px] text-white file:mr-3 file:rounded-[10px] file:border-0 file:bg-[#ffc400] file:px-3 file:py-2 file:font-bold file:text-black"
               />
             </div>
+
+            {textoNota && (
+              <div className="mt-4 rounded-[16px] border border-[#ffc400]/20 bg-black p-4">
+                <p className="text-[13px] font-bold text-[#ffc400]">Texto encontrado na nota:</p>
+                <p className="mt-2 max-h-[140px] overflow-auto text-[12px] leading-relaxed text-white/50">
+                  {textoNota}
+                </p>
+              </div>
+            )}
           </div>
 
           <div className="rounded-[22px] border border-white/10 bg-[#080808] p-4">
@@ -99,13 +162,27 @@ export default function MarcarFrete() {
   )
 }
 
-function Campo({ label, placeholder = "", type = "text" }: { label: string; placeholder?: string; type?: string }) {
+function Campo({
+  label,
+  placeholder = "",
+  type = "text",
+  value,
+  onChange,
+}: {
+  label: string
+  placeholder?: string
+  type?: string
+  value?: string
+  onChange?: (valor: string) => void
+}) {
   return (
     <div className="rounded-[22px] border border-white/10 bg-[#080808] p-4">
       <label className="mb-3 block text-[15px] font-bold text-white/80">{label}</label>
       <input
         type={type}
         placeholder={placeholder}
+        value={value}
+        onChange={(e) => onChange?.(e.target.value)}
         className="h-[52px] w-full rounded-[16px] border border-white/10 bg-black px-4 text-white outline-none placeholder:text-white/35 focus:border-[#ffc400]/60"
       />
     </div>
