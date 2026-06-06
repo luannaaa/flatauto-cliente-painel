@@ -9,8 +9,8 @@ export default function Page() {
       <div className="mx-auto max-w-[430px]">
         <button onClick={() => router.push("/cliente")} className="font-bold text-[#ffc400]">← Voltar</button>
         <section className="mt-8 rounded-[26px] border border-[#ffc400]/25 bg-[#080808] p-6">
-          <h1 className="text-[32px] font-black text-[#ffc400]">Suporte</h1>
-          <p className="mt-3 text-white/60">Aqui o cliente poderá falar com a equipe de suporte.</p>
+          <h1 className="text-[32px] font-black text-[#ffc400]">Ajuda</h1>
+          <p className="mt-3 text-white/60">Aqui o cliente poderá falar com a equipe de ajuda.</p>
         </section>
       </div>
     </main>
