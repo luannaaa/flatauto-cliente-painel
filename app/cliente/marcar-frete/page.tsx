@@ -44,7 +44,7 @@ export default function MarcarFrete() {
       const formData = new FormData()
       formData.append("arquivo", arquivo)
 
-      const resposta = await fetch("/api/ler-nota", {
+      const resposta = await fetch(`${window.location.origin}/api/ler-nota`, {
         method: "POST",
         body: formData,
       })
@@ -52,6 +52,7 @@ export default function MarcarFrete() {
       const dados = await resposta.json()
 
       if (!resposta.ok) {
+        console.error("ERRO DO BACKEND:", dados)
         alert(dados.erro || "Erro ao ler a nota fiscal.")
         return
       }
@@ -61,8 +62,9 @@ export default function MarcarFrete() {
       setDestinoFinal(dados.destinoFinal || "")
       setCepDestino(dados.cepDestino || "")
       setTextoNota(dados.textoEncontrado || "")
-    } catch {
-      alert("Erro ao conectar com o backend da nota fiscal.")
+    } catch (error) {
+      console.error("ERRO COMPLETO AO LER NOTA:", error)
+      alert("Erro ao conectar com o backend da nota fiscal. Veja o console/terminal.")
     } finally {
       setLendoNota(false)
     }
