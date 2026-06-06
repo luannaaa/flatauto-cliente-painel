@@ -28,11 +28,39 @@ export default function MarcarFrete() {
   const [cepDestino, setCepDestino] = useState("")
   const [lendoNota, setLendoNota] = useState(false)
   const [textoNota, setTextoNota] = useState("")
+  const [sugestoesOrigem, setSugestoesOrigem] = useState<any[]>([])
+const [carregandoEndereco, setCarregandoEndereco] = useState(false)
+
+const [latitudeOrigem, setLatitudeOrigem] = useState("")
+const [longitudeOrigem, setLongitudeOrigem] = useState("")
 
   function voltarPainel() {
     window.location.replace("/cliente")
   }
+  async function buscarEndereco(valor: string) {
+  setLocalSaida(valor)
 
+  if (valor.length < 3) {
+    setSugestoesOrigem([])
+    return
+  }
+
+  try {
+    setCarregandoEndereco(true)
+
+    const resposta = await fetch(
+      `/api/localizacao?q=${encodeURIComponent(valor)}`
+    )
+
+    const dados = await resposta.json()
+
+    setSugestoesOrigem(dados || [])
+  } catch (erro) {
+    console.error("Erro localização:", erro)
+  } finally {
+    setCarregandoEndereco(false)
+  }
+}
   async function lerNotaFiscal(event: ChangeEvent<HTMLInputElement>) {
     const arquivo = event.target.files?.[0]
     if (!arquivo) return
@@ -89,7 +117,38 @@ export default function MarcarFrete() {
         </section>
 
         <section className="mt-6 space-y-4">
-          <Campo label="Local de saída" placeholder="Digite o endereço de origem" value={localSaida} onChange={setLocalSaida} />
+          
+  <Campo
+    label="Local de saída"
+    placeholder="Digite o endereço de origem"
+    value={localSaida}
+    onChange={buscarEndereco}
+  />
+
+  {carregandoEndereco && (
+    <p className="mt-2 text-sm font-bold text-[#ffc400]">Buscando endereço...</p>
+  )}
+
+  {sugestoesOrigem.length > 0 && (
+    <div className="mt-2 overflow-hidden rounded-[18px] border border-[#ffc400]/25 bg-[#080808]">
+      {sugestoesOrigem.map((item, index) => (
+        <button
+          key={index}
+          type="button"
+          onClick={() => {
+            setLocalSaida(item.display_name || "")
+            setLatitudeOrigem(item.lat || "")
+            setLongitudeOrigem(item.lon || "")
+            setSugestoesOrigem([])
+          }}
+          className="w-full border-b border-white/10 px-4 py-3 text-left text-sm text-white/80 last:border-b-0"
+        >
+          📍 {item.display_name}
+        </button>
+      ))}
+    </div>
+  )}
+
           <Campo label="CEP de origem" placeholder="Digite o CEP de origem" value={cepOrigem} onChange={setCepOrigem} />
           <Campo label="Destino final" placeholder="Digite o endereço de entrega" value={destinoFinal} onChange={setDestinoFinal} />
           <Campo label="CEP de destino" placeholder="Digite o CEP de destino" value={cepDestino} onChange={setCepDestino} />
