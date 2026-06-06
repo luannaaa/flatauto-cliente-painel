@@ -14,6 +14,7 @@ type Cliente = {
 }
 
 const STORAGE_CLIENTE = "flatauto_cliente_logado"
+const STORAGE_MODO = "flatauto_cliente_modo_painel"
 
 export default function ClientePage() {
   const [tela, setTela] = useState<Tela>("login")
@@ -28,6 +29,8 @@ export default function ClientePage() {
   const [carregou, setCarregou] = useState(false)
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const deveAbrirPainel = params.get("painel") === "1" || localStorage.getItem(STORAGE_MODO) === "1"
     const clienteGuardado = localStorage.getItem(STORAGE_CLIENTE)
 
     if (clienteGuardado) {
@@ -36,33 +39,27 @@ export default function ClientePage() {
         setClienteSalvo(cliente)
         setUsuarioLogado(cliente)
         setTela("painel")
+        localStorage.setItem(STORAGE_MODO, "1")
       } catch {
         localStorage.removeItem(STORAGE_CLIENTE)
       }
+    } else if (deveAbrirPainel) {
+      const clienteTemporario: Cliente = {
+        nome: "Cliente",
+        email: "cliente@email.com",
+        senha: "",
+        tipo: "cliente",
+      }
+
+      setClienteSalvo(clienteTemporario)
+      setUsuarioLogado(clienteTemporario)
+      setTela("painel")
+      localStorage.setItem(STORAGE_CLIENTE, JSON.stringify(clienteTemporario))
+      localStorage.setItem(STORAGE_MODO, "1")
     }
 
     setCarregou(true)
   }, [])
-
-  useEffect(() => {
-    if (tela !== "painel" || !usuarioLogado) return
-
-    const manterNoPainel = () => {
-      const clienteGuardado = localStorage.getItem(STORAGE_CLIENTE)
-
-      if (clienteGuardado) {
-        window.history.pushState(null, "", "/cliente")
-        setTela("painel")
-      }
-    }
-
-    window.history.pushState(null, "", "/cliente")
-    window.addEventListener("popstate", manterNoPainel)
-
-    return () => {
-      window.removeEventListener("popstate", manterNoPainel)
-    }
-  }, [tela, usuarioLogado])
 
   function limparCampos() {
     setNome("")
@@ -72,9 +69,11 @@ export default function ClientePage() {
 
   function salvarLogin(cliente: Cliente) {
     localStorage.setItem(STORAGE_CLIENTE, JSON.stringify(cliente))
+    localStorage.setItem(STORAGE_MODO, "1")
     setClienteSalvo(cliente)
     setUsuarioLogado(cliente)
     setTela("painel")
+    window.history.replaceState(null, "", "/cliente?painel=1")
   }
 
   function criarConta() {
@@ -116,9 +115,11 @@ export default function ClientePage() {
 
   function sair() {
     localStorage.removeItem(STORAGE_CLIENTE)
+    localStorage.removeItem(STORAGE_MODO)
     setUsuarioLogado(null)
     limparCampos()
     setTela("login")
+    window.history.replaceState(null, "", "/cliente")
   }
 
   if (!carregou) {

@@ -1,12 +1,14 @@
 "use client"
 
 import { useState, type ChangeEvent } from "react"
-import { useRouter } from "next/navigation"
 import Image from "next/image"
 
 export default function PerfilPage() {
-  const router = useRouter()
   const [foto, setFoto] = useState("/foto_perfil_cadastro.png")
+
+  function voltarPainel() {
+    window.location.href = "/cliente?painel=1"
+  }
 
   function trocarFoto(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0]
@@ -17,7 +19,7 @@ export default function PerfilPage() {
   return (
     <main className="min-h-screen bg-black px-5 pt-8 text-white">
       <div className="mx-auto max-w-[430px]">
-        <button onClick={() => router.push("/cliente")} className="font-bold text-[#ffc400]">← Voltar</button>
+        <button onClick={voltarPainel} className="font-bold text-[#ffc400]">← Voltar</button>
 
         <section className="mt-8 rounded-[26px] border border-[#ffc400]/25 bg-[#080808] p-6 text-center">
           <label className="mx-auto block h-[110px] w-[110px] cursor-pointer overflow-hidden rounded-full border-4 border-[#ffc400] bg-[#ffc400]/15 p-1">
