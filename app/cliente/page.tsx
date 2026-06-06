@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import PainelClienteMobile from "./components/PainelClienteMobile"
 
 type Tela = "login" | "cadastro" | "painel"
@@ -13,6 +13,8 @@ type Cliente = {
   tipo: TipoConta
 }
 
+const STORAGE_CLIENTE = "flatauto_cliente_logado"
+
 export default function ClientePage() {
   const [tela, setTela] = useState<Tela>("login")
   const [tipoConta, setTipoConta] = useState<TipoConta>("cliente")
@@ -23,11 +25,56 @@ export default function ClientePage() {
   const [nome, setNome] = useState("")
   const [email, setEmail] = useState("")
   const [senha, setSenha] = useState("")
+  const [carregou, setCarregou] = useState(false)
+
+  useEffect(() => {
+    const clienteGuardado = localStorage.getItem(STORAGE_CLIENTE)
+
+    if (clienteGuardado) {
+      try {
+        const cliente = JSON.parse(clienteGuardado) as Cliente
+        setClienteSalvo(cliente)
+        setUsuarioLogado(cliente)
+        setTela("painel")
+      } catch {
+        localStorage.removeItem(STORAGE_CLIENTE)
+      }
+    }
+
+    setCarregou(true)
+  }, [])
+
+  useEffect(() => {
+    if (tela !== "painel" || !usuarioLogado) return
+
+    const manterNoPainel = () => {
+      const clienteGuardado = localStorage.getItem(STORAGE_CLIENTE)
+
+      if (clienteGuardado) {
+        window.history.pushState(null, "", "/cliente")
+        setTela("painel")
+      }
+    }
+
+    window.history.pushState(null, "", "/cliente")
+    window.addEventListener("popstate", manterNoPainel)
+
+    return () => {
+      window.removeEventListener("popstate", manterNoPainel)
+    }
+  }, [tela, usuarioLogado])
 
   function limparCampos() {
     setNome("")
     setEmail("")
     setSenha("")
+  }
+
+  function salvarLogin(cliente: Cliente) {
+    localStorage.setItem(STORAGE_CLIENTE, JSON.stringify(cliente))
+    setClienteSalvo(cliente)
+    setUsuarioLogado(cliente)
+    setTela("painel")
   }
 
   function criarConta() {
@@ -43,9 +90,7 @@ export default function ClientePage() {
       tipo: tipoConta,
     }
 
-    setClienteSalvo(novoCliente)
-    setUsuarioLogado(novoCliente)
-    setTela("painel")
+    salvarLogin(novoCliente)
   }
 
   function entrarConta() {
@@ -55,8 +100,7 @@ export default function ClientePage() {
     }
 
     if (clienteSalvo) {
-      setUsuarioLogado(clienteSalvo)
-      setTela("painel")
+      salvarLogin(clienteSalvo)
       return
     }
 
@@ -67,14 +111,22 @@ export default function ClientePage() {
       tipo: "cliente",
     }
 
-    setUsuarioLogado(clienteTemporario)
-    setTela("painel")
+    salvarLogin(clienteTemporario)
   }
 
   function sair() {
+    localStorage.removeItem(STORAGE_CLIENTE)
     setUsuarioLogado(null)
     limparCampos()
     setTela("login")
+  }
+
+  if (!carregou) {
+    return (
+      <main className="min-h-screen bg-[#030507] text-white flex items-center justify-center px-4 py-8">
+        <p className="text-[#ffc400] font-bold">Carregando...</p>
+      </main>
+    )
   }
 
   if (tela === "painel" && usuarioLogado) {
