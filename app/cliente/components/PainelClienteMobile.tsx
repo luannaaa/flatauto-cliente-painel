@@ -117,11 +117,10 @@ export default function PainelClienteMobile({ nomeCompleto }: PainelClienteMobil
           />
 
           <Card
-            label={<>Meus<br />fretes</>}
-            icon={<FileIcon />}
-            onClick={() => router.push("/cliente/meus-fretes")}
+           label={<>Nova<br />entrega</>}
+           icon={<TruckImageIcon tipo="dourado" destaque />}
+          onClick={() => router.push("/cliente/marcar-frete")}
           />
-
           <Card
             label="Favoritos"
             icon={<StarIcon />}
