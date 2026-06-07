@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
+import NovaEntregaModal from "./components/NovaEntregaModal"
 import {
   Home,
   Truck,
@@ -60,6 +61,7 @@ const crmColunas = [
 export default function PainelEmpresa() {
   const [tema, setTema] = useState<Tema>("dark")
   const [periodo, setPeriodo] = useState("12/05/2026 - 18/05/2026")
+  const [modalAberto, setModalAberto] = useState(false)
 
   useEffect(() => {
     const temaSalvo = localStorage.getItem("temaEmpresa") as Tema | null
@@ -96,7 +98,7 @@ export default function PainelEmpresa() {
       <section className="relative hidden min-h-screen grid-cols-[286px_1fr] xl:grid">
         <MenuLateral ui={ui} tema={tema} setTema={alterarTema} />
         <section className="min-w-0 px-7 py-6">
-          <Topo periodo={periodo} setPeriodo={setPeriodo} ui={ui} />
+          <Topo periodo={periodo} setPeriodo={setPeriodo} ui={ui} abrirModal={() => setModalAberto(true)} />
           <div className="mt-6 grid grid-cols-5 gap-4">
             <Indicador ui={ui} titulo="Total de Entregas" valor="128" detalhe="↑ 18% vs período anterior" icon={<Package />} />
             <Indicador ui={ui} titulo="Concluídas" valor="96" detalhe="75% do total" icon={<CheckCircle2 />} verde />
@@ -136,7 +138,7 @@ export default function PainelEmpresa() {
 
           <div className="mt-5 grid grid-cols-[1fr_auto] gap-3">
             <div className={`flex h-12 items-center gap-2 rounded-xl border px-3 text-sm ${ui.card2}`}><CalendarDays size={18} /><input value={periodo} onChange={(e) => setPeriodo(e.target.value)} className="min-w-0 flex-1 bg-transparent outline-none" /></div>
-            <button className="flex h-12 items-center gap-1 rounded-xl bg-[#ffc400] px-4 font-black text-black"><Plus size={18} />Nova</button>
+            <button onClick={() => setModalAberto(true)} className="flex h-12 items-center gap-1 rounded-xl bg-[#ffc400] px-4 font-black text-black"><Plus size={18} />Nova</button>
           </div>
 
           <div className="mt-5 grid grid-cols-2 gap-3">
@@ -163,6 +165,10 @@ export default function PainelEmpresa() {
           </div>
         </nav>
       </section>
+
+      {modalAberto && (
+        <NovaEntregaModal ui={ui} fechar={() => setModalAberto(false)} />
+      )}
     </main>
   )
 }
@@ -171,8 +177,46 @@ function LogoMarca({ compacto = false }: { compacto?: boolean }) {
   return <div className="flex items-center gap-3"><img src={imagens.logoEmpresa} alt="FlatAuto" className={`${compacto ? "h-11 w-11" : "h-14 w-14"} object-contain drop-shadow-[0_0_18px_rgba(255,196,0,0.25)]`} /><div><p className={`${compacto ? "text-[18px]" : "text-[21px]"} font-black leading-none tracking-wide`}>FLAT<span className="text-[#ffc400]">AUTO</span></p><p className={`${compacto ? "text-[9px]" : "text-xs"} mt-1 font-bold tracking-[0.18em] text-[#ffc400]`}>EMPRESA</p></div></div>
 }
 
-function Topo({ periodo, setPeriodo, ui }: any) {
-  return <header className="flex items-start justify-between gap-6"><div><h1 className="text-[36px] font-black leading-tight tracking-[-0.035em]">Olá, Transportes Silva LTDA 👋</h1><p className={`mt-2 text-[16px] ${ui.textoFraco}`}>Acompanhe o desempenho da sua operação em tempo real.</p><p className={`mt-1 text-[13px] ${ui.textoFraco}`}>Última atualização: 18/05/2026 16:42</p></div><div className="flex items-center gap-4"><div className={`flex h-12 w-[255px] items-center gap-3 rounded-xl border px-4 text-sm ${ui.card2}`}><CalendarDays size={18} /><input value={periodo} onChange={(e) => setPeriodo(e.target.value)} className="min-w-0 flex-1 bg-transparent outline-none" /></div><button className="flex h-12 items-center gap-2 rounded-xl bg-[#ffc400] px-7 font-black text-black shadow-[0_0_28px_rgba(255,196,0,0.38)]"><Plus size={18} />Nova Entrega</button><button className={`relative flex h-12 w-12 items-center justify-center rounded-xl border ${ui.card2}`}><Bell size={21} /><span className="absolute right-3 top-3 h-2 w-2 rounded-full bg-[#ffc400]" /></button></div></header>
+function Topo({ periodo, setPeriodo, ui, abrirModal }: any) {
+  return (
+    <header className="flex items-start justify-between gap-6">
+      <div>
+        <h1 className="text-[36px] font-black leading-tight tracking-[-0.035em]">
+          Olá, Transportes Silva LTDA 👋
+        </h1>
+        <p className={`mt-2 text-[16px] ${ui.textoFraco}`}>
+          Acompanhe o desempenho da sua operação em tempo real.
+        </p>
+        <p className={`mt-1 text-[13px] ${ui.textoFraco}`}>
+          Última atualização: 18/05/2026 16:42
+        </p>
+      </div>
+
+      <div className="flex items-center gap-4">
+        <div className={`flex h-12 w-[255px] items-center gap-3 rounded-xl border px-4 text-sm ${ui.card2}`}>
+          <CalendarDays size={18} />
+          <input
+            value={periodo}
+            onChange={(e) => setPeriodo(e.target.value)}
+            className="min-w-0 flex-1 bg-transparent outline-none"
+          />
+        </div>
+
+        <button
+          onClick={abrirModal}
+          className="flex h-12 items-center gap-2 rounded-xl bg-[#ffc400] px-7 font-black text-black shadow-[0_0_28px_rgba(255,196,0,0.38)]"
+        >
+          <Plus size={18} />
+          Nova Entrega
+        </button>
+
+        <button className={`relative flex h-12 w-12 items-center justify-center rounded-xl border ${ui.card2}`}>
+          <Bell size={21} />
+          <span className="absolute right-3 top-3 h-2 w-2 rounded-full bg-[#ffc400]" />
+        </button>
+      </div>
+    </header>
+  )
 }
 
 function MenuLateral({ ui, tema, setTema }: any) {
