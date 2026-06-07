@@ -122,7 +122,7 @@ export default function PainelEmpresa() {
         </section>
       </section>
 
-      <section className="relative min-h-screen px-4 pb-28 pt-5 xl:hidden">
+      <section className="relative min-h-screen px-4 pb-32 pt-5 xl:hidden">
         <div className="mx-auto max-w-[430px]">
           <header className="flex items-center justify-between">
             <button className={`${claro ? "text-black/80" : "text-white/80"}`}><Menu size={28} /></button>
@@ -155,7 +155,7 @@ export default function PainelEmpresa() {
           <div className="mt-4"><Card ui={ui} titulo="Entregas Recentes"><ListaMobile ui={ui} /></Card></div>
         </div>
 
-        <nav className={`fixed bottom-0 left-0 right-0 border-t px-5 py-3 backdrop-blur-2xl ${ui.card2}`}>
+        <nav className={`fixed bottom-0 left-0 right-0 border-t px-5 pb-4 pt-3 backdrop-blur-2xl ${ui.card2}`}>
           <div className="mx-auto flex max-w-[430px] items-center justify-between">
             <NavMobile icon={<Home />} texto="Dashboard" href="/empresa" ativo claro={claro} />
             <NavMobile icon={<Truck />} texto="Entregas" href="/empresa/entregas" claro={claro} />
@@ -301,7 +301,7 @@ function GraficoLinha({ mobile = false }: { mobile?: boolean }) {
 }
 
 function CRM({ ui, mobile }: any) {
-  return <div className={`grid ${mobile ? "grid-cols-3 overflow-x-auto" : "grid-cols-4"} gap-3`}>{crmColunas.map((coluna) => <div key={coluna.nome} className={`min-w-[132px] rounded-xl border p-3 ${coluna.cor}`}><div className="mb-3 flex items-center justify-between"><h3 className="text-sm font-black">{coluna.nome}</h3><span className="rounded-full bg-[#ffc400]/20 px-2 text-xs text-[#ffc400]">{coluna.total}</span></div><div className="space-y-2">{coluna.itens.slice(0, mobile ? 1 : 2).map((item) => <div key={item.nome} className={`rounded-lg border p-3 ${ui.card2}`}><p className="text-xs font-bold">{item.nome}</p><p className={`mt-1 text-[11px] ${ui.textoFraco}`}>{item.local}</p><p className="mt-2 text-xs font-bold">{item.valor}</p></div>)}</div></div>)}</div>
+  return <div className={`grid ${mobile ? "grid-cols-1" : "grid-cols-4"} gap-3`}>{crmColunas.map((coluna) => <div key={coluna.nome} className={`min-w-[132px] rounded-xl border p-3 ${coluna.cor}`}><div className="mb-3 flex items-center justify-between"><h3 className="text-sm font-black">{coluna.nome}</h3><span className="rounded-full bg-[#ffc400]/20 px-2 text-xs text-[#ffc400]">{coluna.total}</span></div><div className="space-y-2">{coluna.itens.slice(0, mobile ? 1 : 2).map((item) => <div key={item.nome} className={`rounded-lg border p-3 ${ui.card2}`}><p className="text-xs font-bold">{item.nome}</p><p className={`mt-1 text-[11px] ${ui.textoFraco}`}>{item.local}</p><p className="mt-2 text-xs font-bold">{item.valor}</p></div>)}</div></div>)}</div>
 }
 
 function Exportar({ ui }: any) {
