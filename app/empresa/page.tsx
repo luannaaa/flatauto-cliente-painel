@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import {
   Home,
@@ -60,6 +60,19 @@ const crmColunas = [
 export default function PainelEmpresa() {
   const [tema, setTema] = useState<Tema>("dark")
   const [periodo, setPeriodo] = useState("12/05/2026 - 18/05/2026")
+
+  useEffect(() => {
+    const temaSalvo = localStorage.getItem("temaEmpresa") as Tema | null
+    if (temaSalvo === "dark" || temaSalvo === "light") {
+      setTema(temaSalvo)
+    }
+  }, [])
+
+  const alterarTema = (novoTema: Tema) => {
+    setTema(novoTema)
+    localStorage.setItem("temaEmpresa", novoTema)
+  }
+
   const claro = tema === "light"
 
   const ui = useMemo(() => ({
@@ -81,7 +94,7 @@ export default function PainelEmpresa() {
       </div>
 
       <section className="relative hidden min-h-screen grid-cols-[286px_1fr] xl:grid">
-        <MenuLateral ui={ui} tema={tema} setTema={setTema} />
+        <MenuLateral ui={ui} tema={tema} setTema={alterarTema} />
         <section className="min-w-0 px-7 py-6">
           <Topo periodo={periodo} setPeriodo={setPeriodo} ui={ui} />
           <div className="mt-6 grid grid-cols-5 gap-4">
