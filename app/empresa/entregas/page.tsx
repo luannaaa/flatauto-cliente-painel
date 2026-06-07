@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import {
   Truck,
   Search,
@@ -14,6 +15,8 @@ import {
   Filter,
   MoreHorizontal,
 } from "lucide-react"
+
+type Tema = "dark" | "light"
 
 const entregas = [
   {
@@ -71,12 +74,36 @@ const entregas = [
 ]
 
 export default function EntregasEmpresaPage() {
+  const [tema, setTema] = useState<Tema>("dark")
+
+  useEffect(() => {
+    const temaSalvo = localStorage.getItem("temaEmpresa") as Tema | null
+    if (temaSalvo === "dark" || temaSalvo === "light") {
+      setTema(temaSalvo)
+    }
+  }, [])
+
+  const claro = tema === "light"
+
+  const ui = {
+    pagina: claro ? "bg-[#f6f0df] text-black" : "bg-[#020507] text-white",
+    card: claro
+      ? "border-[#dfd0a5] bg-white/90 shadow"
+      : "border-white/10 bg-[#10171b]/90 shadow-[0_18px_45px_rgba(0,0,0,0.30)]",
+    card2: claro
+      ? "border-[#dfd0a5] bg-[#f7f0dc]"
+      : "border-white/10 bg-white/[0.045]",
+    textoFraco: claro ? "text-black/55" : "text-white/60",
+    linha: claro ? "border-[#dfd0a5]" : "border-white/10",
+    iconeEscuro: claro ? "text-black/70" : "text-white/70",
+  }
+
   return (
-    <main className="min-h-screen bg-[#f6f0df] px-6 py-6 text-black">
+    <main className={`min-h-screen px-6 py-6 ${ui.pagina}`}>
       <header className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-black">Entregas</h1>
-          <p className="mt-1 text-sm text-black/55">
+          <p className={`mt-1 text-sm ${ui.textoFraco}`}>
             Gerencie todas as entregas da empresa em tempo real.
           </p>
         </div>
@@ -88,15 +115,15 @@ export default function EntregasEmpresaPage() {
       </header>
 
       <section className="mb-6 grid grid-cols-4 gap-4">
-        <CardResumo titulo="Total" valor="128" detalhe="Entregas registradas" icon={<Package />} />
-        <CardResumo titulo="Concluídas" valor="96" detalhe="75% do total" icon={<CheckCircle2 />} verde />
-        <CardResumo titulo="Em andamento" valor="18" detalhe="Acompanhando rota" icon={<Clock />} azul />
-        <CardResumo titulo="Canceladas" valor="14" detalhe="11% do total" icon={<XCircle />} vermelho />
+        <CardResumo ui={ui} titulo="Total" valor="128" detalhe="Entregas registradas" icon={<Package />} />
+        <CardResumo ui={ui} titulo="Concluídas" valor="96" detalhe="75% do total" icon={<CheckCircle2 />} verde />
+        <CardResumo ui={ui} titulo="Em andamento" valor="18" detalhe="Acompanhando rota" icon={<Clock />} azul />
+        <CardResumo ui={ui} titulo="Canceladas" valor="14" detalhe="11% do total" icon={<XCircle />} vermelho />
       </section>
 
-      <section className="rounded-[26px] border border-[#dfd0a5] bg-white/90 p-5 shadow">
+      <section className={`rounded-[26px] border p-5 ${ui.card}`}>
         <div className="mb-5 flex items-center justify-between gap-4">
-          <div className="flex h-12 flex-1 items-center gap-3 rounded-xl border border-[#dfd0a5] bg-[#f7f0dc] px-4">
+          <div className={`flex h-12 flex-1 items-center gap-3 rounded-xl border px-4 ${ui.card2}`}>
             <Search size={19} />
             <input
               placeholder="Buscar por cliente, motorista, cidade ou ID..."
@@ -104,7 +131,7 @@ export default function EntregasEmpresaPage() {
             />
           </div>
 
-          <button className="flex h-12 items-center gap-2 rounded-xl border border-[#dfd0a5] bg-[#f7f0dc] px-4 font-bold">
+          <button className={`flex h-12 items-center gap-2 rounded-xl border px-4 font-bold ${ui.card2}`}>
             <Filter size={18} />
             Filtrar
           </button>
@@ -113,7 +140,7 @@ export default function EntregasEmpresaPage() {
         <div className="overflow-x-auto">
           <table className="w-full min-w-[1100px] text-left text-sm">
             <thead>
-              <tr className="border-b border-[#dfd0a5] text-black/55">
+              <tr className={`border-b ${ui.linha} ${ui.textoFraco}`}>
                 <th className="pb-4">ID</th>
                 <th className="pb-4">Cliente</th>
                 <th className="pb-4">Origem</th>
@@ -130,7 +157,7 @@ export default function EntregasEmpresaPage() {
 
             <tbody>
               {entregas.map((entrega) => (
-                <tr key={entrega.id} className="border-b border-[#dfd0a5]">
+                <tr key={entrega.id} className={`border-b ${ui.linha}`}>
                   <td className="py-4 font-bold">{entrega.id}</td>
 
                   <td>
@@ -142,7 +169,7 @@ export default function EntregasEmpresaPage() {
 
                   <td>
                     <div className="flex items-center gap-2">
-                      <MapPin size={17} className="text-green-600" />
+                      <MapPin size={17} className="text-green-500" />
                       {entrega.origem}
                     </div>
                   </td>
@@ -165,14 +192,14 @@ export default function EntregasEmpresaPage() {
 
                   <td>
                     <div className="flex items-center gap-2">
-                      <Truck size={17} className="text-black/70" />
+                      <Truck size={17} className={ui.iconeEscuro} />
                       {entrega.veiculo}
                     </div>
                   </td>
 
                   <td>
                     <div className="flex items-center gap-2">
-                      <CalendarDays size={17} className="text-black/60" />
+                      <CalendarDays size={17} className={ui.iconeEscuro} />
                       {entrega.data} • {entrega.horario}
                     </div>
                   </td>
@@ -181,7 +208,7 @@ export default function EntregasEmpresaPage() {
                   <td><Status nome={entrega.status} /></td>
 
                   <td>
-                    <button className="rounded-lg p-2 hover:bg-black/5">
+                    <button className="rounded-lg p-2 hover:bg-white/10">
                       <MoreHorizontal size={19} />
                     </button>
                   </td>
@@ -195,7 +222,7 @@ export default function EntregasEmpresaPage() {
   )
 }
 
-function CardResumo({ titulo, valor, detalhe, icon, verde, azul, vermelho }: any) {
+function CardResumo({ titulo, valor, detalhe, icon, verde, azul, vermelho, ui }: any) {
   const cor = vermelho
     ? "text-red-500"
     : azul
@@ -205,15 +232,15 @@ function CardResumo({ titulo, valor, detalhe, icon, verde, azul, vermelho }: any
     : "text-[#ffc400]"
 
   return (
-    <div className="rounded-[24px] border border-[#dfd0a5] bg-white/90 p-5 shadow">
+    <div className={`rounded-[24px] border p-5 ${ui.card}`}>
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-sm text-black/55">{titulo}</p>
+          <p className={`text-sm ${ui.textoFraco}`}>{titulo}</p>
           <h2 className="mt-3 text-4xl font-black">{valor}</h2>
           <p className={`mt-3 text-sm ${cor}`}>{detalhe}</p>
         </div>
 
-        <div className={`flex h-14 w-14 items-center justify-center rounded-2xl bg-[#f7f0dc] ${cor}`}>
+        <div className={`flex h-14 w-14 items-center justify-center rounded-2xl ${ui.card2} ${cor}`}>
           {icon}
         </div>
       </div>
