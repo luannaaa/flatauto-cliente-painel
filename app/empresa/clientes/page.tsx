@@ -1,7 +1,7 @@
 "use client"
 
-import { useEffect, useState } from "react"
 import NovoClienteModal from "../components/NovoClienteModal"
+import { useEffect, useState } from "react"
 import {
   Building2,
   UserRound,
@@ -16,10 +16,6 @@ import {
   CheckCircle2,
   XCircle,
   Users,
-  Eye,
-  Pencil,
-  Save,
-  X,
 } from "lucide-react"
 
 type Tema = "dark" | "light"
@@ -70,57 +66,21 @@ const clientesIniciais: Cliente[] = [
     valorMovimentado: "R$ 5.980,00",
     status: "Ativo",
   },
-  {
-    id: 3,
-    nome: "João Almeida",
-    responsavel: "João Almeida",
-    tipo: "Pessoa física",
-    documento: "123.456.789-00",
-    telefone: "(81) 97777-3030",
-    email: "joao@email.com",
-    cidade: "Olinda - PE",
-    entregas: 5,
-    ultimaEntrega: "04/06/2026",
-    valorMovimentado: "R$ 940,00",
-    status: "Ativo",
-  },
-  {
-    id: 4,
-    nome: "Construtora Nova",
-    responsavel: "Rafael Gomes",
-    tipo: "Empresa",
-    documento: "88.222.111/0001-44",
-    telefone: "(81) 96666-4040",
-    email: "obras@construtoranova.com",
-    cidade: "Camaragibe - PE",
-    entregas: 9,
-    ultimaEntrega: "01/06/2026",
-    valorMovimentado: "R$ 12.300,00",
-    status: "Inativo",
-  },
 ]
 
 export default function ClientesPage() {
   const [tema, setTema] = useState<Tema>("dark")
-  const [clientes, setClientes] = useState(clientesIniciais)
+  const [clientes, setClientes] = useState<Cliente[]>(clientesIniciais)
   const [menuAberto, setMenuAberto] = useState<number | null>(null)
-  const [clienteDetalhes, setClienteDetalhes] = useState<Cliente | null>(null)
-  const [clienteEditando, setClienteEditando] = useState<Cliente | null>(null)
   const [modalNovoCliente, setModalNovoCliente] = useState(false)
 
   useEffect(() => {
     function carregarTema() {
       const temaSalvo = localStorage.getItem("temaEmpresa")
-
-      if (temaSalvo === "light" || temaSalvo === "claro") {
-        setTema("light")
-      } else {
-        setTema("dark")
-      }
+      setTema(temaSalvo === "light" || temaSalvo === "claro" ? "light" : "dark")
     }
 
     carregarTema()
-
     window.addEventListener("storage", carregarTema)
     window.addEventListener("temaEmpresaAtualizado", carregarTema)
 
@@ -144,26 +104,27 @@ export default function ClientesPage() {
     linha: claro ? "border-[#dfd0a5]" : "border-white/10",
   }
 
-  function abrirDetalhes(cliente: Cliente) {
-    setClienteDetalhes(cliente)
-    setMenuAberto(null)
-  }
+  function adicionarCliente(novoCliente: any) {
+    const clienteFormatado: Cliente = {
+      id: Date.now(),
+      nome: novoCliente.nome || novoCliente.nomeCliente || "Novo Cliente",
+      responsavel: novoCliente.responsavel || "A preencher",
+      tipo: novoCliente.tipo || "Pessoa física",
+      documento: novoCliente.documento || "A preencher",
+      telefone: novoCliente.telefone || novoCliente.whatsapp || "A preencher",
+      email: novoCliente.email || "A preencher",
+      cidade:
+        novoCliente.cidade && novoCliente.estado
+          ? `${novoCliente.cidade} - ${novoCliente.estado}`
+          : novoCliente.cidade || "A preencher",
+      entregas: 0,
+      ultimaEntrega: "Nenhuma",
+      valorMovimentado: "R$ 0,00",
+      status: novoCliente.status || "Ativo",
+    }
 
-  function abrirEdicao(cliente: Cliente) {
-    setClienteEditando({ ...cliente })
-    setMenuAberto(null)
-  }
-
-  function salvarEdicao() {
-    if (!clienteEditando) return
-
-    setClientes((lista) =>
-      lista.map((cliente) =>
-        cliente.id === clienteEditando.id ? clienteEditando : cliente
-      )
-    )
-
-    setClienteEditando(null)
+    setClientes((lista) => [clienteFormatado, ...lista])
+    setModalNovoCliente(false)
   }
 
   function excluirCliente(id: number) {
@@ -172,36 +133,6 @@ export default function ClientesPage() {
 
     setClientes((lista) => lista.filter((cliente) => cliente.id !== id))
     setMenuAberto(null)
-  }
-
-
-  function salvarNovoCliente(novoCliente: {
-    nome: string
-    responsavel: string
-    tipo: TipoCliente
-    documento: string
-    telefone: string
-    email: string
-    cidade: string
-    status: StatusCliente
-  }) {
-    const novo: Cliente = {
-      id: Date.now(),
-      nome: novoCliente.nome,
-      responsavel: novoCliente.responsavel,
-      tipo: novoCliente.tipo,
-      documento: novoCliente.documento,
-      telefone: novoCliente.telefone,
-      email: novoCliente.email,
-      cidade: novoCliente.cidade,
-      entregas: 0,
-      ultimaEntrega: "Ainda não realizou",
-      valorMovimentado: "R$ 0,00",
-      status: novoCliente.status,
-    }
-
-    setClientes((lista) => [novo, ...lista])
-    setModalNovoCliente(false)
   }
 
   const totalClientes = clientes.length
@@ -222,6 +153,7 @@ export default function ClientesPage() {
           </div>
 
           <button
+            type="button"
             onClick={() => setModalNovoCliente(true)}
             className="flex h-12 items-center justify-center gap-2 rounded-xl bg-[#ffc400] px-5 font-black text-black shadow"
           >
@@ -254,25 +186,16 @@ export default function ClientesPage() {
 
           <div className="grid gap-4 lg:grid-cols-2">
             {clientes.map((cliente) => (
-              <article
-                key={cliente.id}
-                className={`relative rounded-[26px] border p-4 sm:p-5 ${ui.card2}`}
-              >
+              <article key={cliente.id} className={`relative rounded-[26px] border p-4 sm:p-5 ${ui.card2}`}>
                 <div className="flex items-start gap-4">
                   <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-[#ffc400] text-black">
-                    {cliente.tipo === "Empresa" ? (
-                      <Building2 size={30} />
-                    ) : (
-                      <UserRound size={30} />
-                    )}
+                    {cliente.tipo === "Empresa" ? <Building2 size={30} /> : <UserRound size={30} />}
                   </div>
 
                   <div className="min-w-0 flex-1">
                     <div className="flex items-start justify-between gap-3">
                       <div>
-                        <h2 className="text-lg font-black leading-tight">
-                          {cliente.nome}
-                        </h2>
+                        <h2 className="text-lg font-black leading-tight">{cliente.nome}</h2>
                         <p className={`mt-1 text-xs font-bold ${ui.textoFraco}`}>
                           {cliente.tipo} • {cliente.documento}
                         </p>
@@ -280,29 +203,19 @@ export default function ClientesPage() {
 
                       <div className="relative">
                         <button
-                          onClick={() =>
-                            setMenuAberto(menuAberto === cliente.id ? null : cliente.id)
-                          }
+                          onClick={() => setMenuAberto(menuAberto === cliente.id ? null : cliente.id)}
                           className={`flex h-10 w-10 items-center justify-center rounded-xl border ${ui.card}`}
                         >
                           <MoreHorizontal size={20} />
                         </button>
 
                         {menuAberto === cliente.id && (
-                          <div className={`absolute right-0 top-12 z-40 w-44 rounded-xl border p-2 ${ui.card}`}>
-                            <button
-                              onClick={() => abrirDetalhes(cliente)}
-                              className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-black hover:bg-[#ffc400]/10"
-                            >
-                              <Eye size={16} />
+                          <div className={`absolute right-0 top-12 z-40 w-40 rounded-xl border p-2 ${ui.card}`}>
+                            <button className="w-full rounded-lg px-3 py-2 text-left text-sm font-black hover:bg-[#ffc400]/10">
                               Ver detalhes
                             </button>
 
-                            <button
-                              onClick={() => abrirEdicao(cliente)}
-                              className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-black hover:bg-[#ffc400]/10"
-                            >
-                              <Pencil size={16} />
+                            <button className="w-full rounded-lg px-3 py-2 text-left text-sm font-black hover:bg-[#ffc400]/10">
                               Editar
                             </button>
 
@@ -335,15 +248,6 @@ export default function ClientesPage() {
                   <Info ui={ui} icon={<CalendarDays size={17} />} label="Última entrega" value={cliente.ultimaEntrega} />
                   <Info ui={ui} icon={<Package size={17} />} label="Movimentado" value={cliente.valorMovimentado} />
                 </div>
-
-                <div className={`mt-4 rounded-2xl border px-4 py-3 ${ui.card}`}>
-                  <p className={`text-xs font-bold ${ui.textoFraco}`}>
-                    Preparado para backend/API
-                  </p>
-                  <p className="mt-1 text-sm font-black">
-                    Depois essa tela vai puxar clientes reais das entregas.
-                  </p>
-                </div>
               </article>
             ))}
           </div>
@@ -354,103 +258,10 @@ export default function ClientesPage() {
         <NovoClienteModal
           ui={ui}
           fechar={() => setModalNovoCliente(false)}
-          salvar={salvarNovoCliente}
+          salvar={adicionarCliente}
         />
       )}
-
-      {clienteDetalhes && (
-        <ModalBase ui={ui} titulo="Detalhes do cliente" fechar={() => setClienteDetalhes(null)}>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Info ui={ui} icon={<Building2 size={17} />} label="Nome" value={clienteDetalhes.nome} />
-            <Info ui={ui} icon={<UserRound size={17} />} label="Responsável" value={clienteDetalhes.responsavel} />
-            <Info ui={ui} icon={<Package size={17} />} label="Tipo" value={clienteDetalhes.tipo} />
-            <Info ui={ui} icon={<Package size={17} />} label="Documento" value={clienteDetalhes.documento} />
-            <Info ui={ui} icon={<Phone size={17} />} label="Telefone" value={clienteDetalhes.telefone} />
-            <Info ui={ui} icon={<Mail size={17} />} label="E-mail" value={clienteDetalhes.email} />
-            <Info ui={ui} icon={<MapPin size={17} />} label="Cidade" value={clienteDetalhes.cidade} />
-            <Info ui={ui} icon={<CalendarDays size={17} />} label="Última entrega" value={clienteDetalhes.ultimaEntrega} />
-          </div>
-        </ModalBase>
-      )}
-
-      {clienteEditando && (
-        <ModalBase ui={ui} titulo="Editar cliente" fechar={() => setClienteEditando(null)}>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <CampoEdit ui={ui} label="Nome" value={clienteEditando.nome} onChange={(valor: string) => setClienteEditando({ ...clienteEditando, nome: valor })} />
-            <CampoEdit ui={ui} label="Responsável" value={clienteEditando.responsavel} onChange={(valor: string) => setClienteEditando({ ...clienteEditando, responsavel: valor })} />
-            <CampoEdit ui={ui} label="Documento" value={clienteEditando.documento} onChange={(valor: string) => setClienteEditando({ ...clienteEditando, documento: valor })} />
-            <CampoEdit ui={ui} label="Telefone" value={clienteEditando.telefone} onChange={(valor: string) => setClienteEditando({ ...clienteEditando, telefone: valor })} />
-            <CampoEdit ui={ui} label="E-mail" value={clienteEditando.email} onChange={(valor: string) => setClienteEditando({ ...clienteEditando, email: valor })} />
-            <CampoEdit ui={ui} label="Cidade" value={clienteEditando.cidade} onChange={(valor: string) => setClienteEditando({ ...clienteEditando, cidade: valor })} />
-            <CampoEdit ui={ui} label="Última entrega" value={clienteEditando.ultimaEntrega} onChange={(valor: string) => setClienteEditando({ ...clienteEditando, ultimaEntrega: valor })} />
-            <CampoEdit ui={ui} label="Valor movimentado" value={clienteEditando.valorMovimentado} onChange={(valor: string) => setClienteEditando({ ...clienteEditando, valorMovimentado: valor })} />
-
-            <label>
-              <span className={`mb-2 block text-xs font-black ${ui.textoFraco}`}>Tipo</span>
-              <select
-                value={clienteEditando.tipo}
-                onChange={(e) => setClienteEditando({ ...clienteEditando, tipo: e.target.value as TipoCliente })}
-                className={`h-12 w-full rounded-xl border px-3 text-sm font-bold outline-none ${ui.card2}`}
-              >
-                <option className="bg-black text-white">Empresa</option>
-                <option className="bg-black text-white">Pessoa física</option>
-              </select>
-            </label>
-
-            <label>
-              <span className={`mb-2 block text-xs font-black ${ui.textoFraco}`}>Status</span>
-              <select
-                value={clienteEditando.status}
-                onChange={(e) => setClienteEditando({ ...clienteEditando, status: e.target.value as StatusCliente })}
-                className={`h-12 w-full rounded-xl border px-3 text-sm font-bold outline-none ${ui.card2}`}
-              >
-                <option className="bg-black text-white">Ativo</option>
-                <option className="bg-black text-white">Inativo</option>
-              </select>
-            </label>
-          </div>
-
-          <button
-            onClick={salvarEdicao}
-            className="mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#ffc400] font-black text-black"
-          >
-            <Save size={18} />
-            Salvar alteração
-          </button>
-        </ModalBase>
-      )}
     </main>
-  )
-}
-
-function ModalBase({ ui, titulo, fechar, children }: any) {
-  return (
-    <div className="fixed inset-0 z-[999] flex items-end justify-center bg-black/70 p-0 backdrop-blur-sm sm:items-center sm:p-4">
-      <section className={`max-h-[92vh] w-full overflow-y-auto rounded-t-[28px] border p-5 sm:max-w-[760px] sm:rounded-[28px] sm:p-6 ${ui.card}`}>
-        <div className={`mb-5 flex items-center justify-between border-b pb-4 ${ui.linha}`}>
-          <h2 className="text-xl font-black">{titulo}</h2>
-
-          <button onClick={fechar} className={`flex h-10 w-10 items-center justify-center rounded-xl border ${ui.card2}`}>
-            <X size={20} />
-          </button>
-        </div>
-
-        {children}
-      </section>
-    </div>
-  )
-}
-
-function CampoEdit({ ui, label, value, onChange }: any) {
-  return (
-    <label>
-      <span className={`mb-2 block text-xs font-black ${ui.textoFraco}`}>{label}</span>
-      <input
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className={`h-12 w-full rounded-xl border px-3 text-sm font-bold outline-none ${ui.card2}`}
-      />
-    </label>
   )
 }
 
