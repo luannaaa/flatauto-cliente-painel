@@ -12,7 +12,7 @@ export default function MotoristaSubPage() {
           </a>
           <div>
             <p className="text-xs font-black text-[#ffc400]">FLATAUTO MOTORISTA</p>
-            <h1 className="text-2xl font-black">Ganhos</h1>
+            <h1 className="text-2xl font-black">Agendamentos</h1>
           </div>
         </header>
 
