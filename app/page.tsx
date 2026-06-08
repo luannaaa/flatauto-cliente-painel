@@ -399,17 +399,25 @@ function LoginForm({
 
     setMensagem("")
 
-    // LOGIN EMPRESA TESTE
-    // Esse login entra direto no painel da empresa no PC e no celular.
-    if (
-      emailLimpo === "luanacat249@gmail.com" &&
-      senhaLimpa === "12345678"
-    ) {
-      window.location.href = "/empresa"
-      return
-    }
+   // LOGIN EMPRESA TESTE
+if (
+  emailLimpo === "luanacat249@gmail.com" &&
+  senhaLimpa === "12345678"
+) {
+  window.location.href = "/empresa"
+  return
+}
 
-    // CAMPOS VAZIOS
+// LOGIN MOTORISTA TESTE
+if (
+  emailLimpo === "luanacat249@gmail.com" &&
+  senhaLimpa === "luke2003"
+) {
+  window.location.href = "/motorista"
+  return
+}
+
+    // CAMPOS VAZIOSg
     if (!emailLimpo || !senhaLimpa) {
       setMensagem("Digite e-mail e senha para testar.")
       return
