@@ -2,6 +2,24 @@
 
 import { useEffect, useState, type ChangeEvent } from "react"
 
+type TipoEndereco = "origem" | "destino"
+
+type SugestaoLocalizacao = {
+  display_name?: string
+  lat?: string
+  lon?: string
+}
+
+type ViaCepResposta = {
+  cep?: string
+  logradouro?: string
+  complemento?: string
+  bairro?: string
+  localidade?: string
+  uf?: string
+  erro?: boolean
+}
+
 function useVoltarCelularParaPainel() {
   useEffect(() => {
     window.history.pushState({ telaInternaCliente: true }, "", window.location.href)
@@ -18,44 +36,173 @@ function useVoltarCelularParaPainel() {
   }, [])
 }
 
+function somenteNumeros(valor: string) {
+  return valor.replace(/\D/g, "")
+}
+
+function formatarCep(valor: string) {
+  const numeros = somenteNumeros(valor).slice(0, 8)
+
+  if (numeros.length > 5) {
+    return `${numeros.slice(0, 5)}-${numeros.slice(5)}`
+  }
+
+  return numeros
+}
+
+function montarEnderecoViaCep(dados: ViaCepResposta) {
+  const partes = [
+    dados.logradouro,
+    dados.bairro,
+    dados.localidade,
+    dados.uf,
+  ].filter(Boolean)
+
+  return partes.join(", ")
+}
+
 export default function MarcarFrete() {
   useVoltarCelularParaPainel()
 
   const [segundaParada, setSegundaParada] = useState(false)
+
   const [localSaida, setLocalSaida] = useState("")
   const [cepOrigem, setCepOrigem] = useState("")
+
   const [destinoFinal, setDestinoFinal] = useState("")
   const [cepDestino, setCepDestino] = useState("")
+
   const [lendoNota, setLendoNota] = useState(false)
   const [textoNota, setTextoNota] = useState("")
-  const [sugestoesOrigem, setSugestoesOrigem] = useState<any[]>([])
-  const [carregandoEndereco, setCarregandoEndereco] = useState(false)
+
+  const [sugestoesOrigem, setSugestoesOrigem] = useState<SugestaoLocalizacao[]>([])
+  const [sugestoesDestino, setSugestoesDestino] = useState<SugestaoLocalizacao[]>([])
+
+  const [carregandoOrigem, setCarregandoOrigem] = useState(false)
+  const [carregandoDestino, setCarregandoDestino] = useState(false)
+
   const [latitudeOrigem, setLatitudeOrigem] = useState("")
   const [longitudeOrigem, setLongitudeOrigem] = useState("")
+  const [latitudeDestino, setLatitudeDestino] = useState("")
+  const [longitudeDestino, setLongitudeDestino] = useState("")
 
   function voltarPainel() {
     window.location.replace("/cliente")
   }
 
-  async function buscarEndereco(valor: string) {
-    setLocalSaida(valor)
+  async function buscarCep(cepDigitado: string, tipo: TipoEndereco) {
+    const cepLimpo = somenteNumeros(cepDigitado)
+
+    if (cepLimpo.length !== 8) return
+
+    try {
+      if (tipo === "origem") {
+        setCarregandoOrigem(true)
+      } else {
+        setCarregandoDestino(true)
+      }
+
+      const resposta = await fetch(`https://viacep.com.br/ws/${cepLimpo}/json/`)
+      const dados = (await resposta.json()) as ViaCepResposta
+
+      if (!resposta.ok || dados.erro) {
+        alert("CEP não encontrado. Confira o número e tente novamente.")
+        return
+      }
+
+      const enderecoCompleto = montarEnderecoViaCep(dados)
+      const cepFormatado = formatarCep(dados.cep || cepLimpo)
+
+      if (tipo === "origem") {
+        setCepOrigem(cepFormatado)
+        setLocalSaida(enderecoCompleto)
+        setSugestoesOrigem([])
+      } else {
+        setCepDestino(cepFormatado)
+        setDestinoFinal(enderecoCompleto)
+        setSugestoesDestino([])
+      }
+    } catch (erro) {
+      console.error("Erro ao buscar CEP:", erro)
+      alert("Erro ao buscar CEP. Tente novamente.")
+    } finally {
+      setCarregandoOrigem(false)
+      setCarregandoDestino(false)
+    }
+  }
+
+  async function buscarEndereco(valor: string, tipo: TipoEndereco) {
+    if (tipo === "origem") {
+      setLocalSaida(valor)
+    } else {
+      setDestinoFinal(valor)
+    }
+
+    const numeros = somenteNumeros(valor)
+
+    if (numeros.length === 8 && valor.length <= 9) {
+      await buscarCep(valor, tipo)
+      return
+    }
 
     if (valor.length < 3) {
-      setSugestoesOrigem([])
+      if (tipo === "origem") {
+        setSugestoesOrigem([])
+      } else {
+        setSugestoesDestino([])
+      }
+
       return
     }
 
     try {
-      setCarregandoEndereco(true)
+      if (tipo === "origem") {
+        setCarregandoOrigem(true)
+      } else {
+        setCarregandoDestino(true)
+      }
 
       const resposta = await fetch(`/api/localizacao?q=${encodeURIComponent(valor)}`)
       const dados = await resposta.json()
 
-      setSugestoesOrigem(dados || [])
+      if (tipo === "origem") {
+        setSugestoesOrigem(dados || [])
+      } else {
+        setSugestoesDestino(dados || [])
+      }
     } catch (erro) {
       console.error("Erro localização:", erro)
     } finally {
-      setCarregandoEndereco(false)
+      setCarregandoOrigem(false)
+      setCarregandoDestino(false)
+    }
+  }
+
+  function selecionarSugestao(item: SugestaoLocalizacao, tipo: TipoEndereco) {
+    if (tipo === "origem") {
+      setLocalSaida(item.display_name || "")
+      setLatitudeOrigem(item.lat || "")
+      setLongitudeOrigem(item.lon || "")
+      setSugestoesOrigem([])
+    } else {
+      setDestinoFinal(item.display_name || "")
+      setLatitudeDestino(item.lat || "")
+      setLongitudeDestino(item.lon || "")
+      setSugestoesDestino([])
+    }
+  }
+
+  async function alterarCep(valor: string, tipo: TipoEndereco) {
+    const cepFormatado = formatarCep(valor)
+
+    if (tipo === "origem") {
+      setCepOrigem(cepFormatado)
+    } else {
+      setCepDestino(cepFormatado)
+    }
+
+    if (somenteNumeros(cepFormatado).length === 8) {
+      await buscarCep(cepFormatado, tipo)
     }
   }
 
@@ -84,9 +231,9 @@ export default function MarcarFrete() {
       }
 
       setLocalSaida(dados.localSaida || "")
-      setCepOrigem(dados.cepOrigem || "")
+      setCepOrigem(dados.cepOrigem ? formatarCep(dados.cepOrigem) : "")
       setDestinoFinal(dados.destinoFinal || "")
-      setCepDestino(dados.cepDestino || "")
+      setCepDestino(dados.cepDestino ? formatarCep(dados.cepDestino) : "")
       setTextoNota(dados.textoEncontrado || "")
     } catch (error) {
       console.error("ERRO COMPLETO AO LER NOTA:", error)
@@ -103,54 +250,71 @@ export default function MarcarFrete() {
           <button onClick={voltarPainel} className="text-[18px] font-bold text-[#ffc400]">
             ← Voltar
           </button>
-          <h1 className="text-[22px] font-black">Agendar frete</h1>
+          <h1 className="text-[22px] font-black">Solicitar entrega</h1>
           <div className="w-[62px]" />
         </header>
 
         <section className="mt-8 rounded-[26px] border border-[#ffc400]/25 bg-[#080808] p-5">
-          <h2 className="text-[28px] font-black leading-tight">Agendar nova entrega</h2>
+          <h2 className="text-[28px] font-black leading-tight">Nova solicitação</h2>
           <p className="mt-2 text-[15px] leading-relaxed text-white/55">
-            Preencha os dados da entrega para encontrar o frete ideal.
+            Digite o CEP ou o endereço. Se informar o CEP, o sistema preenche o endereço automaticamente.
           </p>
         </section>
 
         <section className="mt-6 space-y-4">
           <div>
             <Campo
-              label="Local de saída"
-              placeholder="Digite o endereço de origem"
+              label="Origem"
+              placeholder="Digite CEP ou endereço de origem"
               value={localSaida}
-              onChange={buscarEndereco}
+              onChange={(valor) => buscarEndereco(valor, "origem")}
             />
 
-            {carregandoEndereco && (
-              <p className="mt-2 text-sm font-bold text-[#ffc400]">Buscando endereço...</p>
+            {carregandoOrigem && (
+              <p className="mt-2 text-sm font-bold text-[#ffc400]">Buscando origem...</p>
             )}
 
             {sugestoesOrigem.length > 0 && (
-              <div className="mt-2 overflow-hidden rounded-[18px] border border-[#ffc400]/25 bg-[#080808]">
-                {sugestoesOrigem.map((item, index) => (
-                  <button
-                    key={index}
-                    type="button"
-                    onClick={() => {
-                      setLocalSaida(item.display_name || "")
-                      setLatitudeOrigem(item.lat || "")
-                      setLongitudeOrigem(item.lon || "")
-                      setSugestoesOrigem([])
-                    }}
-                    className="w-full border-b border-white/10 px-4 py-3 text-left text-sm text-white/80 last:border-b-0"
-                  >
-                    📍 {item.display_name}
-                  </button>
-                ))}
-              </div>
+              <Sugestoes
+                sugestoes={sugestoesOrigem}
+                onSelecionar={(item) => selecionarSugestao(item, "origem")}
+              />
             )}
           </div>
 
-          <Campo label="CEP de origem" placeholder="Digite o CEP de origem" value={cepOrigem} onChange={setCepOrigem} />
-          <Campo label="Destino final" placeholder="Digite o endereço de entrega" value={destinoFinal} onChange={setDestinoFinal} />
-          <Campo label="CEP de destino" placeholder="Digite o CEP de destino" value={cepDestino} onChange={setCepDestino} />
+          <Campo
+            label="CEP de origem"
+            placeholder="Digite somente o CEP de origem"
+            value={cepOrigem}
+            onChange={(valor) => alterarCep(valor, "origem")}
+          />
+
+          <div>
+            <Campo
+              label="Destino"
+              placeholder="Digite CEP ou endereço de destino"
+              value={destinoFinal}
+              onChange={(valor) => buscarEndereco(valor, "destino")}
+            />
+
+            {carregandoDestino && (
+              <p className="mt-2 text-sm font-bold text-[#ffc400]">Buscando destino...</p>
+            )}
+
+            {sugestoesDestino.length > 0 && (
+              <Sugestoes
+                sugestoes={sugestoesDestino}
+                onSelecionar={(item) => selecionarSugestao(item, "destino")}
+              />
+            )}
+          </div>
+
+          <Campo
+            label="CEP de destino"
+            placeholder="Digite somente o CEP de destino"
+            value={cepDestino}
+            onChange={(valor) => alterarCep(valor, "destino")}
+          />
 
           <button
             onClick={() => setSegundaParada(!segundaParada)}
@@ -159,12 +323,15 @@ export default function MarcarFrete() {
             {segundaParada ? "− Remover segunda parada" : "+ Adicionar segunda parada"}
           </button>
 
-          {segundaParada && <Campo label="Segunda parada" placeholder="Digite o endereço da parada" />}
+          {segundaParada && (
+            <Campo
+              label="Segunda parada"
+              placeholder="Digite CEP ou endereço da parada"
+            />
+          )}
 
           <Campo label="Data de coleta" type="date" />
           <Campo label="Data de entrega" type="date" />
-          <Campo label="Horário da chegada" type="time" />
-          <Campo label="Horário da retirada da mercadoria" type="time" />
           <Campo label="Peso aproximado" placeholder="Ex: 800 kg" />
 
           <SelectCampo
@@ -182,9 +349,10 @@ export default function MarcarFrete() {
           />
 
           <SelectCampo
-            label="Tipo de veículo"
-            placeholder="Selecione o tipo de veículo"
+            label="Tipo de transporte"
+            placeholder="Selecione o tipo de transporte"
             options={[
+              "Motoboy",
               "Carro utilitário",
               "Fiorino / pequeno utilitário",
               "Van",
@@ -240,10 +408,33 @@ export default function MarcarFrete() {
         </section>
 
         <button className="mt-8 h-[58px] w-full rounded-[20px] bg-[#ffc400] text-[18px] font-black text-black">
-          Agendar frete
+          Solicitar entrega
         </button>
       </div>
     </main>
+  )
+}
+
+function Sugestoes({
+  sugestoes,
+  onSelecionar,
+}: {
+  sugestoes: SugestaoLocalizacao[]
+  onSelecionar: (item: SugestaoLocalizacao) => void
+}) {
+  return (
+    <div className="mt-2 overflow-hidden rounded-[18px] border border-[#ffc400]/25 bg-[#080808]">
+      {sugestoes.map((item, index) => (
+        <button
+          key={index}
+          type="button"
+          onClick={() => onSelecionar(item)}
+          className="w-full border-b border-white/10 px-4 py-3 text-left text-sm text-white/80 last:border-b-0"
+        >
+          📍 {item.display_name}
+        </button>
+      ))}
+    </div>
   )
 }
 
