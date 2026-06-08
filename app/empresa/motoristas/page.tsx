@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import {
   Bike,
   Car,
@@ -109,30 +110,66 @@ function nomeVeiculo(tipo: Veiculo) {
 }
 
 export default function MotoristasPage() {
+  const [claro, setClaro] = useState(true)
+
+  useEffect(() => {
+    const temaSalvo =
+      localStorage.getItem("temaEmpresa") ||
+      localStorage.getItem("modoEmpresa") ||
+      localStorage.getItem("tema")
+
+    if (
+      temaSalvo === "escuro" ||
+      temaSalvo === "dark" ||
+      temaSalvo === "false"
+    ) {
+      setClaro(false)
+    } else {
+      setClaro(true)
+    }
+  }, [])
+
+  const ui = {
+    pagina: claro ? "bg-[#ffffff] text-[#111111]" : "bg-[#020507] text-white",
+    card: claro
+      ? "border-[#e8dcc2] bg-white shadow-[0_18px_45px_rgba(15,23,42,0.08)]"
+      : "border-white/10 bg-[#10171b] shadow-[0_18px_45px_rgba(0,0,0,0.35)]",
+    card2: claro
+      ? "bg-[#fbfaf7] border-[#e8dcc2]"
+      : "bg-white/[0.045] border-white/10",
+    textoFraco: claro ? "text-black/60" : "text-white/60",
+    textoMaisFraco: claro ? "text-black/45" : "text-white/45",
+    linha: claro ? "border-[#e8dcc2]" : "border-white/10",
+  }
+
   return (
-    <main className="min-h-screen bg-[#f8f6ef] px-4 py-5 text-[#111] sm:px-6 lg:px-10">
+    <main className={`min-h-screen px-4 py-5 sm:px-6 lg:px-10 ${ui.pagina}`}>
       <div className="mx-auto max-w-7xl space-y-8">
         <header>
-          <p className="text-sm font-bold text-[#b99025]">Área da Empresa</p>
+          <p className="text-sm font-bold text-[#d4af37]">Área da Empresa</p>
+
           <h1 className="mt-1 text-2xl font-black sm:text-4xl">
             Motoristas e entregas
           </h1>
-          <p className="mt-2 max-w-2xl text-sm text-black/60 sm:text-base">
-            Acompanhe os motoristas em rota e veja o histórico das entregas já finalizadas.
+
+          <p className={`mt-2 max-w-2xl text-sm sm:text-base ${ui.textoFraco}`}>
+            Acompanhe os motoristas em rota e veja o histórico das entregas já
+            finalizadas.
           </p>
         </header>
 
         <section>
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-xl font-black">Em andamento</h2>
-            <span className="rounded-full bg-[#d4af37]/15 px-3 py-1 text-xs font-black text-[#9b7817]">
+
+            <span className="rounded-full bg-[#d4af37]/15 px-3 py-1 text-xs font-black text-[#d4af37]">
               {entregasEmAndamento.length} ativas
             </span>
           </div>
 
           <div className="grid gap-4 lg:grid-cols-2">
             {entregasEmAndamento.map((entrega) => (
-              <CardEmAndamento key={entrega.id} entrega={entrega} />
+              <CardEmAndamento key={entrega.id} entrega={entrega} ui={ui} />
             ))}
           </div>
         </section>
@@ -140,14 +177,15 @@ export default function MotoristasPage() {
         <section>
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-xl font-black">Histórico</h2>
-            <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-black text-green-700">
+
+            <span className="rounded-full bg-green-500/15 px-3 py-1 text-xs font-black text-green-500">
               Finalizadas
             </span>
           </div>
 
           <div className="grid gap-4 lg:grid-cols-2">
             {historicoEntregas.map((entrega) => (
-              <CardHistorico key={entrega.id} entrega={entrega} />
+              <CardHistorico key={entrega.id} entrega={entrega} ui={ui} />
             ))}
           </div>
         </section>
@@ -156,9 +194,9 @@ export default function MotoristasPage() {
   )
 }
 
-function CardEmAndamento({ entrega }: { entrega: Entrega }) {
+function CardEmAndamento({ entrega, ui }: { entrega: Entrega; ui: any }) {
   return (
-    <article className="rounded-[28px] border border-[#e8dcc2] bg-white p-4 shadow-[0_18px_45px_rgba(15,23,42,0.08)] sm:p-5">
+    <article className={`rounded-[28px] border p-4 sm:p-5 ${ui.card}`}>
       <div className="flex gap-4">
         <img
           src={entrega.foto}
@@ -173,13 +211,13 @@ function CardEmAndamento({ entrega }: { entrega: Entrega }) {
                 {entrega.motorista}
               </h3>
 
-              <div className="mt-2 flex w-fit items-center gap-2 rounded-full bg-[#d4af37]/15 px-3 py-1 text-xs font-black text-[#9b7817]">
+              <div className="mt-2 flex w-fit items-center gap-2 rounded-full bg-[#d4af37]/15 px-3 py-1 text-xs font-black text-[#d4af37]">
                 <IconeVeiculo tipo={entrega.veiculo} size={16} />
                 {nomeVeiculo(entrega.veiculo)}
               </div>
             </div>
 
-            <span className="w-fit rounded-full border border-[#d4af37]/40 bg-[#d4af37]/10 px-3 py-1 text-xs font-black text-[#9b7817]">
+            <span className="w-fit rounded-full border border-[#d4af37]/40 bg-[#d4af37]/10 px-3 py-1 text-xs font-black text-[#d4af37]">
               Em andamento
             </span>
           </div>
@@ -187,13 +225,13 @@ function CardEmAndamento({ entrega }: { entrega: Entrega }) {
       </div>
 
       <div className="mt-5 grid gap-3 text-sm sm:grid-cols-2">
-        <Info icon={<Package size={17} />} label="Mercadoria" value={entrega.mercadoria} />
-        <Info icon={<CalendarDays size={17} />} label="Data/Hora" value={`${entrega.data} às ${entrega.horario}`} />
-        <Info icon={<MapPin size={17} />} label="Origem" value={entrega.origem} />
-        <Info icon={<Navigation size={17} />} label="Destino" value={entrega.destino} />
+        <Info ui={ui} icon={<Package size={17} />} label="Mercadoria" value={entrega.mercadoria} />
+        <Info ui={ui} icon={<CalendarDays size={17} />} label="Data/Hora" value={`${entrega.data} às ${entrega.horario}`} />
+        <Info ui={ui} icon={<MapPin size={17} />} label="Origem" value={entrega.origem} />
+        <Info ui={ui} icon={<Navigation size={17} />} label="Destino" value={entrega.destino} />
       </div>
 
-      <div className="mt-5 rounded-2xl bg-[#fbfaf7] p-4">
+      <div className={`mt-5 rounded-2xl border p-4 ${ui.card2}`}>
         <div className="mb-2 flex items-center justify-between text-xs font-black">
           <span>Progresso da rota</span>
           <span>{entrega.progresso}%</span>
@@ -206,7 +244,7 @@ function CardEmAndamento({ entrega }: { entrega: Entrega }) {
           />
         </div>
 
-        <div className="mt-3 flex flex-col gap-2 text-xs font-bold text-black/60 sm:flex-row sm:items-center sm:justify-between">
+        <div className={`mt-3 flex flex-col gap-2 text-xs font-bold sm:flex-row sm:items-center sm:justify-between ${ui.textoFraco}`}>
           <span>Distância: {entrega.distancia}</span>
           <span>Falta: {entrega.tempoRestante}</span>
         </div>
@@ -215,9 +253,9 @@ function CardEmAndamento({ entrega }: { entrega: Entrega }) {
   )
 }
 
-function CardHistorico({ entrega }: { entrega: Entrega }) {
+function CardHistorico({ entrega, ui }: { entrega: Entrega; ui: any }) {
   return (
-    <article className="rounded-[26px] border border-[#e8dcc2] bg-white p-4 shadow-[0_14px_35px_rgba(15,23,42,0.06)] sm:p-5">
+    <article className={`rounded-[26px] border p-4 sm:p-5 ${ui.card}`}>
       <div className="flex gap-4">
         <img
           src={entrega.foto}
@@ -230,13 +268,13 @@ function CardHistorico({ entrega }: { entrega: Entrega }) {
             <div>
               <h3 className="font-black">{entrega.motorista}</h3>
 
-              <div className="mt-2 flex w-fit items-center gap-2 rounded-full bg-black/5 px-3 py-1 text-xs font-black">
+              <div className={`mt-2 flex w-fit items-center gap-2 rounded-full border px-3 py-1 text-xs font-black ${ui.card2}`}>
                 <IconeVeiculo tipo={entrega.veiculo} size={15} />
                 {nomeVeiculo(entrega.veiculo)}
               </div>
             </div>
 
-            <span className="flex w-fit items-center gap-1 rounded-full bg-green-100 px-3 py-1 text-xs font-black text-green-700">
+            <span className="flex w-fit items-center gap-1 rounded-full bg-green-500/15 px-3 py-1 text-xs font-black text-green-500">
               <CheckCircle2 size={14} />
               Finalizada
             </span>
@@ -245,14 +283,17 @@ function CardHistorico({ entrega }: { entrega: Entrega }) {
       </div>
 
       <div className="mt-5 grid gap-3 text-sm sm:grid-cols-2">
-        <Info icon={<Package size={17} />} label="Mercadoria" value={entrega.mercadoria} />
-        <Info icon={<CalendarDays size={17} />} label="Data/Hora" value={`${entrega.data} às ${entrega.horario}`} />
-        <Info icon={<MapPin size={17} />} label="Origem" value={entrega.origem} />
-        <Info icon={<Navigation size={17} />} label="Destino" value={entrega.destino} />
+        <Info ui={ui} icon={<Package size={17} />} label="Mercadoria" value={entrega.mercadoria} />
+        <Info ui={ui} icon={<CalendarDays size={17} />} label="Data/Hora" value={`${entrega.data} às ${entrega.horario}`} />
+        <Info ui={ui} icon={<MapPin size={17} />} label="Origem" value={entrega.origem} />
+        <Info ui={ui} icon={<Navigation size={17} />} label="Destino" value={entrega.destino} />
       </div>
 
-      <div className="mt-4 flex items-center justify-between rounded-2xl bg-[#fbfaf7] px-4 py-3">
-        <span className="text-sm font-bold text-black/60">Valor da entrega</span>
+      <div className={`mt-4 flex items-center justify-between rounded-2xl border px-4 py-3 ${ui.card2}`}>
+        <span className={`text-sm font-bold ${ui.textoFraco}`}>
+          Valor da entrega
+        </span>
+
         <strong className="text-lg font-black">{entrega.valor}</strong>
       </div>
     </article>
@@ -260,19 +301,22 @@ function CardHistorico({ entrega }: { entrega: Entrega }) {
 }
 
 function Info({
+  ui,
   icon,
   label,
   value,
 }: {
+  ui: any
   icon: React.ReactNode
   label: string
   value: string
 }) {
   return (
-    <div className="flex gap-3 rounded-2xl bg-[#fbfaf7] p-3">
+    <div className={`flex gap-3 rounded-2xl border p-3 ${ui.card2}`}>
       <span className="mt-0.5 text-[#d4af37]">{icon}</span>
+
       <div>
-        <p className="text-xs font-black text-black/45">{label}</p>
+        <p className={`text-xs font-black ${ui.textoMaisFraco}`}>{label}</p>
         <p className="mt-1 text-sm font-bold">{value}</p>
       </div>
     </div>
