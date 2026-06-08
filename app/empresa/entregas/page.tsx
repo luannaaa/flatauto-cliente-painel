@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import NovaEntregaModal from "../components/NovaEntregaModal"
 import {
   Truck,
   Search,
@@ -81,12 +82,14 @@ function normalizarTema(valor: string | null): Tema {
   return "dark"
 }
 
-function useTemaEmpresa() {
+export default function EntregasEmpresaPage() {
   const [tema, setTema] = useState<Tema>("dark")
+  const [modalNovaEntrega, setModalNovaEntrega] = useState(false)
 
   useEffect(() => {
     function carregarTema() {
-      setTema(normalizarTema(localStorage.getItem(CHAVE_TEMA_EMPRESA)))
+      const temaSalvo = normalizarTema(localStorage.getItem(CHAVE_TEMA_EMPRESA))
+      setTema(temaSalvo)
     }
 
     carregarTema()
@@ -100,17 +103,12 @@ function useTemaEmpresa() {
     }
   }, [])
 
-  return tema
-}
-
-export default function EntregasEmpresaPage() {
-  const tema = useTemaEmpresa()
   const claro = tema === "light"
 
   const ui = {
     pagina: claro ? "bg-[#ffffff] text-[#111111]" : "bg-[#020507] text-white",
     card: claro
-      ? "border-[#e8dcc2] bg-white shadow-[0_18px_45px_rgba(15,23,42,0.08)]"
+      ? "border-[#e8dcc2] bg-white shadow-[0_18px_50px_rgba(15,23,42,0.08)]"
       : "border-white/10 bg-[#10171b]/90 shadow-[0_18px_45px_rgba(0,0,0,0.30)]",
     card2: claro
       ? "border-[#e8dcc2] bg-[#fbfaf7]"
@@ -118,7 +116,6 @@ export default function EntregasEmpresaPage() {
     textoFraco: claro ? "text-black/55" : "text-white/60",
     linha: claro ? "border-[#e8dcc2]" : "border-white/10",
     iconeEscuro: claro ? "text-black/70" : "text-white/70",
-    hover: claro ? "hover:bg-black/5" : "hover:bg-white/10",
   }
 
   return (
@@ -131,7 +128,11 @@ export default function EntregasEmpresaPage() {
           </p>
         </div>
 
-        <button className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#d4af37] px-5 font-black text-white shadow sm:w-auto">
+        <button
+          type="button"
+          onClick={() => setModalNovaEntrega(true)}
+          className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#d4af37] px-5 font-black text-white shadow sm:w-auto"
+        >
           <Plus size={20} />
           Nova Entrega
         </button>
@@ -145,7 +146,7 @@ export default function EntregasEmpresaPage() {
       </section>
 
       <section className={`rounded-[26px] border p-4 sm:p-5 ${ui.card}`}>
-        <div className="mb-5 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className={`flex h-12 flex-1 items-center gap-3 rounded-xl border px-4 ${ui.card2}`}>
             <Search size={19} />
             <input
@@ -160,7 +161,7 @@ export default function EntregasEmpresaPage() {
           </button>
         </div>
 
-        <div className="hidden overflow-x-auto lg:block">
+        <div className="overflow-x-auto">
           <table className="w-full min-w-[1100px] text-left text-sm">
             <thead>
               <tr className={`border-b ${ui.linha} ${ui.textoFraco}`}>
@@ -182,17 +183,56 @@ export default function EntregasEmpresaPage() {
               {entregas.map((entrega) => (
                 <tr key={entrega.id} className={`border-b ${ui.linha}`}>
                   <td className="py-4 font-bold">{entrega.id}</td>
-                  <td><LinhaIcone icon={<UserRound size={17} className="text-[#d4af37]" />} texto={entrega.cliente} /></td>
-                  <td><LinhaIcone icon={<MapPin size={17} className="text-green-500" />} texto={entrega.origem} /></td>
-                  <td><LinhaIcone icon={<MapPin size={17} className="text-red-500" />} texto={entrega.destino} /></td>
+
+                  <td>
+                    <div className="flex items-center gap-2">
+                      <UserRound size={17} className="text-[#d4af37]" />
+                      {entrega.cliente}
+                    </div>
+                  </td>
+
+                  <td>
+                    <div className="flex items-center gap-2">
+                      <MapPin size={17} className="text-green-500" />
+                      {entrega.origem}
+                    </div>
+                  </td>
+
+                  <td>
+                    <div className="flex items-center gap-2">
+                      <MapPin size={17} className="text-red-500" />
+                      {entrega.destino}
+                    </div>
+                  </td>
+
                   <td>{entrega.motorista}</td>
-                  <td><LinhaIcone icon={<Package size={17} className="text-[#d4af37]" />} texto={entrega.carga} /></td>
-                  <td><LinhaIcone icon={<Truck size={17} className={ui.iconeEscuro} />} texto={entrega.veiculo} /></td>
-                  <td><LinhaIcone icon={<CalendarDays size={17} className={ui.iconeEscuro} />} texto={`${entrega.data} • ${entrega.horario}`} /></td>
+
+                  <td>
+                    <div className="flex items-center gap-2">
+                      <Package size={17} className="text-[#d4af37]" />
+                      {entrega.carga}
+                    </div>
+                  </td>
+
+                  <td>
+                    <div className="flex items-center gap-2">
+                      <Truck size={17} className={ui.iconeEscuro} />
+                      {entrega.veiculo}
+                    </div>
+                  </td>
+
+                  <td>
+                    <div className="flex items-center gap-2">
+                      <CalendarDays size={17} className={ui.iconeEscuro} />
+                      {entrega.data} • {entrega.horario}
+                    </div>
+                  </td>
+
                   <td className="font-bold">{entrega.valor}</td>
                   <td><Status nome={entrega.status} /></td>
+
                   <td>
-                    <button className={`rounded-lg p-2 ${ui.hover}`}>
+                    <button className={`rounded-lg p-2 ${claro ? "hover:bg-black/5" : "hover:bg-white/10"}`}>
                       <MoreHorizontal size={19} />
                     </button>
                   </td>
@@ -201,45 +241,12 @@ export default function EntregasEmpresaPage() {
             </tbody>
           </table>
         </div>
-
-        <div className="grid gap-4 lg:hidden">
-          {entregas.map((entrega) => (
-            <article key={entrega.id} className={`rounded-2xl border p-4 ${ui.card2}`}>
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="font-black">{entrega.id}</p>
-                  <p className={`mt-1 text-sm ${ui.textoFraco}`}>{entrega.cliente}</p>
-                </div>
-                <Status nome={entrega.status} />
-              </div>
-
-              <div className="mt-4 grid gap-3 text-sm">
-                <LinhaIcone icon={<MapPin size={17} className="text-green-500" />} texto={entrega.origem} />
-                <LinhaIcone icon={<MapPin size={17} className="text-red-500" />} texto={entrega.destino} />
-                <LinhaIcone icon={<UserRound size={17} className="text-[#d4af37]" />} texto={entrega.motorista} />
-                <LinhaIcone icon={<Package size={17} className="text-[#d4af37]" />} texto={entrega.carga} />
-                <LinhaIcone icon={<Truck size={17} className={ui.iconeEscuro} />} texto={entrega.veiculo} />
-                <LinhaIcone icon={<CalendarDays size={17} className={ui.iconeEscuro} />} texto={`${entrega.data} • ${entrega.horario}`} />
-              </div>
-
-              <div className={`mt-4 flex items-center justify-between border-t pt-4 ${ui.linha}`}>
-                <span className={`text-sm font-bold ${ui.textoFraco}`}>Valor</span>
-                <strong>{entrega.valor}</strong>
-              </div>
-            </article>
-          ))}
-        </div>
       </section>
-    </main>
-  )
-}
 
-function LinhaIcone({ icon, texto }: { icon: React.ReactNode; texto: string }) {
-  return (
-    <div className="flex items-center gap-2">
-      {icon}
-      <span>{texto}</span>
-    </div>
+      {modalNovaEntrega && (
+        <NovaEntregaModal ui={ui} fechar={() => setModalNovaEntrega(false)} />
+      )}
+    </main>
   )
 }
 
@@ -254,14 +261,14 @@ function CardResumo({ titulo, valor, detalhe, icon, verde, azul, vermelho, ui }:
 
   return (
     <div className={`rounded-[24px] border p-5 ${ui.card}`}>
-      <div className="flex items-start justify-between gap-3">
+      <div className="flex items-start justify-between">
         <div>
           <p className={`text-sm ${ui.textoFraco}`}>{titulo}</p>
           <h2 className="mt-3 text-3xl font-black sm:text-4xl">{valor}</h2>
-          <p className={`mt-3 text-sm font-bold ${cor}`}>{detalhe}</p>
+          <p className={`mt-3 text-sm ${cor}`}>{detalhe}</p>
         </div>
 
-        <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border sm:h-14 sm:w-14 ${ui.card2} ${cor}`}>
+        <div className={`flex h-14 w-14 items-center justify-center rounded-2xl border ${ui.card2} ${cor}`}>
           {icon}
         </div>
       </div>
