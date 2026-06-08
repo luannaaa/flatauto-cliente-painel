@@ -16,6 +16,8 @@ import {
   CheckCircle2,
   XCircle,
   Users,
+  X,
+  Save,
 } from "lucide-react"
 
 type Tema = "dark" | "light"
@@ -73,6 +75,8 @@ export default function ClientesPage() {
   const [clientes, setClientes] = useState<Cliente[]>(clientesIniciais)
   const [menuAberto, setMenuAberto] = useState<number | null>(null)
   const [modalNovoCliente, setModalNovoCliente] = useState(false)
+  const [clienteDetalhes, setClienteDetalhes] = useState<Cliente | null>(null)
+  const [clienteEditando, setClienteEditando] = useState<Cliente | null>(null)
 
   useEffect(() => {
     function carregarTema() {
@@ -133,6 +137,25 @@ export default function ClientesPage() {
 
     setClientes((lista) => lista.filter((cliente) => cliente.id !== id))
     setMenuAberto(null)
+  }
+
+  function abrirDetalhes(cliente: Cliente) {
+    setClienteDetalhes(cliente)
+    setMenuAberto(null)
+  }
+
+  function abrirEditar(cliente: Cliente) {
+    setClienteEditando(cliente)
+    setMenuAberto(null)
+  }
+
+  function salvarEdicao(clienteAtualizado: Cliente) {
+    setClientes((lista) =>
+      lista.map((cliente) =>
+        cliente.id === clienteAtualizado.id ? clienteAtualizado : cliente
+      )
+    )
+    setClienteEditando(null)
   }
 
   const totalClientes = clientes.length
@@ -203,6 +226,7 @@ export default function ClientesPage() {
 
                       <div className="relative">
                         <button
+                          type="button"
                           onClick={() => setMenuAberto(menuAberto === cliente.id ? null : cliente.id)}
                           className={`flex h-10 w-10 items-center justify-center rounded-xl border ${ui.card}`}
                         >
@@ -210,16 +234,25 @@ export default function ClientesPage() {
                         </button>
 
                         {menuAberto === cliente.id && (
-                          <div className={`absolute right-0 top-12 z-40 w-40 rounded-xl border p-2 ${ui.card}`}>
-                            <button className="w-full rounded-lg px-3 py-2 text-left text-sm font-black hover:bg-[#ffc400]/10">
+                          <div className={`absolute right-0 top-12 z-50 w-44 rounded-xl border p-2 ${ui.card}`}>
+                            <button
+                              type="button"
+                              onClick={() => abrirDetalhes(cliente)}
+                              className="w-full rounded-lg px-3 py-2 text-left text-sm font-black hover:bg-[#ffc400]/10"
+                            >
                               Ver detalhes
                             </button>
 
-                            <button className="w-full rounded-lg px-3 py-2 text-left text-sm font-black hover:bg-[#ffc400]/10">
+                            <button
+                              type="button"
+                              onClick={() => abrirEditar(cliente)}
+                              className="w-full rounded-lg px-3 py-2 text-left text-sm font-black hover:bg-[#ffc400]/10"
+                            >
                               Editar
                             </button>
 
                             <button
+                              type="button"
                               onClick={() => excluirCliente(cliente.id)}
                               className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-black text-red-500 hover:bg-red-500/10"
                             >
@@ -261,7 +294,138 @@ export default function ClientesPage() {
           salvar={adicionarCliente}
         />
       )}
+
+      {clienteDetalhes && (
+        <ModalDetalhesCliente
+          ui={ui}
+          cliente={clienteDetalhes}
+          fechar={() => setClienteDetalhes(null)}
+        />
+      )}
+
+      {clienteEditando && (
+        <ModalEditarCliente
+          ui={ui}
+          cliente={clienteEditando}
+          fechar={() => setClienteEditando(null)}
+          salvar={salvarEdicao}
+        />
+      )}
     </main>
+  )
+}
+
+function ModalDetalhesCliente({ ui, cliente, fechar }: any) {
+  return (
+    <div className="fixed inset-0 z-[999] flex items-end justify-center bg-black/70 p-0 backdrop-blur-sm sm:items-center sm:p-4">
+      <section className={`max-h-[92vh] w-full overflow-y-auto rounded-t-[28px] border p-5 sm:max-w-[720px] sm:rounded-[30px] sm:p-7 ${ui.card}`}>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-sm font-black text-[#ffc400]">Detalhes do cliente</p>
+            <h2 className="mt-1 text-2xl font-black">{cliente.nome}</h2>
+            <p className={`mt-1 text-sm ${ui.textoFraco}`}>{cliente.tipo} • {cliente.documento}</p>
+          </div>
+
+          <button onClick={fechar} className={`rounded-xl border p-2.5 ${ui.card2}`}>
+            <X size={20} />
+          </button>
+        </div>
+
+        <div className="mt-6 grid gap-3 sm:grid-cols-2">
+          <Info ui={ui} icon={<UserRound size={17} />} label="Responsável" value={cliente.responsavel} />
+          <Info ui={ui} icon={<Phone size={17} />} label="Telefone" value={cliente.telefone} />
+          <Info ui={ui} icon={<Mail size={17} />} label="E-mail" value={cliente.email} />
+          <Info ui={ui} icon={<MapPin size={17} />} label="Cidade" value={cliente.cidade} />
+          <Info ui={ui} icon={<CalendarDays size={17} />} label="Última entrega" value={cliente.ultimaEntrega} />
+          <Info ui={ui} icon={<Package size={17} />} label="Movimentado" value={cliente.valorMovimentado} />
+        </div>
+
+        <button onClick={fechar} className="mt-6 h-12 w-full rounded-xl bg-[#ffc400] font-black text-black">
+          Fechar
+        </button>
+      </section>
+    </div>
+  )
+}
+
+function ModalEditarCliente({ ui, cliente, fechar, salvar }: any) {
+  const [form, setForm] = useState<Cliente>(cliente)
+
+  function atualizar(campo: keyof Cliente, valor: any) {
+    setForm((atual) => ({ ...atual, [campo]: valor }))
+  }
+
+  return (
+    <div className="fixed inset-0 z-[999] flex items-end justify-center bg-black/70 p-0 backdrop-blur-sm sm:items-center sm:p-4">
+      <section className={`max-h-[92vh] w-full overflow-y-auto rounded-t-[28px] border p-5 sm:max-w-[860px] sm:rounded-[30px] sm:p-7 ${ui.card}`}>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-sm font-black text-[#ffc400]">Editar cliente</p>
+            <h2 className="mt-1 text-2xl font-black">{form.nome}</h2>
+          </div>
+
+          <button onClick={fechar} className={`rounded-xl border p-2.5 ${ui.card2}`}>
+            <X size={20} />
+          </button>
+        </div>
+
+        <div className="mt-6 grid gap-3 sm:grid-cols-2">
+          <Campo ui={ui} label="Nome" value={form.nome} onChange={(v: string) => atualizar("nome", v)} />
+          <Campo ui={ui} label="Responsável" value={form.responsavel} onChange={(v: string) => atualizar("responsavel", v)} />
+          <Campo ui={ui} label="Documento" value={form.documento} onChange={(v: string) => atualizar("documento", v)} />
+          <Campo ui={ui} label="Telefone" value={form.telefone} onChange={(v: string) => atualizar("telefone", v)} />
+          <Campo ui={ui} label="E-mail" value={form.email} onChange={(v: string) => atualizar("email", v)} />
+          <Campo ui={ui} label="Cidade" value={form.cidade} onChange={(v: string) => atualizar("cidade", v)} />
+
+          <label>
+            <span className={`mb-2 block text-xs font-bold sm:text-sm ${ui.textoFraco}`}>Tipo</span>
+            <select
+              value={form.tipo}
+              onChange={(e) => atualizar("tipo", e.target.value as TipoCliente)}
+              className={`h-12 w-full rounded-2xl border px-4 bg-transparent text-sm font-bold outline-none ${ui.card2}`}
+            >
+              <option value="Empresa" className="bg-black text-white">Empresa</option>
+              <option value="Pessoa física" className="bg-black text-white">Pessoa física</option>
+            </select>
+          </label>
+
+          <label>
+            <span className={`mb-2 block text-xs font-bold sm:text-sm ${ui.textoFraco}`}>Status</span>
+            <select
+              value={form.status}
+              onChange={(e) => atualizar("status", e.target.value as StatusCliente)}
+              className={`h-12 w-full rounded-2xl border px-4 bg-transparent text-sm font-bold outline-none ${ui.card2}`}
+            >
+              <option value="Ativo" className="bg-black text-white">Ativo</option>
+              <option value="Inativo" className="bg-black text-white">Inativo</option>
+            </select>
+          </label>
+        </div>
+
+        <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+          <button onClick={fechar} className={`h-12 flex-1 rounded-xl border font-black ${ui.card2}`}>
+            Cancelar
+          </button>
+          <button onClick={() => salvar(form)} className="flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-[#ffc400] font-black text-black">
+            <Save size={18} />
+            Salvar alteração
+          </button>
+        </div>
+      </section>
+    </div>
+  )
+}
+
+function Campo({ ui, label, value, onChange }: any) {
+  return (
+    <label>
+      <span className={`mb-2 block text-xs font-bold sm:text-sm ${ui.textoFraco}`}>{label}</span>
+      <input
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className={`h-12 w-full rounded-2xl border px-4 bg-transparent text-sm font-bold outline-none ${ui.card2}`}
+      />
+    </label>
   )
 }
 
