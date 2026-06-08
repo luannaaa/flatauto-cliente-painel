@@ -111,9 +111,9 @@ export default function PainelClienteMobile({ nomeCompleto }: PainelClienteMobil
 
         <section className="mt-6 grid grid-cols-4 gap-3">
           <Card
-         label={<>Nova<br />entrega</>}
-         icon={<TruckImageIcon tipo="dourado" destaque />}
-          onClick={() => router.push("/cliente/marcar-frete")}
+            label={<>Solicitar<br />entrega</>}
+            icon={<TruckImageIcon tipo="dourado" destaque />}
+            onClick={() => router.push("/cliente/marcar-frete")}
           />
 
           <Card
