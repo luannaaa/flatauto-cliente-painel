@@ -21,6 +21,7 @@ import {
   Wrench,
   XCircle,
 } from "lucide-react"
+import NovoVeiculoModal from "../components/NovoVeiculoModal"
 
 type Tema = "dark" | "light"
 type TipoVeiculo = "moto" | "carro" | "van" | "caminhao"
@@ -118,6 +119,7 @@ export default function VeiculosPage() {
   const [tema, setTema] = useState<Tema>("dark")
   const [veiculosLista, setVeiculosLista] = useState<Veiculo[]>(veiculos)
   const [menuAberto, setMenuAberto] = useState<number | null>(null)
+  const [modalNovoVeiculo, setModalNovoVeiculo] = useState(false)
 
   useEffect(() => {
     function atualizarTema() {
@@ -175,7 +177,10 @@ export default function VeiculosPage() {
             </p>
           </div>
 
-          <button className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#d4af37] px-5 font-black text-white shadow sm:w-auto">
+          <button
+            onClick={() => setModalNovoVeiculo(true)}
+            className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#d4af37] px-5 font-black text-white shadow sm:w-auto"
+          >
             <Plus size={20} />
             Novo Veículo
           </button>
@@ -218,6 +223,10 @@ export default function VeiculosPage() {
           </div>
         </section>
       </div>
+
+      {modalNovoVeiculo && (
+        <NovoVeiculoModal ui={ui} fechar={() => setModalNovoVeiculo(false)} />
+      )}
     </main>
   )
 }

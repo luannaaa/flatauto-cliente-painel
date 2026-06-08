@@ -33,6 +33,8 @@ type Entrega = {
   valor?: string
 }
 
+const CHAVE_TEMA_EMPRESA = "temaEmpresa"
+
 const entregasEmAndamento: Entrega[] = [
   {
     id: 1,
@@ -95,6 +97,12 @@ const historicoEntregas: Entrega[] = [
   },
 ]
 
+function normalizarTema(valor: string | null): Tema {
+  if (valor === "light" || valor === "claro") return "light"
+  if (valor === "dark" || valor === "escuro") return "dark"
+  return "dark"
+}
+
 function IconeVeiculo({ tipo, size = 22 }: { tipo: Veiculo; size?: number }) {
   if (tipo === "moto") return <Bike size={size} />
   if (tipo === "carro") return <Car size={size} />
@@ -113,24 +121,19 @@ export default function MotoristasPage() {
   const [tema, setTema] = useState<Tema>("dark")
 
   useEffect(() => {
-    function carregarTemaEmpresa() {
-      const temaSalvo = localStorage.getItem("temaEmpresa")
-
-      if (temaSalvo === "light" || temaSalvo === "claro") {
-        setTema("light")
-      } else {
-        setTema("dark")
-      }
+    function carregarTema() {
+      const temaSalvo = normalizarTema(localStorage.getItem(CHAVE_TEMA_EMPRESA))
+      setTema(temaSalvo)
     }
 
-    carregarTemaEmpresa()
+    carregarTema()
 
-    window.addEventListener("storage", carregarTemaEmpresa)
-    window.addEventListener("temaEmpresaAtualizado", carregarTemaEmpresa)
+    window.addEventListener("storage", carregarTema)
+    window.addEventListener("temaEmpresaAtualizado", carregarTema)
 
     return () => {
-      window.removeEventListener("storage", carregarTemaEmpresa)
-      window.removeEventListener("temaEmpresaAtualizado", carregarTemaEmpresa)
+      window.removeEventListener("storage", carregarTema)
+      window.removeEventListener("temaEmpresaAtualizado", carregarTema)
     }
   }, [])
 
@@ -146,6 +149,7 @@ export default function MotoristasPage() {
       : "bg-white/[0.045] border-white/10",
     textoFraco: claro ? "text-black/60" : "text-white/60",
     textoMaisFraco: claro ? "text-black/45" : "text-white/45",
+    linha: claro ? "border-[#e8dcc2]" : "border-white/10",
   }
 
   return (
@@ -153,9 +157,11 @@ export default function MotoristasPage() {
       <div className="mx-auto max-w-7xl space-y-8">
         <header>
           <p className="text-sm font-bold text-[#d4af37]">Área da Empresa</p>
+
           <h1 className="mt-1 text-2xl font-black sm:text-4xl">
             Motoristas e entregas
           </h1>
+
           <p className={`mt-2 max-w-2xl text-sm sm:text-base ${ui.textoFraco}`}>
             Acompanhe os motoristas em rota e veja o histórico das entregas já finalizadas.
           </p>
@@ -164,6 +170,7 @@ export default function MotoristasPage() {
         <section>
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-xl font-black">Em andamento</h2>
+
             <span className="rounded-full bg-[#d4af37]/15 px-3 py-1 text-xs font-black text-[#d4af37]">
               {entregasEmAndamento.length} ativas
             </span>
@@ -179,6 +186,7 @@ export default function MotoristasPage() {
         <section>
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-xl font-black">Histórico</h2>
+
             <span className="rounded-full bg-green-500/15 px-3 py-1 text-xs font-black text-green-500">
               Finalizadas
             </span>
@@ -199,12 +207,17 @@ function CardEmAndamento({ entrega, ui }: { entrega: Entrega; ui: any }) {
   return (
     <article className={`rounded-[28px] border p-4 sm:p-5 ${ui.card}`}>
       <div className="flex gap-4">
-        <img src={entrega.foto} alt={entrega.motorista} className="h-16 w-16 rounded-2xl object-cover sm:h-20 sm:w-20" />
+        <img
+          src={entrega.foto}
+          alt={entrega.motorista}
+          className="h-16 w-16 rounded-2xl object-cover sm:h-20 sm:w-20"
+        />
 
         <div className="min-w-0 flex-1">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <h3 className="text-lg font-black leading-tight">{entrega.motorista}</h3>
+
               <div className="mt-2 flex w-fit items-center gap-2 rounded-full bg-[#d4af37]/15 px-3 py-1 text-xs font-black text-[#d4af37]">
                 <IconeVeiculo tipo={entrega.veiculo} size={16} />
                 {nomeVeiculo(entrega.veiculo)}
@@ -232,7 +245,10 @@ function CardEmAndamento({ entrega, ui }: { entrega: Entrega; ui: any }) {
         </div>
 
         <div className="relative h-3 overflow-hidden rounded-full bg-black/10">
-          <div className="h-full rounded-full bg-[#d4af37]" style={{ width: `${entrega.progresso}%` }} />
+          <div
+            className="h-full rounded-full bg-[#d4af37]"
+            style={{ width: `${entrega.progresso}%` }}
+          />
         </div>
 
         <div className={`mt-3 flex flex-col gap-2 text-xs font-bold sm:flex-row sm:items-center sm:justify-between ${ui.textoFraco}`}>
@@ -248,12 +264,17 @@ function CardHistorico({ entrega, ui }: { entrega: Entrega; ui: any }) {
   return (
     <article className={`rounded-[26px] border p-4 sm:p-5 ${ui.card}`}>
       <div className="flex gap-4">
-        <img src={entrega.foto} alt={entrega.motorista} className="h-14 w-14 rounded-2xl object-cover sm:h-16 sm:w-16" />
+        <img
+          src={entrega.foto}
+          alt={entrega.motorista}
+          className="h-14 w-14 rounded-2xl object-cover sm:h-16 sm:w-16"
+        />
 
         <div className="min-w-0 flex-1">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <h3 className="font-black">{entrega.motorista}</h3>
+
               <div className={`mt-2 flex w-fit items-center gap-2 rounded-full border px-3 py-1 text-xs font-black ${ui.card2}`}>
                 <IconeVeiculo tipo={entrega.veiculo} size={15} />
                 {nomeVeiculo(entrega.veiculo)}
@@ -276,17 +297,31 @@ function CardHistorico({ entrega, ui }: { entrega: Entrega; ui: any }) {
       </div>
 
       <div className={`mt-4 flex items-center justify-between rounded-2xl border px-4 py-3 ${ui.card2}`}>
-        <span className={`text-sm font-bold ${ui.textoFraco}`}>Valor da entrega</span>
+        <span className={`text-sm font-bold ${ui.textoFraco}`}>
+          Valor da entrega
+        </span>
+
         <strong className="text-lg font-black">{entrega.valor}</strong>
       </div>
     </article>
   )
 }
 
-function Info({ ui, icon, label, value }: { ui: any; icon: React.ReactNode; label: string; value: string }) {
+function Info({
+  ui,
+  icon,
+  label,
+  value,
+}: {
+  ui: any
+  icon: React.ReactNode
+  label: string
+  value: string
+}) {
   return (
     <div className={`flex gap-3 rounded-2xl border p-3 ${ui.card2}`}>
       <span className="mt-0.5 text-[#d4af37]">{icon}</span>
+
       <div>
         <p className={`text-xs font-black ${ui.textoMaisFraco}`}>{label}</p>
         <p className="mt-1 text-sm font-bold">{value}</p>
