@@ -15,7 +15,10 @@ import {
   CheckCircle2,
   XCircle,
   Users,
-  BriefcaseBusiness,
+  Eye,
+  Pencil,
+  Save,
+  X,
 } from "lucide-react"
 
 type Tema = "dark" | "light"
@@ -100,6 +103,8 @@ export default function ClientesPage() {
   const [tema, setTema] = useState<Tema>("dark")
   const [clientes, setClientes] = useState(clientesIniciais)
   const [menuAberto, setMenuAberto] = useState<number | null>(null)
+  const [clienteDetalhes, setClienteDetalhes] = useState<Cliente | null>(null)
+  const [clienteEditando, setClienteEditando] = useState<Cliente | null>(null)
 
   useEffect(() => {
     function carregarTema() {
@@ -135,6 +140,28 @@ export default function ClientesPage() {
       : "border-white/10 bg-white/[0.045]",
     textoFraco: claro ? "text-black/55" : "text-white/60",
     linha: claro ? "border-[#dfd0a5]" : "border-white/10",
+  }
+
+  function abrirDetalhes(cliente: Cliente) {
+    setClienteDetalhes(cliente)
+    setMenuAberto(null)
+  }
+
+  function abrirEdicao(cliente: Cliente) {
+    setClienteEditando({ ...cliente })
+    setMenuAberto(null)
+  }
+
+  function salvarEdicao() {
+    if (!clienteEditando) return
+
+    setClientes((lista) =>
+      lista.map((cliente) =>
+        cliente.id === clienteEditando.id ? clienteEditando : cliente
+      )
+    )
+
+    setClienteEditando(null)
   }
 
   function excluirCliente(id: number) {
@@ -227,13 +254,23 @@ export default function ClientesPage() {
                         </button>
 
                         {menuAberto === cliente.id && (
-                          <div className={`absolute right-0 top-12 z-40 w-40 rounded-xl border p-2 ${ui.card}`}>
-                            <button className="w-full rounded-lg px-3 py-2 text-left text-sm font-black hover:bg-[#ffc400]/10">
+                          <div className={`absolute right-0 top-12 z-40 w-44 rounded-xl border p-2 ${ui.card}`}>
+                            <button
+                              onClick={() => abrirDetalhes(cliente)}
+                              className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-black hover:bg-[#ffc400]/10"
+                            >
+                              <Eye size={16} />
                               Ver detalhes
                             </button>
-                            <button className="w-full rounded-lg px-3 py-2 text-left text-sm font-black hover:bg-[#ffc400]/10">
+
+                            <button
+                              onClick={() => abrirEdicao(cliente)}
+                              className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-black hover:bg-[#ffc400]/10"
+                            >
+                              <Pencil size={16} />
                               Editar
                             </button>
+
                             <button
                               onClick={() => excluirCliente(cliente.id)}
                               className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-black text-red-500 hover:bg-red-500/10"
@@ -277,7 +314,100 @@ export default function ClientesPage() {
           </div>
         </section>
       </div>
+
+      {clienteDetalhes && (
+        <ModalBase ui={ui} titulo="Detalhes do cliente" fechar={() => setClienteDetalhes(null)}>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Info ui={ui} icon={<Building2 size={17} />} label="Nome" value={clienteDetalhes.nome} />
+            <Info ui={ui} icon={<UserRound size={17} />} label="Responsável" value={clienteDetalhes.responsavel} />
+            <Info ui={ui} icon={<Package size={17} />} label="Tipo" value={clienteDetalhes.tipo} />
+            <Info ui={ui} icon={<Package size={17} />} label="Documento" value={clienteDetalhes.documento} />
+            <Info ui={ui} icon={<Phone size={17} />} label="Telefone" value={clienteDetalhes.telefone} />
+            <Info ui={ui} icon={<Mail size={17} />} label="E-mail" value={clienteDetalhes.email} />
+            <Info ui={ui} icon={<MapPin size={17} />} label="Cidade" value={clienteDetalhes.cidade} />
+            <Info ui={ui} icon={<CalendarDays size={17} />} label="Última entrega" value={clienteDetalhes.ultimaEntrega} />
+          </div>
+        </ModalBase>
+      )}
+
+      {clienteEditando && (
+        <ModalBase ui={ui} titulo="Editar cliente" fechar={() => setClienteEditando(null)}>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <CampoEdit ui={ui} label="Nome" value={clienteEditando.nome} onChange={(valor: string) => setClienteEditando({ ...clienteEditando, nome: valor })} />
+            <CampoEdit ui={ui} label="Responsável" value={clienteEditando.responsavel} onChange={(valor: string) => setClienteEditando({ ...clienteEditando, responsavel: valor })} />
+            <CampoEdit ui={ui} label="Documento" value={clienteEditando.documento} onChange={(valor: string) => setClienteEditando({ ...clienteEditando, documento: valor })} />
+            <CampoEdit ui={ui} label="Telefone" value={clienteEditando.telefone} onChange={(valor: string) => setClienteEditando({ ...clienteEditando, telefone: valor })} />
+            <CampoEdit ui={ui} label="E-mail" value={clienteEditando.email} onChange={(valor: string) => setClienteEditando({ ...clienteEditando, email: valor })} />
+            <CampoEdit ui={ui} label="Cidade" value={clienteEditando.cidade} onChange={(valor: string) => setClienteEditando({ ...clienteEditando, cidade: valor })} />
+            <CampoEdit ui={ui} label="Última entrega" value={clienteEditando.ultimaEntrega} onChange={(valor: string) => setClienteEditando({ ...clienteEditando, ultimaEntrega: valor })} />
+            <CampoEdit ui={ui} label="Valor movimentado" value={clienteEditando.valorMovimentado} onChange={(valor: string) => setClienteEditando({ ...clienteEditando, valorMovimentado: valor })} />
+
+            <label>
+              <span className={`mb-2 block text-xs font-black ${ui.textoFraco}`}>Tipo</span>
+              <select
+                value={clienteEditando.tipo}
+                onChange={(e) => setClienteEditando({ ...clienteEditando, tipo: e.target.value as TipoCliente })}
+                className={`h-12 w-full rounded-xl border px-3 text-sm font-bold outline-none ${ui.card2}`}
+              >
+                <option className="bg-black text-white">Empresa</option>
+                <option className="bg-black text-white">Pessoa física</option>
+              </select>
+            </label>
+
+            <label>
+              <span className={`mb-2 block text-xs font-black ${ui.textoFraco}`}>Status</span>
+              <select
+                value={clienteEditando.status}
+                onChange={(e) => setClienteEditando({ ...clienteEditando, status: e.target.value as StatusCliente })}
+                className={`h-12 w-full rounded-xl border px-3 text-sm font-bold outline-none ${ui.card2}`}
+              >
+                <option className="bg-black text-white">Ativo</option>
+                <option className="bg-black text-white">Inativo</option>
+              </select>
+            </label>
+          </div>
+
+          <button
+            onClick={salvarEdicao}
+            className="mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#ffc400] font-black text-black"
+          >
+            <Save size={18} />
+            Salvar alteração
+          </button>
+        </ModalBase>
+      )}
     </main>
+  )
+}
+
+function ModalBase({ ui, titulo, fechar, children }: any) {
+  return (
+    <div className="fixed inset-0 z-[999] flex items-end justify-center bg-black/70 p-0 backdrop-blur-sm sm:items-center sm:p-4">
+      <section className={`max-h-[92vh] w-full overflow-y-auto rounded-t-[28px] border p-5 sm:max-w-[760px] sm:rounded-[28px] sm:p-6 ${ui.card}`}>
+        <div className={`mb-5 flex items-center justify-between border-b pb-4 ${ui.linha}`}>
+          <h2 className="text-xl font-black">{titulo}</h2>
+
+          <button onClick={fechar} className={`flex h-10 w-10 items-center justify-center rounded-xl border ${ui.card2}`}>
+            <X size={20} />
+          </button>
+        </div>
+
+        {children}
+      </section>
+    </div>
+  )
+}
+
+function CampoEdit({ ui, label, value, onChange }: any) {
+  return (
+    <label>
+      <span className={`mb-2 block text-xs font-black ${ui.textoFraco}`}>{label}</span>
+      <input
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className={`h-12 w-full rounded-xl border px-3 text-sm font-bold outline-none ${ui.card2}`}
+      />
+    </label>
   )
 }
 
