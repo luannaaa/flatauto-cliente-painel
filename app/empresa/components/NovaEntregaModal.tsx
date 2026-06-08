@@ -12,6 +12,9 @@ import {
   Save,
   FileSearch,
   Truck,
+  Bike,
+  Car,
+  Bus,
 } from "lucide-react"
 
 type TipoEndereco = "origem" | "destino"
@@ -59,6 +62,14 @@ function montarEndereco(dados: ViaCepResposta) {
   return [dados.logradouro, dados.bairro, dados.localidade, dados.uf]
     .filter(Boolean)
     .join(", ")
+}
+
+function IconeTransporte({ tipo, size = 18 }: { tipo?: string; size?: number }) {
+  if (tipo === "Motoboy") return <Bike size={size} />
+  if (tipo === "Carro utilitário") return <Car size={size} />
+  if (tipo === "Fiorino / pequeno utilitário") return <Bus size={size} />
+  if (tipo === "Van") return <Bus size={size} />
+  return <Truck size={size} />
 }
 
 export default function NovaEntregaModal({ ui, fechar }: any) {
@@ -321,7 +332,6 @@ export default function NovaEntregaModal({ ui, fechar }: any) {
 
               <SelectCampo
                 ui={ui}
-                icon={<Truck size={18} />}
                 label="Tipo de transporte"
                 value={tipoTransporte}
                 onChange={setTipoTransporte}
@@ -360,7 +370,15 @@ export default function NovaEntregaModal({ ui, fechar }: any) {
                 <ResumoLinha label="Status inicial" valor="Em andamento" />
                 <ResumoLinha label="Origem" valor={origem || "A preencher"} />
                 <ResumoLinha label="Destino" valor={destino || "A preencher"} />
-                <ResumoLinha label="Transporte" valor={tipoTransporte || "A definir"} />
+                <ResumoLinha
+                  label="Transporte"
+                  valor={
+                    <span className="flex items-center justify-end gap-2">
+                      <IconeTransporte tipo={tipoTransporte} size={16} />
+                      {tipoTransporte || "A definir"}
+                    </span>
+                  }
+                />
               </div>
 
               <button className="mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#ffc400] font-black text-black sm:mt-6">
@@ -399,7 +417,7 @@ function Campo({ ui, icon, label, placeholder, value, onChange }: any) {
   )
 }
 
-function SelectCampo({ ui, icon, label, value, onChange, options }: any) {
+function SelectCampo({ ui, label, value, onChange, options }: any) {
   return (
     <label>
       <span className={`mb-2 block text-xs font-bold sm:text-sm ${ui.textoFraco}`}>
@@ -407,7 +425,9 @@ function SelectCampo({ ui, icon, label, value, onChange, options }: any) {
       </span>
 
       <div className={`flex h-11 items-center gap-3 rounded-2xl border px-3 sm:h-12 sm:px-4 ${ui.card2}`}>
-        <span className="text-[#ffc400]">{icon}</span>
+        <span className="text-[#ffc400]">
+          <IconeTransporte tipo={value} size={18} />
+        </span>
 
         <select
           value={value}
@@ -456,7 +476,7 @@ function ResumoLinha({ label, valor }: any) {
   return (
     <div className="flex items-start justify-between gap-3 text-sm">
       <span className="opacity-60">{label}</span>
-      <strong className="max-w-[160px] text-right text-xs sm:text-sm">{valor}</strong>
+      <strong className="max-w-[180px] text-right text-xs sm:text-sm">{valor}</strong>
     </div>
   )
 }
