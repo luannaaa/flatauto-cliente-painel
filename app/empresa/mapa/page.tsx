@@ -97,6 +97,7 @@ export default function MapaPage() {
       ? "border-[#dfd0a5] bg-[#f7f0dc]"
       : "border-white/10 bg-white/[0.045]",
     textoFraco: claro ? "text-black/55" : "text-white/60",
+    linha: claro ? "border-[#dfd0a5]" : "border-white/10",
   }
 
   return (
@@ -112,7 +113,7 @@ export default function MapaPage() {
         </header>
 
         <section className="grid gap-5 lg:grid-cols-[0.9fr_1.5fr]">
-          <aside className={`rounded-[30px] border p-4 sm:p-5 ${ui.card}`}>
+          <aside className={`order-2 rounded-[30px] border p-4 sm:p-5 lg:order-1 ${ui.card}`}>
             <h2 className="text-xl font-black">Entregas em andamento</h2>
             <p className={`mt-1 text-sm ${ui.textoFraco}`}>
               Toque em uma entrega para ver o veículo no mapa.
@@ -163,12 +164,10 @@ export default function MapaPage() {
             </div>
           </aside>
 
-          <section className={`overflow-hidden rounded-[30px] border ${ui.card}`}>
-            <div className={`flex flex-col gap-3 border-b p-4 sm:flex-row sm:items-center sm:justify-between ${claro ? "border-[#dfd0a5]" : "border-white/10"}`}>
+          <section className={`order-1 overflow-hidden rounded-[30px] border lg:order-2 ${ui.card}`}>
+            <div className={`flex flex-col gap-3 border-b p-4 sm:flex-row sm:items-center sm:justify-between ${ui.linha}`}>
               <div>
-                <h2 className="text-xl font-black">
-                  {selecionada.cliente}
-                </h2>
+                <h2 className="text-xl font-black">{selecionada.cliente}</h2>
                 <p className={`mt-1 text-sm ${ui.textoFraco}`}>
                   {selecionada.origem} → {selecionada.destino}
                 </p>
@@ -180,7 +179,7 @@ export default function MapaPage() {
               </span>
             </div>
 
-            <div className="relative h-[520px] overflow-hidden bg-[#d9e4d2] sm:h-[620px]">
+            <div className="relative h-[380px] overflow-hidden bg-[#d9e4d2] sm:h-[620px]">
               <div className="absolute inset-0 opacity-80">
                 <div className="absolute left-[8%] top-[15%] h-[2px] w-[90%] rotate-[18deg] bg-white/80" />
                 <div className="absolute left-[2%] top-[45%] h-[3px] w-[95%] -rotate-[8deg] bg-white/90" />
@@ -212,14 +211,20 @@ export default function MapaPage() {
               >
                 <IconeVeiculo tipo={selecionada.veiculo} size={30} />
               </div>
+            </div>
 
-              <div className={`absolute bottom-4 left-4 right-4 rounded-2xl border p-4 backdrop-blur-md ${claro ? "border-[#dfd0a5] bg-white/85" : "border-white/10 bg-black/70"}`}>
-                <div className="grid gap-3 sm:grid-cols-4">
-                  <Info ui={ui} icon={<Package size={17} />} label="Cliente" value={selecionada.cliente} />
-                  <Info ui={ui} icon={<Truck size={17} />} label="Veículo" value={nomeVeiculo(selecionada.veiculo)} />
-                  <Info ui={ui} icon={<Clock size={17} />} label="Tempo" value={selecionada.tempo} />
-                  <Info ui={ui} icon={<MapPin size={17} />} label="Localização" value="Simulada" />
-                </div>
+            <div
+              className={`border-t p-4 sm:absolute sm:bottom-4 sm:left-4 sm:right-4 sm:rounded-2xl sm:border ${
+                claro
+                  ? "border-[#dfd0a5] bg-white/95 sm:bg-white/85"
+                  : "border-white/10 bg-[#0b1115]/95 sm:bg-black/70"
+              } backdrop-blur-md`}
+            >
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-4">
+                <Info ui={ui} icon={<Package size={17} />} label="Cliente" value={selecionada.cliente} />
+                <Info ui={ui} icon={<Truck size={17} />} label="Veículo" value={nomeVeiculo(selecionada.veiculo)} />
+                <Info ui={ui} icon={<Clock size={17} />} label="Tempo" value={selecionada.tempo} />
+                <Info ui={ui} icon={<MapPin size={17} />} label="Localização" value="Simulada" />
               </div>
             </div>
           </section>
