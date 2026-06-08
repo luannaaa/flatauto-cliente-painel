@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import NovaEntregaModal from "../components/NovaEntregaModal"
 import {
   Truck,
   Search,
@@ -15,9 +16,10 @@ import {
   Filter,
   MoreHorizontal,
 } from "lucide-react"
-import NovaEntregaModal from "../components/NovaEntregaModal"
 
 type Tema = "dark" | "light"
+
+const CHAVE_TEMA_EMPRESA = "temaEmpresa"
 
 const entregas = [
   {
@@ -74,29 +76,30 @@ const entregas = [
   },
 ]
 
+function normalizarTema(valor: string | null): Tema {
+  if (valor === "light" || valor === "claro") return "light"
+  if (valor === "dark" || valor === "escuro") return "dark"
+  return "dark"
+}
+
 export default function EntregasEmpresaPage() {
   const [tema, setTema] = useState<Tema>("dark")
   const [modalNovaEntrega, setModalNovaEntrega] = useState(false)
 
   useEffect(() => {
-    function carregarTemaEmpresa() {
-      const temaSalvo = localStorage.getItem("temaEmpresa")
-
-      if (temaSalvo === "light" || temaSalvo === "claro") {
-        setTema("light")
-      } else {
-        setTema("dark")
-      }
+    function carregarTema() {
+      const temaSalvo = normalizarTema(localStorage.getItem(CHAVE_TEMA_EMPRESA))
+      setTema(temaSalvo)
     }
 
-    carregarTemaEmpresa()
+    carregarTema()
 
-    window.addEventListener("storage", carregarTemaEmpresa)
-    window.addEventListener("temaEmpresaAtualizado", carregarTemaEmpresa)
+    window.addEventListener("storage", carregarTema)
+    window.addEventListener("temaEmpresaAtualizado", carregarTema)
 
     return () => {
-      window.removeEventListener("storage", carregarTemaEmpresa)
-      window.removeEventListener("temaEmpresaAtualizado", carregarTemaEmpresa)
+      window.removeEventListener("storage", carregarTema)
+      window.removeEventListener("temaEmpresaAtualizado", carregarTema)
     }
   }, [])
 
@@ -105,7 +108,7 @@ export default function EntregasEmpresaPage() {
   const ui = {
     pagina: claro ? "bg-[#ffffff] text-[#111111]" : "bg-[#020507] text-white",
     card: claro
-      ? "border-[#e8dcc2] bg-white shadow-[0_18px_45px_rgba(15,23,42,0.08)]"
+      ? "border-[#e8dcc2] bg-white shadow-[0_18px_50px_rgba(15,23,42,0.08)]"
       : "border-white/10 bg-[#10171b]/90 shadow-[0_18px_45px_rgba(0,0,0,0.30)]",
     card2: claro
       ? "border-[#e8dcc2] bg-[#fbfaf7]"
@@ -116,7 +119,7 @@ export default function EntregasEmpresaPage() {
   }
 
   return (
-    <main className={`min-h-screen px-4 py-5 sm:px-6 sm:py-6 ${ui.pagina}`}>
+    <main className={`min-h-screen px-4 py-5 sm:px-6 lg:px-10 ${ui.pagina}`}>
       <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-black sm:text-3xl">Entregas</h1>
@@ -126,6 +129,7 @@ export default function EntregasEmpresaPage() {
         </div>
 
         <button
+          type="button"
           onClick={() => setModalNovaEntrega(true)}
           className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#d4af37] px-5 font-black text-white shadow sm:w-auto"
         >
@@ -134,7 +138,7 @@ export default function EntregasEmpresaPage() {
         </button>
       </header>
 
-      <section className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4">
+      <section className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <CardResumo ui={ui} titulo="Total" valor="128" detalhe="Entregas registradas" icon={<Package />} />
         <CardResumo ui={ui} titulo="Concluídas" valor="96" detalhe="75% do total" icon={<CheckCircle2 />} verde />
         <CardResumo ui={ui} titulo="Em andamento" valor="18" detalhe="Acompanhando rota" icon={<Clock />} azul />
@@ -142,7 +146,7 @@ export default function EntregasEmpresaPage() {
       </section>
 
       <section className={`rounded-[26px] border p-4 sm:p-5 ${ui.card}`}>
-        <div className="mb-5 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+        <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className={`flex h-12 flex-1 items-center gap-3 rounded-xl border px-4 ${ui.card2}`}>
             <Search size={19} />
             <input
@@ -157,7 +161,7 @@ export default function EntregasEmpresaPage() {
           </button>
         </div>
 
-        <div className="hidden overflow-x-auto lg:block">
+        <div className="overflow-x-auto">
           <table className="w-full min-w-[1100px] text-left text-sm">
             <thead>
               <tr className={`border-b ${ui.linha} ${ui.textoFraco}`}>
@@ -179,43 +183,63 @@ export default function EntregasEmpresaPage() {
               {entregas.map((entrega) => (
                 <tr key={entrega.id} className={`border-b ${ui.linha}`}>
                   <td className="py-4 font-bold">{entrega.id}</td>
-                  <td><div className="flex items-center gap-2"><UserRound size={17} className="text-[#d4af37]" />{entrega.cliente}</div></td>
-                  <td><div className="flex items-center gap-2"><MapPin size={17} className="text-green-500" />{entrega.origem}</div></td>
-                  <td><div className="flex items-center gap-2"><MapPin size={17} className="text-red-500" />{entrega.destino}</div></td>
+
+                  <td>
+                    <div className="flex items-center gap-2">
+                      <UserRound size={17} className="text-[#d4af37]" />
+                      {entrega.cliente}
+                    </div>
+                  </td>
+
+                  <td>
+                    <div className="flex items-center gap-2">
+                      <MapPin size={17} className="text-green-500" />
+                      {entrega.origem}
+                    </div>
+                  </td>
+
+                  <td>
+                    <div className="flex items-center gap-2">
+                      <MapPin size={17} className="text-red-500" />
+                      {entrega.destino}
+                    </div>
+                  </td>
+
                   <td>{entrega.motorista}</td>
-                  <td><div className="flex items-center gap-2"><Package size={17} className="text-[#d4af37]" />{entrega.carga}</div></td>
-                  <td><div className="flex items-center gap-2"><Truck size={17} className={ui.iconeEscuro} />{entrega.veiculo}</div></td>
-                  <td><div className="flex items-center gap-2"><CalendarDays size={17} className={ui.iconeEscuro} />{entrega.data} • {entrega.horario}</div></td>
+
+                  <td>
+                    <div className="flex items-center gap-2">
+                      <Package size={17} className="text-[#d4af37]" />
+                      {entrega.carga}
+                    </div>
+                  </td>
+
+                  <td>
+                    <div className="flex items-center gap-2">
+                      <Truck size={17} className={ui.iconeEscuro} />
+                      {entrega.veiculo}
+                    </div>
+                  </td>
+
+                  <td>
+                    <div className="flex items-center gap-2">
+                      <CalendarDays size={17} className={ui.iconeEscuro} />
+                      {entrega.data} • {entrega.horario}
+                    </div>
+                  </td>
+
                   <td className="font-bold">{entrega.valor}</td>
                   <td><Status nome={entrega.status} /></td>
-                  <td><button className="rounded-lg p-2 hover:bg-white/10"><MoreHorizontal size={19} /></button></td>
+
+                  <td>
+                    <button className={`rounded-lg p-2 ${claro ? "hover:bg-black/5" : "hover:bg-white/10"}`}>
+                      <MoreHorizontal size={19} />
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
-        </div>
-
-        <div className="space-y-3 lg:hidden">
-          {entregas.map((entrega) => (
-            <div key={entrega.id} className={`rounded-2xl border p-4 ${ui.card2}`}>
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className={`text-xs font-bold ${ui.textoFraco}`}>{entrega.id} • {entrega.data} às {entrega.horario}</p>
-                  <h3 className="mt-1 font-black">{entrega.cliente}</h3>
-                </div>
-                <Status nome={entrega.status} />
-              </div>
-
-              <div className={`mt-4 space-y-2 text-sm ${ui.textoFraco}`}>
-                <p>📍 {entrega.origem}</p>
-                <p>🏁 {entrega.destino}</p>
-                <p>🚚 {entrega.veiculo} • {entrega.motorista}</p>
-                <p>📦 {entrega.carga}</p>
-              </div>
-
-              <p className="mt-4 text-lg font-black">{entrega.valor}</p>
-            </div>
-          ))}
         </div>
       </section>
 
@@ -236,15 +260,15 @@ function CardResumo({ titulo, valor, detalhe, icon, verde, azul, vermelho, ui }:
     : "text-[#d4af37]"
 
   return (
-    <div className={`rounded-[24px] border p-4 sm:p-5 ${ui.card}`}>
-      <div className="flex items-start justify-between gap-3">
+    <div className={`rounded-[24px] border p-5 ${ui.card}`}>
+      <div className="flex items-start justify-between">
         <div>
           <p className={`text-sm ${ui.textoFraco}`}>{titulo}</p>
           <h2 className="mt-3 text-3xl font-black sm:text-4xl">{valor}</h2>
-          <p className={`mt-3 text-xs sm:text-sm ${cor}`}>{detalhe}</p>
+          <p className={`mt-3 text-sm ${cor}`}>{detalhe}</p>
         </div>
 
-        <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border sm:h-14 sm:w-14 ${ui.card2} ${cor}`}>
+        <div className={`flex h-14 w-14 items-center justify-center rounded-2xl border ${ui.card2} ${cor}`}>
           {icon}
         </div>
       </div>
@@ -261,7 +285,7 @@ function Status({ nome }: { nome: string }) {
       : "bg-red-600"
 
   return (
-    <span className={`whitespace-nowrap rounded-md px-3 py-1 text-xs font-bold text-white ${classe}`}>
+    <span className={`rounded-md px-3 py-1 text-xs font-bold text-white ${classe}`}>
       {nome}
     </span>
   )

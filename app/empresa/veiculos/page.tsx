@@ -12,6 +12,7 @@ import {
   MapPin,
   MoreHorizontal,
   Plus,
+  Trash2,
   Search,
   Settings,
   ShieldCheck,
@@ -115,6 +116,8 @@ function nomeTipo(tipo: TipoVeiculo) {
 
 export default function VeiculosPage() {
   const [tema, setTema] = useState<Tema>("dark")
+  const [veiculosLista, setVeiculosLista] = useState<Veiculo[]>(veiculos)
+  const [menuAberto, setMenuAberto] = useState<number | null>(null)
 
   useEffect(() => {
     function atualizarTema() {
@@ -132,6 +135,14 @@ export default function VeiculosPage() {
     }
   }, [])
 
+  function excluirVeiculo(id: number) {
+    const confirmar = confirm("Deseja excluir este veículo?")
+    if (!confirmar) return
+
+    setVeiculosLista((lista) => lista.filter((item) => item.id !== id))
+    setMenuAberto(null)
+  }
+
   const claro = tema === "light"
 
   const ui = {
@@ -148,9 +159,9 @@ export default function VeiculosPage() {
     input: claro ? "placeholder:text-black/35" : "placeholder:text-white/35",
   }
 
-  const disponiveis = veiculos.filter((item) => item.status === "Disponível").length
-  const emRota = veiculos.filter((item) => item.status === "Em rota").length
-  const manutencao = veiculos.filter((item) => item.status === "Manutenção").length
+  const disponiveis = veiculosLista.filter((item) => item.status === "Disponível").length
+  const emRota = veiculosLista.filter((item) => item.status === "Em rota").length
+  const manutencao = veiculosLista.filter((item) => item.status === "Manutenção").length
 
   return (
     <main className={`min-h-screen px-4 py-5 sm:px-6 lg:px-10 ${ui.pagina}`}>
@@ -171,7 +182,7 @@ export default function VeiculosPage() {
         </header>
 
         <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <CardResumo ui={ui} titulo="Total" valor={String(veiculos.length)} detalhe="Veículos cadastrados" icon={<Truck />} />
+          <CardResumo ui={ui} titulo="Total" valor={String(veiculosLista.length)} detalhe="Veículos cadastrados" icon={<Truck />} />
           <CardResumo ui={ui} titulo="Disponíveis" valor={String(disponiveis)} detalhe="Prontos para entrega" icon={<CheckCircle2 />} verde />
           <CardResumo ui={ui} titulo="Em rota" valor={String(emRota)} detalhe="Operação em andamento" icon={<Clock />} azul />
           <CardResumo ui={ui} titulo="Manutenção" valor={String(manutencao)} detalhe="Aguardando ajuste" icon={<Wrench />} vermelho />
@@ -194,8 +205,15 @@ export default function VeiculosPage() {
           </div>
 
           <div className="grid gap-4 lg:grid-cols-2">
-            {veiculos.map((veiculo) => (
-              <CardVeiculo key={veiculo.id} veiculo={veiculo} ui={ui} />
+            {veiculosLista.map((veiculo) => (
+              <CardVeiculo
+                key={veiculo.id}
+                veiculo={veiculo}
+                ui={ui}
+                menuAberto={menuAberto}
+                setMenuAberto={setMenuAberto}
+                excluirVeiculo={excluirVeiculo}
+              />
             ))}
           </div>
         </section>
@@ -204,7 +222,7 @@ export default function VeiculosPage() {
   )
 }
 
-function CardVeiculo({ veiculo, ui }: { veiculo: Veiculo; ui: any }) {
+function CardVeiculo({ veiculo, ui, menuAberto, setMenuAberto, excluirVeiculo }: { veiculo: Veiculo; ui: any; menuAberto: number | null; setMenuAberto: (id: number | null) => void; excluirVeiculo: (id: number) => void }) {
   return (
     <article className={`rounded-[26px] border p-4 sm:p-5 ${ui.card2}`}>
       <div className="flex items-start gap-4">
@@ -255,9 +273,28 @@ function CardVeiculo({ veiculo, ui }: { veiculo: Veiculo; ui: any }) {
               Pronto para backend/API
             </div>
 
-            <button className={`rounded-xl border p-2 ${ui.card2}`}>
-              <MoreHorizontal size={18} />
-            </button>
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setMenuAberto(menuAberto === veiculo.id ? null : veiculo.id)}
+                className={`rounded-xl border p-2 ${ui.card2}`}
+              >
+                <MoreHorizontal size={18} />
+              </button>
+
+              {menuAberto === veiculo.id && (
+                <div className={`absolute bottom-11 right-0 z-50 w-36 rounded-xl border p-2 ${ui.card}`}>
+                  <button
+                    type="button"
+                    onClick={() => excluirVeiculo(veiculo.id)}
+                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-black text-red-500 hover:bg-red-500/10"
+                  >
+                    <Trash2 size={16} />
+                    Excluir
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
