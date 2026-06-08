@@ -179,7 +179,7 @@ export default function MapaPage() {
               </span>
             </div>
 
-            <div className="relative h-[380px] overflow-hidden bg-[#d9e4d2] sm:h-[620px]">
+            <div className="relative h-[380px] overflow-hidden bg-[#d9e4d2] md:h-[620px]">
               <div className="absolute inset-0 opacity-80">
                 <div className="absolute left-[8%] top-[15%] h-[2px] w-[90%] rotate-[18deg] bg-white/80" />
                 <div className="absolute left-[2%] top-[45%] h-[3px] w-[95%] -rotate-[8deg] bg-white/90" />
@@ -211,16 +211,49 @@ export default function MapaPage() {
               >
                 <IconeVeiculo tipo={selecionada.veiculo} size={30} />
               </div>
+
+              <div
+                className={`
+                  absolute
+                  hidden
+                  md:block
+                  md:bottom-4
+                  md:left-4
+                  md:right-4
+                  rounded-2xl
+                  border
+                  p-4
+                  backdrop-blur-md
+                  ${
+                    claro
+                      ? "border-[#dfd0a5] bg-white/85"
+                      : "border-white/10 bg-black/70"
+                  }
+                `}
+              >
+                <div className="grid gap-3 md:grid-cols-4">
+                  <Info ui={ui} icon={<Package size={17} />} label="Cliente" value={selecionada.cliente} />
+                  <Info ui={ui} icon={<Truck size={17} />} label="Veículo" value={nomeVeiculo(selecionada.veiculo)} />
+                  <Info ui={ui} icon={<Clock size={17} />} label="Tempo" value={selecionada.tempo} />
+                  <Info ui={ui} icon={<MapPin size={17} />} label="Localização" value="Simulada" />
+                </div>
+              </div>
             </div>
 
             <div
-              className={`border-t p-4 sm:absolute sm:bottom-4 sm:left-4 sm:right-4 sm:rounded-2xl sm:border ${
-                claro
-                  ? "border-[#dfd0a5] bg-white/95 sm:bg-white/85"
-                  : "border-white/10 bg-[#0b1115]/95 sm:bg-black/70"
-              } backdrop-blur-md`}
+              className={`
+                block
+                border-t
+                p-4
+                md:hidden
+                ${
+                  claro
+                    ? "border-[#dfd0a5] bg-white/95"
+                    : "border-white/10 bg-[#0b1115]/95"
+                }
+              `}
             >
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-4">
+              <div className="grid grid-cols-1 gap-3">
                 <Info ui={ui} icon={<Package size={17} />} label="Cliente" value={selecionada.cliente} />
                 <Info ui={ui} icon={<Truck size={17} />} label="Veículo" value={nomeVeiculo(selecionada.veiculo)} />
                 <Info ui={ui} icon={<Clock size={17} />} label="Tempo" value={selecionada.tempo} />
