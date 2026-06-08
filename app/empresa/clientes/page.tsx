@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import NovoClienteModal from "../components/NovoClienteModal"
 import {
   Building2,
   UserRound,
@@ -105,6 +106,7 @@ export default function ClientesPage() {
   const [menuAberto, setMenuAberto] = useState<number | null>(null)
   const [clienteDetalhes, setClienteDetalhes] = useState<Cliente | null>(null)
   const [clienteEditando, setClienteEditando] = useState<Cliente | null>(null)
+  const [modalNovoCliente, setModalNovoCliente] = useState(false)
 
   useEffect(() => {
     function carregarTema() {
@@ -172,6 +174,36 @@ export default function ClientesPage() {
     setMenuAberto(null)
   }
 
+
+  function salvarNovoCliente(novoCliente: {
+    nome: string
+    responsavel: string
+    tipo: TipoCliente
+    documento: string
+    telefone: string
+    email: string
+    cidade: string
+    status: StatusCliente
+  }) {
+    const novo: Cliente = {
+      id: Date.now(),
+      nome: novoCliente.nome,
+      responsavel: novoCliente.responsavel,
+      tipo: novoCliente.tipo,
+      documento: novoCliente.documento,
+      telefone: novoCliente.telefone,
+      email: novoCliente.email,
+      cidade: novoCliente.cidade,
+      entregas: 0,
+      ultimaEntrega: "Ainda não realizou",
+      valorMovimentado: "R$ 0,00",
+      status: novoCliente.status,
+    }
+
+    setClientes((lista) => [novo, ...lista])
+    setModalNovoCliente(false)
+  }
+
   const totalClientes = clientes.length
   const ativos = clientes.filter((cliente) => cliente.status === "Ativo").length
   const empresas = clientes.filter((cliente) => cliente.tipo === "Empresa").length
@@ -189,7 +221,10 @@ export default function ClientesPage() {
             </p>
           </div>
 
-          <button className="flex h-12 items-center justify-center gap-2 rounded-xl bg-[#ffc400] px-5 font-black text-black shadow">
+          <button
+            onClick={() => setModalNovoCliente(true)}
+            className="flex h-12 items-center justify-center gap-2 rounded-xl bg-[#ffc400] px-5 font-black text-black shadow"
+          >
             + Novo Cliente
           </button>
         </header>
@@ -314,6 +349,14 @@ export default function ClientesPage() {
           </div>
         </section>
       </div>
+
+      {modalNovoCliente && (
+        <NovoClienteModal
+          ui={ui}
+          fechar={() => setModalNovoCliente(false)}
+          salvar={salvarNovoCliente}
+        />
+      )}
 
       {clienteDetalhes && (
         <ModalBase ui={ui} titulo="Detalhes do cliente" fechar={() => setClienteDetalhes(null)}>
