@@ -109,7 +109,7 @@ export default function PainelClienteMobile({ nomeCompleto }: PainelClienteMobil
           </div>
         </button>
 
-        <section className="mt-6 grid grid-cols-4 gap-3">
+        <section className="mt-5 grid grid-cols-4 gap-2.5">
           <Card
             label={<>Solicitar<br />entrega</>}
             icon={<TruckImageIcon tipo="dourado" destaque />}
@@ -135,12 +135,14 @@ export default function PainelClienteMobile({ nomeCompleto }: PainelClienteMobil
           />
         </section>
 
-        <section className="mt-8">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-[26px] font-black">Fretes recentes</h2>
+        <MiniDashboard />
+
+        <section className="mt-7">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-[22px] font-black">Fretes recentes</h2>
             <button
               onClick={() => router.push("/cliente/meus-fretes")}
-              className="text-[18px] font-bold text-[#ffc400]"
+              className="text-[14px] font-bold text-[#ffc400]"
             >
               Ver todos ›
             </button>
@@ -148,46 +150,55 @@ export default function PainelClienteMobile({ nomeCompleto }: PainelClienteMobil
 
           <div className="overflow-hidden rounded-[24px] border border-white/10 bg-[#080808]">
             <Frete
+              id="#1287"
               type="yellow"
               icon={<PinIcon />}
               origem="São Paulo - SP"
               destino="Campinas - SP"
-              data="12/05/2024"
               valor="R$ 1.250,00"
               status="Em andamento"
+              solicitado="10:20"
+              retirado="11:00"
+              entregue="Pendente"
             />
 
             <Frete
+              id="#1286"
               type="green"
               icon={<CheckIcon />}
               origem="Rio de Janeiro - RJ"
               destino="Belo Horizonte - MG"
-              data="08/05/2024"
               valor="R$ 980,00"
               status="Concluído"
+              solicitado="08:40"
+              retirado="09:15"
+              entregue="13:30"
             />
 
             <Frete
+              id="#1285"
               type="blue"
               icon={<TruckImageIcon tipo="azul" />}
               origem="Curitiba - PR"
               destino="São Paulo - SP"
-              data="05/05/2024"
               valor="R$ 1.430,00"
               status="A caminho"
+              solicitado="07:55"
+              retirado="08:35"
+              entregue="Pendente"
             />
           </div>
         </section>
 
-        <section className="mt-6 flex items-center justify-between rounded-[24px] border border-white/10 bg-[#080808] p-5 shadow-[0_0_25px_rgba(0,0,0,0.65)]">
+        <section className="mt-5 flex items-center justify-between rounded-[24px] border border-white/10 bg-[#080808] p-5 shadow-[0_0_25px_rgba(0,0,0,0.65)]">
           <div className="flex items-center gap-4">
-            <div className="flex h-[58px] w-[58px] shrink-0 items-center justify-center rounded-full border border-[#ffc400]/40 bg-[#ffc400]/15 text-[#ffc400]">
+            <div className="flex h-[50px] w-[50px] shrink-0 items-center justify-center rounded-full border border-[#ffc400]/40 bg-[#ffc400]/15 text-[#ffc400]">
               <HeadsetIcon />
             </div>
 
             <div>
-              <h3 className="text-[18px] font-bold">Precisa de ajuda?</h3>
-              <p className="mt-1 text-sm text-white/55">
+              <h3 className="text-[16px] font-bold">Precisa de ajuda?</h3>
+              <p className="mt-1 text-xs text-white/55">
                 Fale com nossa equipe de suporte.
               </p>
             </div>
@@ -195,7 +206,7 @@ export default function PainelClienteMobile({ nomeCompleto }: PainelClienteMobil
 
           <button
             onClick={() => router.push("/cliente/suporte")}
-            className="rounded-2xl border border-[#ffc400] px-4 py-3 font-bold text-[#ffc400]"
+            className="rounded-2xl border border-[#ffc400] px-3 py-2 text-sm font-bold text-[#ffc400]"
           >
             Falar ›
           </button>
@@ -211,6 +222,53 @@ export default function PainelClienteMobile({ nomeCompleto }: PainelClienteMobil
   )
 }
 
+function MiniDashboard() {
+  return (
+    <section className="mt-6 rounded-[24px] border border-white/10 bg-[#080808] p-4 shadow-[0_0_25px_rgba(0,0,0,0.65)]">
+      <div className="mb-3 flex items-center justify-between">
+        <h2 className="text-[20px] font-black">Resumo da conta</h2>
+        <span className="rounded-full border border-[#ffc400]/35 bg-[#ffc400]/10 px-3 py-1 text-[11px] font-bold text-[#ffc400]">
+          Este mês
+        </span>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <ResumoCard titulo="Total gasto" valor="R$ 3.660" detalhe="em fretes" cor="yellow" />
+        <ResumoCard titulo="Fretes" valor="3" detalhe="solicitados" cor="blue" />
+        <ResumoCard titulo="Andamento" valor="2" detalhe="em rota" cor="orange" />
+        <ResumoCard titulo="Concluídos" valor="1" detalhe="finalizado" cor="green" />
+      </div>
+    </section>
+  )
+}
+
+function ResumoCard({
+  titulo,
+  valor,
+  detalhe,
+  cor,
+}: {
+  titulo: string
+  valor: string
+  detalhe: string
+  cor: "yellow" | "blue" | "orange" | "green"
+}) {
+  const cores = {
+    yellow: "text-[#ffc400]",
+    blue: "text-[#1687ff]",
+    orange: "text-orange-400",
+    green: "text-[#22c55e]",
+  }
+
+  return (
+    <div className="rounded-[18px] border border-white/10 bg-white/[0.035] p-3">
+      <p className="text-[11px] font-bold text-white/50">{titulo}</p>
+      <p className={`mt-1 text-[22px] font-black leading-none ${cores[cor]}`}>{valor}</p>
+      <p className="mt-1 text-[11px] text-white/45">{detalhe}</p>
+    </div>
+  )
+}
+
 function Card({
   icon,
   label,
@@ -223,13 +281,13 @@ function Card({
   return (
     <button
       onClick={onClick}
-      className="flex min-h-[118px] flex-col items-center justify-center rounded-[24px] border border-white/10 bg-[#070707] p-3 text-center shadow-[0_0_25px_rgba(0,0,0,0.65)] transition active:scale-95"
+      className="flex min-h-[104px] flex-col items-center justify-center rounded-[22px] border border-white/10 bg-[#070707] p-2.5 text-center shadow-[0_0_25px_rgba(0,0,0,0.65)] transition active:scale-95"
     >
-      <div className="flex h-[58px] w-[58px] items-center justify-center rounded-full border border-[#ffc400]/35 bg-[#ffc400]/15 text-[#ffc400]">
+      <div className="flex h-[50px] w-[50px] items-center justify-center rounded-full border border-[#ffc400]/35 bg-[#ffc400]/15 text-[#ffc400]">
         {icon}
       </div>
 
-      <span className="mt-3 text-[15px] font-bold leading-tight">
+      <span className="mt-2 text-[13px] font-bold leading-tight">
         {label}
       </span>
     </button>
@@ -237,39 +295,45 @@ function Card({
 }
 
 function Frete({
+  id,
   icon,
   origem,
   destino,
-  data,
   valor,
   status,
   type,
+  solicitado,
+  retirado,
+  entregue,
 }: {
+  id: string
   icon: ReactNode
   origem: string
   destino: string
-  data: string
   valor: string
   status: string
+  solicitado: string
+  retirado: string
+  entregue: string
   type: "yellow" | "green" | "blue"
 }) {
   const cores = {
     yellow: {
       cor: "#ffc400",
-      fundo: "rgba(255,196,0,0.20)",
-      borda: "rgba(255,196,0,0.45)",
+      fundo: "rgba(255,196,0,0.16)",
+      borda: "rgba(255,196,0,0.42)",
       barra: "#ffc400",
     },
     green: {
       cor: "#22c55e",
-      fundo: "rgba(34,197,94,0.20)",
-      borda: "rgba(34,197,94,0.50)",
+      fundo: "rgba(34,197,94,0.16)",
+      borda: "rgba(34,197,94,0.46)",
       barra: "#22c55e",
     },
     blue: {
       cor: "#1687ff",
-      fundo: "rgba(22,135,255,0.20)",
-      borda: "rgba(22,135,255,0.50)",
+      fundo: "rgba(22,135,255,0.16)",
+      borda: "rgba(22,135,255,0.46)",
       barra: "#1687ff",
     },
   }
@@ -277,58 +341,64 @@ function Frete({
   const c = cores[type]
 
   return (
-    <div className="relative flex min-h-[112px] items-center justify-between border-b border-white/10 px-4 py-4 last:border-b-0">
+    <div className="relative border-b border-white/10 px-4 py-4 last:border-b-0">
       <span
-        className="absolute left-0 top-5 h-[58px] w-1.5 rounded-full"
+        className="absolute left-0 top-5 h-[76px] w-1.5 rounded-full"
         style={{ backgroundColor: c.barra }}
       />
 
-      <div className="flex min-w-0 items-center gap-3 pl-3">
-        <div
-          className="flex h-[58px] w-[58px] shrink-0 items-center justify-center rounded-full border"
-          style={{
-            color: c.cor,
-            backgroundColor: c.fundo,
-            borderColor: c.borda,
-          }}
-        >
-          {icon}
-        </div>
-
-        <div className="min-w-0">
-          <h3 className="truncate text-[16px] font-bold leading-tight">{origem}</h3>
-          <p className="mt-1 truncate text-sm text-white/55">{destino}</p>
-
-          <div className="mt-1 flex items-center gap-1 text-xs text-white/45">
-            <CalendarIcon />
-            <span>{data}</span>
-          </div>
-        </div>
-      </div>
-
-      <div className="ml-2 flex shrink-0 items-center gap-1">
-        <div className="w-[108px] text-right">
-          <span
-            className="inline-block rounded-full border px-2.5 py-1 text-[11px] font-bold"
+      <div className="flex items-start justify-between gap-3 pl-3">
+        <div className="flex min-w-0 gap-3">
+          <div
+            className="flex h-[48px] w-[48px] shrink-0 items-center justify-center rounded-full border"
             style={{
               color: c.cor,
               backgroundColor: c.fundo,
               borderColor: c.borda,
             }}
           >
-            {status}
-          </span>
+            {icon}
+          </div>
 
-          <p
-            className="mt-2 text-[17px] font-black"
-            style={{ color: c.cor }}
-          >
-            {valor}
-          </p>
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <p className="text-[11px] font-bold text-white/35">{id}</p>
+              <span
+                className="rounded-full border px-2 py-0.5 text-[10px] font-bold"
+                style={{
+                  color: c.cor,
+                  backgroundColor: c.fundo,
+                  borderColor: c.borda,
+                }}
+              >
+                {status}
+              </span>
+            </div>
+
+            <h3 className="mt-1 truncate text-[14px] font-black leading-tight">{origem}</h3>
+            <p className="mt-0.5 truncate text-[12px] text-white/55">{destino}</p>
+          </div>
         </div>
 
-        <span className="text-2xl text-white/35">›</span>
+        <p className="shrink-0 text-[15px] font-black" style={{ color: c.cor }}>
+          {valor}
+        </p>
       </div>
+
+      <div className="mt-3 grid grid-cols-3 gap-2 pl-3">
+        <HoraCard titulo="Solicitado" valor={solicitado} />
+        <HoraCard titulo="Retirado" valor={retirado} />
+        <HoraCard titulo="Entregue" valor={entregue} />
+      </div>
+    </div>
+  )
+}
+
+function HoraCard({ titulo, valor }: { titulo: string; valor: string }) {
+  return (
+    <div className="rounded-[12px] border border-white/10 bg-white/[0.035] px-2 py-2">
+      <p className="text-[9px] font-bold uppercase tracking-wide text-white/35">{titulo}</p>
+      <p className="mt-1 text-[11px] font-black text-white/80">{valor}</p>
     </div>
   )
 }
@@ -343,7 +413,7 @@ function BottomMenu({
   irPara: (rota: string) => void
 }) {
   return (
-    <nav className="mt-6 flex h-[86px] w-full items-center justify-between rounded-[28px] border border-white/10 bg-[#07090d] px-5 shadow-[0_0_35px_rgba(0,0,0,0.9)]">
+    <nav className="mt-6 flex h-[82px] w-full items-center justify-between rounded-[28px] border border-white/10 bg-[#07090d] px-5 shadow-[0_0_35px_rgba(0,0,0,0.9)]">
       <Menu
         icon={<HomeIcon />}
         label="Início"
@@ -363,7 +433,7 @@ function BottomMenu({
 
       <button
         onClick={() => irPara("/cliente/marcar-frete")}
-        className="flex h-[68px] w-[68px] items-center justify-center rounded-full bg-[#ffc400] text-[40px] font-black leading-none text-black shadow-[0_0_30px_rgba(255,196,0,0.55)] transition active:scale-95"
+        className="flex h-[64px] w-[64px] items-center justify-center rounded-full bg-[#ffc400] text-[38px] font-black leading-none text-black shadow-[0_0_30px_rgba(255,196,0,0.55)] transition active:scale-95"
       >
         +
       </button>
@@ -416,7 +486,7 @@ function Menu({
       >
         {icon}
       </div>
-      <span className={`text-[12px] leading-tight transition-all duration-200 ${active ? "font-bold text-[#ffc400]" : "text-white/50"}`}>
+      <span className={`text-[11px] leading-tight transition-all duration-200 ${active ? "font-bold text-[#ffc400]" : "text-white/50"}`}>
         {label}
       </span>
     </button>
