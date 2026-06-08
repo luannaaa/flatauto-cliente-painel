@@ -11,7 +11,7 @@ import {
   Navigation,
   Save,
   FileSearch,
-  UserRound,
+  Truck,
 } from "lucide-react"
 
 type TipoEndereco = "origem" | "destino"
@@ -30,6 +30,16 @@ type SugestaoLocalizacao = {
   lat?: string
   lon?: string
 }
+
+const tiposTransporte = [
+  "Motoboy",
+  "Carro utilitário",
+  "Fiorino / pequeno utilitário",
+  "Van",
+  "VUC",
+  "Caminhão pequeno",
+  "Caminhão médio",
+]
 
 function somenteNumeros(valor: string) {
   return valor.replace(/\D/g, "")
@@ -61,7 +71,7 @@ export default function NovaEntregaModal({ ui, fechar }: any) {
   const [data, setData] = useState("18/05/2026")
   const [horario, setHorario] = useState("14:30")
   const [valor, setValor] = useState("R$ 0,00")
-  const [transportador, setTransportador] = useState("A definir")
+  const [tipoTransporte, setTipoTransporte] = useState("")
   const [observacoes, setObservacoes] = useState("")
 
   const [sugestoesOrigem, setSugestoesOrigem] = useState<SugestaoLocalizacao[]>([])
@@ -309,13 +319,13 @@ export default function NovaEntregaModal({ ui, fechar }: any) {
                 />
               </div>
 
-              <Campo
+              <SelectCampo
                 ui={ui}
-                icon={<UserRound size={18} />}
-                label="Transportador"
-                placeholder="A definir ou selecionar depois"
-                value={transportador}
-                onChange={setTransportador}
+                icon={<Truck size={18} />}
+                label="Tipo de transporte"
+                value={tipoTransporte}
+                onChange={setTipoTransporte}
+                options={tiposTransporte}
               />
 
               <div>
@@ -350,7 +360,7 @@ export default function NovaEntregaModal({ ui, fechar }: any) {
                 <ResumoLinha label="Status inicial" valor="Em andamento" />
                 <ResumoLinha label="Origem" valor={origem || "A preencher"} />
                 <ResumoLinha label="Destino" valor={destino || "A preencher"} />
-                <ResumoLinha label="Transportador" valor={transportador || "A definir"} />
+                <ResumoLinha label="Transporte" valor={tipoTransporte || "A definir"} />
               </div>
 
               <button className="mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#ffc400] font-black text-black sm:mt-6">
@@ -384,6 +394,36 @@ function Campo({ ui, icon, label, placeholder, value, onChange }: any) {
           placeholder={placeholder}
           className="w-full bg-transparent text-sm outline-none"
         />
+      </div>
+    </label>
+  )
+}
+
+function SelectCampo({ ui, icon, label, value, onChange, options }: any) {
+  return (
+    <label>
+      <span className={`mb-2 block text-xs font-bold sm:text-sm ${ui.textoFraco}`}>
+        {label}
+      </span>
+
+      <div className={`flex h-11 items-center gap-3 rounded-2xl border px-3 sm:h-12 sm:px-4 ${ui.card2}`}>
+        <span className="text-[#ffc400]">{icon}</span>
+
+        <select
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="w-full bg-transparent text-sm outline-none"
+        >
+          <option value="" className="bg-black text-white">
+            Selecione o tipo de transporte
+          </option>
+
+          {options.map((option: string) => (
+            <option key={option} value={option} className="bg-black text-white">
+              {option}
+            </option>
+          ))}
+        </select>
       </div>
     </label>
   )
