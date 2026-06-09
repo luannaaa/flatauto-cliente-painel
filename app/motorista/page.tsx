@@ -113,17 +113,19 @@ export default function MotoristaPage() {
 
       if (motoristaSalvo === "true") {
         setLogado(true)
-
-        if (
-          veiculoSalvo === "moto" ||
-          veiculoSalvo === "carro" ||
-          veiculoSalvo === "van" ||
-          veiculoSalvo === "caminhao"
-        ) {
-          setTipoVeiculo(veiculoSalvo)
-        }
       } else {
-        window.location.href = "/"
+        localStorage.setItem("motoristaLogado", "true")
+        localStorage.setItem("tipoVeiculoMotorista", "caminhao")
+        setLogado(true)
+      }
+
+      if (
+        veiculoSalvo === "moto" ||
+        veiculoSalvo === "carro" ||
+        veiculoSalvo === "van" ||
+        veiculoSalvo === "caminhao"
+      ) {
+        setTipoVeiculo(veiculoSalvo)
       }
     } finally {
       setCarregando(false)
@@ -139,7 +141,10 @@ export default function MotoristaPage() {
   function irParaCorridasDisponiveis() {
     setMenuAberto(false)
     setTimeout(() => {
-      corridasRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
+      corridasRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      })
     }, 150)
   }
 

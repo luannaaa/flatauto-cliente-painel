@@ -6,7 +6,15 @@ export default function ConfiguracoesPage() {
   return (
     <main className="min-h-screen bg-[#020507] px-4 py-5 text-white">
       <div className="mx-auto max-w-[480px] space-y-5">
-        <Header titulo="Configurações" />
+        <header className="flex items-center gap-3">
+          <a href="/motorista" className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04]">
+            <ArrowLeft size={22} />
+          </a>
+          <div>
+            <p className="text-xs font-black text-[#ffc400]">FLATAUTO MOTORISTA</p>
+            <h1 className="text-2xl font-black">Configurações</h1>
+          </div>
+        </header>
 
         <section className="rounded-[28px] border border-white/10 bg-[#10171b] p-5">
           <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[#ffc400] text-black">
@@ -21,20 +29,6 @@ export default function ConfiguracoesPage() {
         <Opcao titulo="Conta" texto="Dados e segurança" />
       </div>
     </main>
-  )
-}
-
-function Header({ titulo }: any) {
-  return (
-    <header className="flex items-center gap-3">
-      <a href="/motorista" className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04]">
-        <ArrowLeft size={22} />
-      </a>
-      <div>
-        <p className="text-xs font-black text-[#ffc400]">FLATAUTO MOTORISTA</p>
-        <h1 className="text-2xl font-black">{titulo}</h1>
-      </div>
-    </header>
   )
 }
 
