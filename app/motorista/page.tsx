@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import {
   Menu,
   X,
@@ -21,6 +21,37 @@ import {
 
 type Veiculo = "moto" | "carro" | "van" | "caminhao"
 
+type Corrida = {
+  id: string
+  origem: string
+  destino: string
+  tipoCarga: string
+  tempoEstimado: string
+  valorEstimado: string
+  observacaoCliente: string
+}
+
+const corridasDisponiveis: Corrida[] = [
+  {
+    id: "corrida-001",
+    origem: "Recife Antigo",
+    destino: "Boa Viagem",
+    tipoCarga: "Documentos",
+    tempoEstimado: "22 min",
+    valorEstimado: "R$ 38,00",
+    observacaoCliente: "Tomar cuidado na entrega. Entregar apenas ao responsável.",
+  },
+  {
+    id: "corrida-002",
+    origem: "Mercado Central",
+    destino: "Olinda",
+    tipoCarga: "Mercadorias pequenas",
+    tempoEstimado: "34 min",
+    valorEstimado: "R$ 52,00",
+    observacaoCliente: "Produto embalado. Cliente pediu retirada na portaria.",
+  },
+]
+
 function IconeVeiculo({ tipo, size = 28 }: { tipo: Veiculo; size?: number }) {
   if (tipo === "moto") return <Bike size={size} />
   if (tipo === "carro") return <Car size={size} />
@@ -33,6 +64,9 @@ export default function MotoristaPage() {
   const [carregando, setCarregando] = useState(true)
   const [menuAberto, setMenuAberto] = useState(false)
   const [tipoVeiculo, setTipoVeiculo] = useState<Veiculo>("caminhao")
+  const [corridaSelecionada, setCorridaSelecionada] = useState<Corrida | null>(null)
+
+  const corridasRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
     const motoristaSalvo = localStorage.getItem("motoristaLogado")
@@ -60,6 +94,26 @@ export default function MotoristaPage() {
     localStorage.removeItem("motoristaLogado")
     localStorage.removeItem("tipoVeiculoMotorista")
     window.location.href = "/"
+  }
+
+  function irParaCorridasDisponiveis() {
+    setMenuAberto(false)
+
+    setTimeout(() => {
+      corridasRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      })
+    }, 150)
+  }
+
+  function abrirDetalhes(corrida: Corrida) {
+    setCorridaSelecionada(corrida)
+  }
+
+  function aceitarCorrida() {
+    alert("Corrida aceita visualmente. Depois conectamos com o backend.")
+    setCorridaSelecionada(null)
   }
 
   if (carregando || !logado) {
@@ -110,7 +164,11 @@ export default function MotoristaPage() {
             </div>
 
             <nav className="space-y-2">
-              <MenuItem icon={<Navigation size={18} />} label="Corridas disponíveis" />
+              <MenuItem
+                icon={<Navigation size={18} />}
+                label="Corridas disponíveis"
+                onClick={irParaCorridasDisponiveis}
+              />
               <MenuItem icon={<CalendarDays size={18} />} label="Agendamentos" />
               <MenuItem icon={<Clock size={18} />} label="Em andamento" />
               <MenuItem icon={<CheckCircle2 size={18} />} label="Concluídas" />
@@ -127,6 +185,55 @@ export default function MotoristaPage() {
               </button>
             </nav>
           </aside>
+        </div>
+      )}
+
+      {corridaSelecionada && (
+        <div className="fixed inset-0 z-[60] flex items-end justify-center bg-black/70 px-4 pb-5 sm:items-center sm:pb-0">
+          <div className="w-full max-w-[430px] rounded-[28px] border border-white/10 bg-[#10171b] p-5 shadow-[0_20px_60px_rgba(0,0,0,0.55)]">
+            <div className="mb-4 flex items-start justify-between gap-3">
+              <div>
+                <p className="text-xs font-black text-[#ffc400]">DETALHES DA CORRIDA</p>
+                <h2 className="mt-1 text-xl font-black">Corrida disponível</h2>
+              </div>
+
+              <button
+                onClick={() => setCorridaSelecionada(null)}
+                className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04]"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <DetalheLinha titulo="Origem" valor={corridaSelecionada.origem} icone="📍" />
+              <DetalheLinha titulo="Destino" valor={corridaSelecionada.destino} icone="🏁" />
+              <DetalheLinha titulo="Tipo de carga" valor={corridaSelecionada.tipoCarga} icone="📦" />
+              <DetalheLinha titulo="Tempo estimado" valor={corridaSelecionada.tempoEstimado} icone="⏱" />
+              <DetalheLinha titulo="Valor estimado" valor={corridaSelecionada.valorEstimado} icone="💰" />
+
+              <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+                <p className="text-xs font-black uppercase text-white/45">📝 Observação do cliente</p>
+                <p className="mt-2 text-sm font-bold leading-relaxed text-white">
+                  {corridaSelecionada.observacaoCliente}
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={aceitarCorrida}
+              className="mt-5 h-12 w-full rounded-2xl bg-[#ffc400] font-black text-black"
+            >
+              Aceitar corrida
+            </button>
+
+            <button
+              onClick={() => setCorridaSelecionada(null)}
+              className="mt-3 h-11 w-full rounded-2xl border border-white/10 bg-white/[0.04] font-black text-white"
+            >
+              Fechar
+            </button>
+          </div>
         </div>
       )}
 
@@ -164,35 +271,53 @@ export default function MotoristaPage() {
       <section className="-mt-4 rounded-t-[34px] bg-[#020507] px-4 pb-8 pt-5">
         <div className="mx-auto max-w-[480px] space-y-4">
           <div className="grid grid-cols-3 gap-3">
-            <Resumo titulo="Corridas" valor="5" />
+            <Resumo titulo="Corridas" valor={String(corridasDisponiveis.length)} />
             <Resumo titulo="Agenda" valor="3" />
             <Resumo titulo="Hoje" valor="R$ 120" />
           </div>
 
-          <article className="rounded-[28px] border border-white/10 bg-[#10171b] p-4">
-            <div className="flex items-start gap-3">
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#ffc400] text-black">
-                <Navigation size={28} />
-              </div>
+          <section ref={corridasRef} className="scroll-mt-20">
+            <h2 className="mb-3 text-lg font-black">Corridas disponíveis</h2>
 
-              <div>
-                <h2 className="text-lg font-black">Corrida disponível</h2>
-                <p className="mt-1 text-sm text-white/60">
-                  Cliente quer agendar uma entrega próxima da sua região.
-                </p>
+            <div className="space-y-3">
+              {corridasDisponiveis.map((corrida) => (
+                <article
+                  key={corrida.id}
+                  onClick={() => abrirDetalhes(corrida)}
+                  className="cursor-pointer rounded-[28px] border border-white/10 bg-[#10171b] p-4 transition hover:border-[#ffc400]/40"
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#ffc400] text-black">
+                      <Navigation size={28} />
+                    </div>
 
-                <div className="mt-4 grid gap-2 text-sm font-bold">
-                  <span>📍 Origem: Recife Antigo</span>
-                  <span>🏁 Destino: Boa Viagem</span>
-                  <span>⏱ Estimativa: 22 min</span>
-                </div>
-              </div>
+                    <div className="flex-1">
+                      <h3 className="text-lg font-black">Corrida disponível</h3>
+                      <p className="mt-1 text-sm text-white/60">
+                        Cliente quer agendar uma entrega próxima da sua região.
+                      </p>
+
+                      <div className="mt-4 grid gap-2 text-sm font-bold">
+                        <span>📍 Origem: {corrida.origem}</span>
+                        <span>🏁 Destino: {corrida.destino}</span>
+                        <span>⏱ Estimativa: {corrida.tempoEstimado}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={(event) => {
+                      event.stopPropagation()
+                      abrirDetalhes(corrida)
+                    }}
+                    className="mt-4 h-12 w-full rounded-2xl bg-[#ffc400] font-black text-black"
+                  >
+                    Ver detalhes
+                  </button>
+                </article>
+              ))}
             </div>
-
-            <button className="mt-4 h-12 w-full rounded-2xl bg-[#ffc400] font-black text-black">
-              Ver detalhes
-            </button>
-          </article>
+          </section>
 
           <section>
             <h2 className="mb-3 text-lg font-black">Agendamentos na região</h2>
@@ -208,9 +333,12 @@ export default function MotoristaPage() {
   )
 }
 
-function MenuItem({ icon, label }: any) {
+function MenuItem({ icon, label, onClick }: any) {
   return (
-    <button className="flex w-full items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-left text-sm font-black">
+    <button
+      onClick={onClick}
+      className="flex w-full items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-left text-sm font-black"
+    >
       <span className="text-[#ffc400]">{icon}</span>
       {label}
     </button>
@@ -222,6 +350,17 @@ function Resumo({ titulo, valor }: any) {
     <div className="rounded-2xl border border-white/10 bg-[#10171b] p-3 text-center">
       <p className="text-xs font-bold text-white/50">{titulo}</p>
       <h3 className="mt-1 text-lg font-black text-[#ffc400]">{valor}</h3>
+    </div>
+  )
+}
+
+function DetalheLinha({ titulo, valor, icone }: any) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+      <p className="text-xs font-black uppercase text-white/45">
+        {icone} {titulo}
+      </p>
+      <p className="mt-1 text-sm font-black text-white">{valor}</p>
     </div>
   )
 }

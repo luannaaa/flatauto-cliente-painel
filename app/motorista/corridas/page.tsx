@@ -1,15 +1,19 @@
 "use client"
 
-import { ArrowLeft, Bike, CalendarDays, CheckCircle2, Clock, DollarSign, Settings, UserRound, Navigation } from "lucide-react"
+import { ArrowLeft, Bike } from "lucide-react"
 
 export default function MotoristaSubPage() {
   return (
     <main className="min-h-screen bg-[#020507] px-4 py-5 text-white">
       <div className="mx-auto max-w-[480px] space-y-5">
         <header className="flex items-center gap-3">
-          <a href="/motorista" className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04]">
+          <a
+            href="/motorista"
+            className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04]"
+          >
             <ArrowLeft size={22} />
           </a>
+
           <div>
             <p className="text-xs font-black text-[#ffc400]">FLATAUTO MOTORISTA</p>
             <h1 className="text-2xl font-black">Corridas</h1>
@@ -20,9 +24,11 @@ export default function MotoristaSubPage() {
           <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[#ffc400] text-black">
             <Bike size={34} />
           </div>
+
           <h2 className="mt-5 text-xl font-black">Área preparada</h2>
           <p className="mt-2 text-sm text-white/60">
-            Esta tela está pronta visualmente para receber os dados reais do backend depois.
+            A tela principal do motorista já mostra as corridas disponíveis.
+            Esta página fica reservada para expansão futura.
           </p>
         </section>
 
