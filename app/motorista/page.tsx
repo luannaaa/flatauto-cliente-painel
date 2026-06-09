@@ -107,25 +107,27 @@ export default function MotoristaPage() {
   const corridasRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
-    const motoristaSalvo = localStorage.getItem("motoristaLogado")
-    const veiculoSalvo = localStorage.getItem("tipoVeiculoMotorista") as Veiculo | null
+    try {
+      const motoristaSalvo = localStorage.getItem("motoristaLogado")
+      const veiculoSalvo = localStorage.getItem("tipoVeiculoMotorista") as Veiculo | null
 
-    if (motoristaSalvo === "true") {
-      setLogado(true)
+      if (motoristaSalvo === "true") {
+        setLogado(true)
 
-      if (
-        veiculoSalvo === "moto" ||
-        veiculoSalvo === "carro" ||
-        veiculoSalvo === "van" ||
-        veiculoSalvo === "caminhao"
-      ) {
-        setTipoVeiculo(veiculoSalvo)
+        if (
+          veiculoSalvo === "moto" ||
+          veiculoSalvo === "carro" ||
+          veiculoSalvo === "van" ||
+          veiculoSalvo === "caminhao"
+        ) {
+          setTipoVeiculo(veiculoSalvo)
+        }
+      } else {
+        window.location.href = "/"
       }
-    } else {
-      window.location.href = "/"
+    } finally {
+      setCarregando(false)
     }
-
-    setCarregando(false)
   }, [])
 
   function sair() {
@@ -136,23 +138,20 @@ export default function MotoristaPage() {
 
   function irParaCorridasDisponiveis() {
     setMenuAberto(false)
-
     setTimeout(() => {
-      corridasRef.current?.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
-      })
+      corridasRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
     }, 150)
   }
 
-  function irParaAgendamentos() {
+  function abrirPagina(caminho: string) {
     setMenuAberto(false)
-    window.location.href = "/motorista/agendamentos"
+    window.location.href = caminho
   }
 
   function aceitarCorrida() {
     alert("Corrida aceita visualmente. Depois conectamos com o backend.")
     setCorridaSelecionada(null)
+    window.location.href = "/motorista/em-andamento"
   }
 
   function aceitarAgendamento() {
@@ -160,10 +159,18 @@ export default function MotoristaPage() {
     setAgendamentoSelecionado(null)
   }
 
-  if (carregando || !logado) {
+  if (carregando) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-[#020507] text-white">
         <p className="text-sm text-white/60">Carregando motorista...</p>
+      </main>
+    )
+  }
+
+  if (!logado) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-[#020507] text-white">
+        <p className="text-sm text-white/60">Redirecionando...</p>
       </main>
     )
   }
@@ -209,19 +216,12 @@ export default function MotoristaPage() {
 
             <nav className="space-y-2">
               <MenuItem icon={<Navigation size={18} />} label="Corridas disponíveis" onClick={irParaCorridasDisponiveis} />
-              <MenuItem icon={<CalendarDays size={18} />} label="Agendamentos" onClick={irParaAgendamentos} />
-              <MenuItem
-                icon={<Clock size={18} />}
-                label="Em andamento"
-                onClick={() => {
-                  setMenuAberto(false)
-                  window.location.href = "/motorista/em-andamento"
-                }}
-              />
-              <MenuItem icon={<CheckCircle2 size={18} />} label="Concluídas" />
-              <MenuItem icon={<DollarSign size={18} />} label="Ganhos" />
-              <MenuItem icon={<UserRound size={18} />} label="Perfil" />
-              <MenuItem icon={<Settings size={18} />} label="Configurações" />
+              <MenuItem icon={<CalendarDays size={18} />} label="Agendamentos" onClick={() => abrirPagina("/motorista/agendamentos")} />
+              <MenuItem icon={<Clock size={18} />} label="Em andamento" onClick={() => abrirPagina("/motorista/em-andamento")} />
+              <MenuItem icon={<CheckCircle2 size={18} />} label="Concluídas" onClick={() => abrirPagina("/motorista/concluidas")} />
+              <MenuItem icon={<DollarSign size={18} />} label="Ganhos" onClick={() => abrirPagina("/motorista/ganhos")} />
+              <MenuItem icon={<UserRound size={18} />} label="Perfil" onClick={() => abrirPagina("/motorista/perfil")} />
+              <MenuItem icon={<Settings size={18} />} label="Configurações" onClick={() => abrirPagina("/motorista/configuracoes")} />
 
               <button
                 onClick={sair}
@@ -353,10 +353,7 @@ export default function MotoristaPage() {
             <div className="mb-3 flex items-center justify-between gap-3">
               <h2 className="text-lg font-black">Agendamentos na região</h2>
 
-              <button
-                onClick={() => (window.location.href = "/motorista/agendamentos")}
-                className="text-xs font-black text-[#ffc400]"
-              >
+              <button onClick={() => abrirPagina("/motorista/agendamentos")} className="text-xs font-black text-[#ffc400]">
                 Ver todos
               </button>
             </div>
@@ -404,10 +401,7 @@ function ModalBase({ titulo, subtitulo, onFechar, children }: any) {
 
 function MenuItem({ icon, label, onClick }: any) {
   return (
-    <button
-      onClick={onClick}
-      className="flex w-full items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-left text-sm font-black"
-    >
+    <button onClick={onClick} className="flex w-full items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-left text-sm font-black">
       <span className="text-[#ffc400]">{icon}</span>
       {label}
     </button>
@@ -426,9 +420,7 @@ function Resumo({ titulo, valor }: any) {
 function DetalheLinha({ titulo, valor, icone }: any) {
   return (
     <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
-      <p className="text-xs font-black uppercase text-white/45">
-        {icone} {titulo}
-      </p>
+      <p className="text-xs font-black uppercase text-white/45">{icone} {titulo}</p>
       <p className="mt-1 text-sm font-black text-white">{valor}</p>
     </div>
   )
@@ -445,23 +437,16 @@ function Observacao({ texto }: { texto: string }) {
 
 function AgendaCard({ agendamento, onClick }: { agendamento: Agendamento; onClick: () => void }) {
   return (
-    <article
-      onClick={onClick}
-      className="cursor-pointer rounded-2xl border border-white/10 bg-[#10171b] p-4 transition hover:border-[#ffc400]/40"
-    >
+    <article onClick={onClick} className="cursor-pointer rounded-2xl border border-white/10 bg-[#10171b] p-4 transition hover:border-[#ffc400]/40">
       <div className="flex items-start justify-between gap-3">
         <div>
           <h3 className="font-black">{agendamento.cliente}</h3>
-          <p className="mt-1 text-sm text-white/60">
-            {agendamento.local} → {agendamento.destino}
-          </p>
+          <p className="mt-1 text-sm text-white/60">{agendamento.local} → {agendamento.destino}</p>
           <p className="mt-2 text-sm font-bold text-[#ffc400]">{agendamento.horario}</p>
           <p className="mt-2 text-xs font-bold text-white/45">{agendamento.tipoPacote}</p>
         </div>
 
-        <span className="rounded-full bg-[#ffc400]/15 px-3 py-1 text-xs font-black text-[#ffc400]">
-          Agendado
-        </span>
+        <span className="rounded-full bg-[#ffc400]/15 px-3 py-1 text-xs font-black text-[#ffc400]">Agendado</span>
       </div>
     </article>
   )
