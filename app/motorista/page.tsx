@@ -31,6 +31,18 @@ type Corrida = {
   observacaoCliente: string
 }
 
+type Agendamento = {
+  id: string
+  cliente: string
+  local: string
+  endereco: string
+  destino: string
+  tipoPacote: string
+  horario: string
+  observacaoCliente: string
+  origemTipo: "cliente" | "empresa"
+}
+
 const corridasDisponiveis: Corrida[] = [
   {
     id: "corrida-001",
@@ -52,6 +64,31 @@ const corridasDisponiveis: Corrida[] = [
   },
 ]
 
+const agendamentosPrincipais: Agendamento[] = [
+  {
+    id: "agenda-001",
+    cliente: "Mercado Central",
+    local: "Boa Viagem",
+    endereco: "Av. Conselheiro Aguiar, Boa Viagem",
+    destino: "Olinda",
+    tipoPacote: "Pacote empresarial",
+    horario: "Hoje às 16:30",
+    observacaoCliente: "Retirar na recepção e entregar no setor de estoque.",
+    origemTipo: "empresa",
+  },
+  {
+    id: "agenda-002",
+    cliente: "Cliente particular",
+    local: "Recife Antigo",
+    endereco: "Rua do Bom Jesus, Recife Antigo",
+    destino: "Jaboatão",
+    tipoPacote: "Frágil / sensível",
+    horario: "Amanhã às 09:00",
+    observacaoCliente: "Produto sensível. Evitar impacto e manter em pé.",
+    origemTipo: "cliente",
+  },
+]
+
 function IconeVeiculo({ tipo, size = 28 }: { tipo: Veiculo; size?: number }) {
   if (tipo === "moto") return <Bike size={size} />
   if (tipo === "carro") return <Car size={size} />
@@ -65,6 +102,7 @@ export default function MotoristaPage() {
   const [menuAberto, setMenuAberto] = useState(false)
   const [tipoVeiculo, setTipoVeiculo] = useState<Veiculo>("caminhao")
   const [corridaSelecionada, setCorridaSelecionada] = useState<Corrida | null>(null)
+  const [agendamentoSelecionado, setAgendamentoSelecionado] = useState<Agendamento | null>(null)
 
   const corridasRef = useRef<HTMLDivElement | null>(null)
 
@@ -107,13 +145,19 @@ export default function MotoristaPage() {
     }, 150)
   }
 
-  function abrirDetalhes(corrida: Corrida) {
-    setCorridaSelecionada(corrida)
+  function irParaAgendamentos() {
+    setMenuAberto(false)
+    window.location.href = "/motorista/agendamentos"
   }
 
   function aceitarCorrida() {
     alert("Corrida aceita visualmente. Depois conectamos com o backend.")
     setCorridaSelecionada(null)
+  }
+
+  function aceitarAgendamento() {
+    alert("Agendamento aceito visualmente. Depois conectamos com o backend.")
+    setAgendamentoSelecionado(null)
   }
 
   if (carregando || !logado) {
@@ -164,12 +208,8 @@ export default function MotoristaPage() {
             </div>
 
             <nav className="space-y-2">
-              <MenuItem
-                icon={<Navigation size={18} />}
-                label="Corridas disponíveis"
-                onClick={irParaCorridasDisponiveis}
-              />
-              <MenuItem icon={<CalendarDays size={18} />} label="Agendamentos" />
+              <MenuItem icon={<Navigation size={18} />} label="Corridas disponíveis" onClick={irParaCorridasDisponiveis} />
+              <MenuItem icon={<CalendarDays size={18} />} label="Agendamentos" onClick={irParaAgendamentos} />
               <MenuItem icon={<Clock size={18} />} label="Em andamento" />
               <MenuItem icon={<CheckCircle2 size={18} />} label="Concluídas" />
               <MenuItem icon={<DollarSign size={18} />} label="Ganhos" />
@@ -189,52 +229,37 @@ export default function MotoristaPage() {
       )}
 
       {corridaSelecionada && (
-        <div className="fixed inset-0 z-[60] flex items-end justify-center bg-black/70 px-4 pb-5 sm:items-center sm:pb-0">
-          <div className="w-full max-w-[430px] rounded-[28px] border border-white/10 bg-[#10171b] p-5 shadow-[0_20px_60px_rgba(0,0,0,0.55)]">
-            <div className="mb-4 flex items-start justify-between gap-3">
-              <div>
-                <p className="text-xs font-black text-[#ffc400]">DETALHES DA CORRIDA</p>
-                <h2 className="mt-1 text-xl font-black">Corrida disponível</h2>
-              </div>
-
-              <button
-                onClick={() => setCorridaSelecionada(null)}
-                className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04]"
-              >
-                <X size={20} />
-              </button>
-            </div>
-
-            <div className="space-y-3">
-              <DetalheLinha titulo="Origem" valor={corridaSelecionada.origem} icone="📍" />
-              <DetalheLinha titulo="Destino" valor={corridaSelecionada.destino} icone="🏁" />
-              <DetalheLinha titulo="Tipo de carga" valor={corridaSelecionada.tipoCarga} icone="📦" />
-              <DetalheLinha titulo="Tempo estimado" valor={corridaSelecionada.tempoEstimado} icone="⏱" />
-              <DetalheLinha titulo="Valor estimado" valor={corridaSelecionada.valorEstimado} icone="💰" />
-
-              <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
-                <p className="text-xs font-black uppercase text-white/45">📝 Observação do cliente</p>
-                <p className="mt-2 text-sm font-bold leading-relaxed text-white">
-                  {corridaSelecionada.observacaoCliente}
-                </p>
-              </div>
-            </div>
-
-            <button
-              onClick={aceitarCorrida}
-              className="mt-5 h-12 w-full rounded-2xl bg-[#ffc400] font-black text-black"
-            >
-              Aceitar corrida
-            </button>
-
-            <button
-              onClick={() => setCorridaSelecionada(null)}
-              className="mt-3 h-11 w-full rounded-2xl border border-white/10 bg-white/[0.04] font-black text-white"
-            >
-              Fechar
-            </button>
+        <ModalBase titulo="DETALHES DA CORRIDA" subtitulo="Corrida disponível" onFechar={() => setCorridaSelecionada(null)}>
+          <div className="space-y-3">
+            <DetalheLinha titulo="Origem" valor={corridaSelecionada.origem} icone="📍" />
+            <DetalheLinha titulo="Destino" valor={corridaSelecionada.destino} icone="🏁" />
+            <DetalheLinha titulo="Tipo de carga" valor={corridaSelecionada.tipoCarga} icone="📦" />
+            <DetalheLinha titulo="Tempo estimado" valor={corridaSelecionada.tempoEstimado} icone="⏱" />
+            <DetalheLinha titulo="Valor estimado" valor={corridaSelecionada.valorEstimado} icone="💰" />
+            <Observacao texto={corridaSelecionada.observacaoCliente} />
           </div>
-        </div>
+
+          <button onClick={aceitarCorrida} className="mt-5 h-12 w-full rounded-2xl bg-[#ffc400] font-black text-black">
+            Aceitar corrida
+          </button>
+        </ModalBase>
+      )}
+
+      {agendamentoSelecionado && (
+        <ModalBase titulo="DETALHES DO AGENDAMENTO" subtitulo="Agendamento na região" onFechar={() => setAgendamentoSelecionado(null)}>
+          <div className="space-y-3">
+            <DetalheLinha titulo="Local" valor={agendamentoSelecionado.local} icone="📍" />
+            <DetalheLinha titulo="Endereço" valor={agendamentoSelecionado.endereco} icone="🗺️" />
+            <DetalheLinha titulo="Destino" valor={agendamentoSelecionado.destino} icone="🏁" />
+            <DetalheLinha titulo="Tipo de pacote" valor={agendamentoSelecionado.tipoPacote} icone="📦" />
+            <DetalheLinha titulo="Horário" valor={agendamentoSelecionado.horario} icone="🗓️" />
+            <Observacao texto={agendamentoSelecionado.observacaoCliente} />
+          </div>
+
+          <button onClick={aceitarAgendamento} className="mt-5 h-12 w-full rounded-2xl bg-[#ffc400] font-black text-black">
+            Aceitar agendamento
+          </button>
+        </ModalBase>
       )}
 
       <section className="relative h-[50vh] overflow-hidden bg-[#d9e4d2] pt-16">
@@ -272,7 +297,7 @@ export default function MotoristaPage() {
         <div className="mx-auto max-w-[480px] space-y-4">
           <div className="grid grid-cols-3 gap-3">
             <Resumo titulo="Corridas" valor={String(corridasDisponiveis.length)} />
-            <Resumo titulo="Agenda" valor="3" />
+            <Resumo titulo="Agenda" valor={String(agendamentosPrincipais.length)} />
             <Resumo titulo="Hoje" valor="R$ 120" />
           </div>
 
@@ -283,7 +308,7 @@ export default function MotoristaPage() {
               {corridasDisponiveis.map((corrida) => (
                 <article
                   key={corrida.id}
-                  onClick={() => abrirDetalhes(corrida)}
+                  onClick={() => setCorridaSelecionada(corrida)}
                   className="cursor-pointer rounded-[28px] border border-white/10 bg-[#10171b] p-4 transition hover:border-[#ffc400]/40"
                 >
                   <div className="flex items-start gap-3">
@@ -293,9 +318,7 @@ export default function MotoristaPage() {
 
                     <div className="flex-1">
                       <h3 className="text-lg font-black">Corrida disponível</h3>
-                      <p className="mt-1 text-sm text-white/60">
-                        Cliente quer agendar uma entrega próxima da sua região.
-                      </p>
+                      <p className="mt-1 text-sm text-white/60">Cliente quer uma entrega próxima da sua região.</p>
 
                       <div className="mt-4 grid gap-2 text-sm font-bold">
                         <span>📍 Origem: {corrida.origem}</span>
@@ -308,7 +331,7 @@ export default function MotoristaPage() {
                   <button
                     onClick={(event) => {
                       event.stopPropagation()
-                      abrirDetalhes(corrida)
+                      setCorridaSelecionada(corrida)
                     }}
                     className="mt-4 h-12 w-full rounded-2xl bg-[#ffc400] font-black text-black"
                   >
@@ -320,16 +343,55 @@ export default function MotoristaPage() {
           </section>
 
           <section>
-            <h2 className="mb-3 text-lg font-black">Agendamentos na região</h2>
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <h2 className="text-lg font-black">Agendamentos na região</h2>
+
+              <button
+                onClick={() => (window.location.href = "/motorista/agendamentos")}
+                className="text-xs font-black text-[#ffc400]"
+              >
+                Ver todos
+              </button>
+            </div>
 
             <div className="space-y-3">
-              <AgendaCard cliente="Mercado Central" rota="Boa Viagem → Olinda" horario="Hoje às 16:30" tipo="Moto" />
-              <AgendaCard cliente="Auto Peças Brasil" rota="Recife → Jaboatão" horario="Amanhã às 09:00" tipo="Carro" />
+              {agendamentosPrincipais.map((agendamento) => (
+                <AgendaCard
+                  key={agendamento.id}
+                  agendamento={agendamento}
+                  onClick={() => setAgendamentoSelecionado(agendamento)}
+                />
+              ))}
             </div>
           </section>
         </div>
       </section>
     </main>
+  )
+}
+
+function ModalBase({ titulo, subtitulo, onFechar, children }: any) {
+  return (
+    <div className="fixed inset-0 z-[60] flex items-end justify-center bg-black/70 px-4 pb-5 sm:items-center sm:pb-0">
+      <div className="w-full max-w-[430px] rounded-[28px] border border-white/10 bg-[#10171b] p-5 shadow-[0_20px_60px_rgba(0,0,0,0.55)]">
+        <div className="mb-4 flex items-start justify-between gap-3">
+          <div>
+            <p className="text-xs font-black text-[#ffc400]">{titulo}</p>
+            <h2 className="mt-1 text-xl font-black">{subtitulo}</h2>
+          </div>
+
+          <button onClick={onFechar} className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04]">
+            <X size={20} />
+          </button>
+        </div>
+
+        {children}
+
+        <button onClick={onFechar} className="mt-3 h-11 w-full rounded-2xl border border-white/10 bg-white/[0.04] font-black text-white">
+          Fechar
+        </button>
+      </div>
+    </div>
   )
 }
 
@@ -365,18 +427,33 @@ function DetalheLinha({ titulo, valor, icone }: any) {
   )
 }
 
-function AgendaCard({ cliente, rota, horario, tipo }: any) {
+function Observacao({ texto }: { texto: string }) {
   return (
-    <article className="rounded-2xl border border-white/10 bg-[#10171b] p-4">
+    <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+      <p className="text-xs font-black uppercase text-white/45">📝 Observação do cliente</p>
+      <p className="mt-2 text-sm font-bold leading-relaxed text-white">{texto}</p>
+    </div>
+  )
+}
+
+function AgendaCard({ agendamento, onClick }: { agendamento: Agendamento; onClick: () => void }) {
+  return (
+    <article
+      onClick={onClick}
+      className="cursor-pointer rounded-2xl border border-white/10 bg-[#10171b] p-4 transition hover:border-[#ffc400]/40"
+    >
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h3 className="font-black">{cliente}</h3>
-          <p className="mt-1 text-sm text-white/60">{rota}</p>
-          <p className="mt-2 text-sm font-bold text-[#ffc400]">{horario}</p>
+          <h3 className="font-black">{agendamento.cliente}</h3>
+          <p className="mt-1 text-sm text-white/60">
+            {agendamento.local} → {agendamento.destino}
+          </p>
+          <p className="mt-2 text-sm font-bold text-[#ffc400]">{agendamento.horario}</p>
+          <p className="mt-2 text-xs font-bold text-white/45">{agendamento.tipoPacote}</p>
         </div>
 
         <span className="rounded-full bg-[#ffc400]/15 px-3 py-1 text-xs font-black text-[#ffc400]">
-          {tipo}
+          Agendado
         </span>
       </div>
     </article>
