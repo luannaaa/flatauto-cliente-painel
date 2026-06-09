@@ -116,6 +116,8 @@ export default function Home() {
     }
 
     if (cadastroBase.tipo === "motorista") {
+      localStorage.setItem("motoristaLogado", "true")
+      localStorage.setItem("tipoVeiculoMotorista", "caminhao")
       window.location.href = "/motorista"
       return
     }
@@ -413,6 +415,8 @@ if (
   emailLimpo === "luanacat249@gmail.com" &&
   senhaLimpa === "luke2003"
 ) {
+  localStorage.setItem("motoristaLogado", "true")
+  localStorage.setItem("tipoVeiculoMotorista", "caminhao")
   window.location.href = "/motorista"
   return
 }
