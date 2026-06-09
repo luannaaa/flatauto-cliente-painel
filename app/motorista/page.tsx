@@ -40,7 +40,15 @@ export default function MotoristaPage() {
 
     if (motoristaSalvo === "true") {
       setLogado(true)
-      if (veiculoSalvo) setTipoVeiculo(veiculoSalvo)
+
+      if (
+        veiculoSalvo === "moto" ||
+        veiculoSalvo === "carro" ||
+        veiculoSalvo === "van" ||
+        veiculoSalvo === "caminhao"
+      ) {
+        setTipoVeiculo(veiculoSalvo)
+      }
     } else {
       window.location.href = "/"
     }
