@@ -210,7 +210,14 @@ export default function MotoristaPage() {
             <nav className="space-y-2">
               <MenuItem icon={<Navigation size={18} />} label="Corridas disponíveis" onClick={irParaCorridasDisponiveis} />
               <MenuItem icon={<CalendarDays size={18} />} label="Agendamentos" onClick={irParaAgendamentos} />
-              <MenuItem icon={<Clock size={18} />} label="Em andamento" />
+              <MenuItem
+                icon={<Clock size={18} />}
+                label="Em andamento"
+                onClick={() => {
+                  setMenuAberto(false)
+                  window.location.href = "/motorista/em-andamento"
+                }}
+              />
               <MenuItem icon={<CheckCircle2 size={18} />} label="Concluídas" />
               <MenuItem icon={<DollarSign size={18} />} label="Ganhos" />
               <MenuItem icon={<UserRound size={18} />} label="Perfil" />
