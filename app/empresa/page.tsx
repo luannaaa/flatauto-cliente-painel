@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
@@ -29,7 +29,7 @@ import {
 } from "lucide-react"
 
 type Tema = "dark" | "light"
-type StatusEntrega = "Concluída" | "Em Andamento" | "Cancelada"
+type StatusEntrega = "ConcluÃ­da" | "Em Andamento" | "Cancelada"
 
 const imagens = {
   logoEmpresa: "/empresa_logo.png",
@@ -37,26 +37,26 @@ const imagens = {
 }
 
 const entregas = [
-  { id: "#1287", data: "18/05/2026", cliente: "Auto Peças Brasil", origem: "São Paulo - SP", destino: "Campinas - SP", motorista: "Marcos Vinícius", valor: "R$ 1.250,00", status: "Concluída" as StatusEntrega },
-  { id: "#1286", data: "18/05/2026", cliente: "Construtora Nova", origem: "Santos - SP", destino: "Ribeirão Preto - SP", motorista: "João Silva", valor: "R$ 2.340,00", status: "Em Andamento" as StatusEntrega },
-  { id: "#1285", data: "17/05/2026", cliente: "Mercado Central", origem: "Campinas - SP", destino: "São Paulo - SP", motorista: "Carlos Alberto", valor: "R$ 980,00", status: "Concluída" as StatusEntrega },
-  { id: "#1284", data: "17/05/2026", cliente: "Indústria ABC", origem: "São Paulo - SP", destino: "Sorocaba - SP", motorista: "Rafael Costa", valor: "R$ 1.870,00", status: "Cancelada" as StatusEntrega },
-  { id: "#1283", data: "16/05/2026", cliente: "Lojas Silva", origem: "Ribeirão Preto - SP", destino: "Santos - SP", motorista: "Lucas Martins", valor: "R$ 1.450,00", status: "Concluída" as StatusEntrega },
+  { id: "#1287", data: "18/05/2026", cliente: "Auto PeÃ§as Brasil", origem: "SÃ£o Paulo - SP", destino: "Campinas - SP", motorista: "Marcos VinÃ­cius", valor: "R$ 1.250,00", status: "ConcluÃ­da" as StatusEntrega },
+  { id: "#1286", data: "18/05/2026", cliente: "Construtora Nova", origem: "Santos - SP", destino: "RibeirÃ£o Preto - SP", motorista: "JoÃ£o Silva", valor: "R$ 2.340,00", status: "Em Andamento" as StatusEntrega },
+  { id: "#1285", data: "17/05/2026", cliente: "Mercado Central", origem: "Campinas - SP", destino: "SÃ£o Paulo - SP", motorista: "Carlos Alberto", valor: "R$ 980,00", status: "ConcluÃ­da" as StatusEntrega },
+  { id: "#1284", data: "17/05/2026", cliente: "IndÃºstria ABC", origem: "SÃ£o Paulo - SP", destino: "Sorocaba - SP", motorista: "Rafael Costa", valor: "R$ 1.870,00", status: "Cancelada" as StatusEntrega },
+  { id: "#1283", data: "16/05/2026", cliente: "Lojas Silva", origem: "RibeirÃ£o Preto - SP", destino: "Santos - SP", motorista: "Lucas Martins", valor: "R$ 1.450,00", status: "ConcluÃ­da" as StatusEntrega },
 ]
 
 const destinos = [
-  { cidade: "São Paulo - SP", total: 42 },
+  { cidade: "SÃ£o Paulo - SP", total: 42 },
   { cidade: "Campinas - SP", total: 18 },
-  { cidade: "Ribeirão Preto - SP", total: 12 },
+  { cidade: "RibeirÃ£o Preto - SP", total: 12 },
   { cidade: "Sorocaba - SP", total: 10 },
   { cidade: "Santos - SP", total: 8 },
 ]
 
 const crmColunas = [
-  { nome: "Novos Leads", total: 8, cor: "border-[#ffc400]/35 bg-[#ffc400]/8", itens: [{ nome: "Empresa ABC", local: "São Paulo - SP", valor: "R$ 12.500" }, { nome: "Indústria Lima", local: "Campinas - SP", valor: "R$ 8.750" }] },
-  { nome: "Contato Inicial", total: 5, cor: "border-[#d89711]/35 bg-[#d89711]/8", itens: [{ nome: "Comércio Forte", local: "Santos - SP", valor: "R$ 23.000" }, { nome: "Log Express", local: "São Paulo - SP", valor: "R$ 15.400" }] },
-  { nome: "Em andamento", total: 7, cor: "border-sky-500/35 bg-sky-500/8", itens: [{ nome: "Distribuidora X", local: "Ribeirão Preto - SP", valor: "R$ 27.800" }, { nome: "Transportes Betta", local: "Sorocaba - SP", valor: "R$ 16.600" }] },
-  { nome: "Negócio Fechado", total: 12, cor: "border-green-500/35 bg-green-500/8", itens: [{ nome: "Mercado Central", local: "São Paulo - SP", valor: "R$ 31.200" }, { nome: "Global Foods", local: "Curitiba - PR", valor: "R$ 22.500" }] },
+  { nome: "Novos Leads", total: 8, cor: "border-[#ffc400]/35 bg-[#ffc400]/8", itens: [{ nome: "Empresa ABC", local: "SÃ£o Paulo - SP", valor: "R$ 12.500" }, { nome: "IndÃºstria Lima", local: "Campinas - SP", valor: "R$ 8.750" }] },
+  { nome: "Contato Inicial", total: 5, cor: "border-[#d89711]/35 bg-[#d89711]/8", itens: [{ nome: "ComÃ©rcio Forte", local: "Santos - SP", valor: "R$ 23.000" }, { nome: "Log Express", local: "SÃ£o Paulo - SP", valor: "R$ 15.400" }] },
+  { nome: "Em andamento", total: 7, cor: "border-sky-500/35 bg-sky-500/8", itens: [{ nome: "Distribuidora X", local: "RibeirÃ£o Preto - SP", valor: "R$ 27.800" }, { nome: "Transportes Betta", local: "Sorocaba - SP", valor: "R$ 16.600" }] },
+  { nome: "NegÃ³cio Fechado", total: 12, cor: "border-green-500/35 bg-green-500/8", itens: [{ nome: "Mercado Central", local: "SÃ£o Paulo - SP", valor: "R$ 31.200" }, { nome: "Global Foods", local: "Curitiba - PR", valor: "R$ 22.500" }] },
 ]
 
 export default function PainelEmpresa() {
@@ -118,21 +118,21 @@ export default function PainelEmpresa() {
         <section className="min-w-0 px-7 py-6">
           <Topo periodo={periodo} setPeriodo={setPeriodo} ui={ui} abrirNovaEntrega={() => setModalNovaEntrega(true)} />
           <div className="mt-6 grid grid-cols-5 gap-4">
-            <Indicador ui={ui} titulo="Total de Entregas" valor="128" detalhe="↑ 18% vs período anterior" icon={<Package />} />
-            <Indicador ui={ui} titulo="Concluídas" valor="96" detalhe="75% do total" icon={<CheckCircle2 />} verde />
+            <Indicador ui={ui} titulo="Total de Entregas" valor="128" detalhe="â†‘ 18% vs perÃ­odo anterior" icon={<Package />} />
+            <Indicador ui={ui} titulo="ConcluÃ­das" valor="96" detalhe="75% do total" icon={<CheckCircle2 />} verde />
             <Indicador ui={ui} titulo="Em Andamento" valor="18" detalhe="14% do total" icon={<Truck />} azul />
             <Indicador ui={ui} titulo="Canceladas" valor="14" detalhe="11% do total" icon={<XCircle />} vermelho />
-            <Indicador ui={ui} titulo="Receita Líquida" valor="R$ 16.220,00" detalhe="Após repasse motorista" icon={<DollarSign />} />
+            <Indicador ui={ui} titulo="Receita LÃ­quida" valor="R$ 16.220,00" detalhe="ApÃ³s repasse motorista" icon={<DollarSign />} />
           </div>
 
           <div className="mt-5 grid grid-cols-[0.86fr_1.34fr_0.58fr] gap-5">
-            <Card ui={ui} titulo="Entregas por Período" acao="7 dias"><GraficoLinha /></Card>
-            <Card ui={ui} titulo="CRM - Pipeline de Negócios"><CRM ui={ui} /></Card>
-            <Card ui={ui} titulo="Exportar Relatórios"><Exportar ui={ui} /></Card>
+            <Card ui={ui} titulo="Entregas por PerÃ­odo" acao="7 dias"><GraficoLinha /></Card>
+            <Card ui={ui} titulo="CRM - Pipeline de NegÃ³cios"><CRM ui={ui} /></Card>
+            <Card ui={ui} titulo="Exportar RelatÃ³rios"><Exportar ui={ui} /></Card>
           </div>
 
           <div className="mt-5 grid grid-cols-[1.25fr_0.75fr] gap-5">
-            <Card ui={ui} titulo="Resumo Financeiro" acao="Este mês"><Financeiro ui={ui} /></Card>
+            <Card ui={ui} titulo="Resumo Financeiro" acao="Este mÃªs"><Financeiro ui={ui} /></Card>
             <Card ui={ui} titulo="Capital de SP" acao="Mapa da Capital de SP"><MapaSaoPaulo ui={ui} /></Card>
           </div>
 
@@ -155,9 +155,9 @@ export default function PainelEmpresa() {
           </header>
 
           <div className="mt-7">
-            <h1 className="text-[25px] font-black leading-tight">Olá, Transportes Silva LTDA 👋</h1>
-            <p className={`mt-2 text-sm ${ui.textoFraco}`}>Acompanhe sua operação em tempo real.</p>
-            <p className={`mt-1 text-xs ${ui.textoFraco}`}>Última atualização: 18/05/2026 16:42</p>
+            <h1 className="text-[25px] font-black leading-tight">OlÃ¡, Transportes Silva LTDA ðŸ‘‹</h1>
+            <p className={`mt-2 text-sm ${ui.textoFraco}`}>Acompanhe sua operaÃ§Ã£o em tempo real.</p>
+            <p className={`mt-1 text-xs ${ui.textoFraco}`}>Ãšltima atualizaÃ§Ã£o: 18/05/2026 16:42</p>
           </div>
 
           <div className="mt-5 grid grid-cols-[1fr_auto] gap-3">
@@ -166,16 +166,16 @@ export default function PainelEmpresa() {
           </div>
 
           <div className="mt-5 grid grid-cols-2 gap-3">
-            <Indicador ui={ui} titulo="Total de Entregas" valor="128" detalhe="↑ 18%" icon={<Package />} mobile />
-            <Indicador ui={ui} titulo="Concluídas" valor="96" detalhe="75% do total" icon={<CheckCircle2 />} verde mobile />
+            <Indicador ui={ui} titulo="Total de Entregas" valor="128" detalhe="â†‘ 18%" icon={<Package />} mobile />
+            <Indicador ui={ui} titulo="ConcluÃ­das" valor="96" detalhe="75% do total" icon={<CheckCircle2 />} verde mobile />
             <Indicador ui={ui} titulo="Em Andamento" valor="18" detalhe="14% do total" icon={<Truck />} azul mobile />
             <Indicador ui={ui} titulo="Canceladas" valor="14" detalhe="11% do total" icon={<XCircle />} vermelho mobile />
           </div>
 
-          <div className="mt-4"><Card ui={ui} titulo="Entregas por Período" acao="7 dias"><GraficoLinha mobile /></Card></div>
+          <div className="mt-4"><Card ui={ui} titulo="Entregas por PerÃ­odo" acao="7 dias"><GraficoLinha mobile /></Card></div>
           <div className="mt-4"><Card ui={ui} titulo="CRM - Pipeline" acao="Ver tudo"><CRM ui={ui} mobile /></Card></div>
           <div className="mt-4"><Card ui={ui} titulo="Capital de SP"><MapaSaoPaulo ui={ui} mobile /></Card></div>
-          <div className="mt-4"><Card ui={ui} titulo="Resumo Financeiro" acao="Este mês"><Financeiro ui={ui} mobile /></Card></div>
+          <div className="mt-4"><Card ui={ui} titulo="Resumo Financeiro" acao="Este mÃªs"><Financeiro ui={ui} mobile /></Card></div>
           <div className="mt-4"><Card ui={ui} titulo="Entregas Recentes"><ListaMobile ui={ui} /></Card></div>
         </div>
 
@@ -218,14 +218,14 @@ export default function PainelEmpresa() {
                 ["Dashboard", "/empresa", <Home key="dashboard" />],
                 ["Entregas", "/empresa/entregas", <Truck key="entregas" />],
                 ["Motoristas", "/empresa/motoristas", <UserRound key="motoristas" />],
-                ["Veículos", "/empresa/veiculos", <Car key="veiculos" />],
+                ["VeÃ­culos", "/empresa/veiculos", <Car key="veiculos" />],
                 ["Clientes", "/empresa/clientes", <UsersRound key="clientes" />],
                 ["CRM", "/empresa/crm", <BarChart3 key="crm" />],
                 ["Financeiro", "/empresa/financeiro", <Wallet key="financeiro" />],
-                ["Relatórios", "/empresa/relatorios", <FileText key="relatorios" />],
+                ["RelatÃ³rios", "/empresa/relatorios", <FileText key="relatorios" />],
                 ["Mapa", "/empresa/mapa", <MapPinned key="mapa" />],
                 ["Analytics", "/empresa/analytics", <BarChart3 key="analytics" />],
-                ["Configurações", "/empresa/configuracoes", <Settings key="configuracoes" />],
+                ["ConfiguraÃ§Ãµes", "/empresa/configuracoes", <Settings key="configuracoes" />],
               ].map(([texto, href, icon]: any) => (
                 <Link
                   key={texto}
@@ -262,7 +262,7 @@ function LogoMarca({ compacto = false }: { compacto?: boolean }) {
 }
 
 function Topo({ periodo, setPeriodo, ui, abrirNovaEntrega }: any) {
-  return <header className="flex items-start justify-between gap-6"><div><h1 className="text-[36px] font-black leading-tight tracking-[-0.035em]">Olá, Transportes Silva LTDA 👋</h1><p className={`mt-2 text-[16px] ${ui.textoFraco}`}>Acompanhe o desempenho da sua operação em tempo real.</p><p className={`mt-1 text-[13px] ${ui.textoFraco}`}>Última atualização: 18/05/2026 16:42</p></div><div className="flex items-center gap-4"><div className={`flex h-12 w-[255px] items-center gap-3 rounded-xl border px-4 text-sm ${ui.card2}`}><CalendarDays size={18} /><input value={periodo} onChange={(e) => setPeriodo(e.target.value)} className="min-w-0 flex-1 bg-transparent outline-none" /></div><button onClick={abrirNovaEntrega} className="flex h-12 items-center gap-2 rounded-xl bg-[#ffc400] px-7 font-black text-black shadow-[0_0_28px_rgba(255,196,0,0.38)]"><Plus size={18} />Nova Entrega</button><button className={`relative flex h-12 w-12 items-center justify-center rounded-xl border ${ui.card2}`}><Bell size={21} /><span className="absolute right-3 top-3 h-2 w-2 rounded-full bg-[#ffc400]" /></button></div></header>
+  return <header className="flex items-start justify-between gap-6"><div><h1 className="text-[36px] font-black leading-tight tracking-[-0.035em]">OlÃ¡, Transportes Silva LTDA ðŸ‘‹</h1><p className={`mt-2 text-[16px] ${ui.textoFraco}`}>Acompanhe o desempenho da sua operaÃ§Ã£o em tempo real.</p><p className={`mt-1 text-[13px] ${ui.textoFraco}`}>Ãšltima atualizaÃ§Ã£o: 18/05/2026 16:42</p></div><div className="flex items-center gap-4"><div className={`flex h-12 w-[255px] items-center gap-3 rounded-xl border px-4 text-sm ${ui.card2}`}><CalendarDays size={18} /><input value={periodo} onChange={(e) => setPeriodo(e.target.value)} className="min-w-0 flex-1 bg-transparent outline-none" /></div><button onClick={abrirNovaEntrega} className="flex h-12 items-center gap-2 rounded-xl bg-[#ffc400] px-7 font-black text-black shadow-[0_0_28px_rgba(255,196,0,0.38)]"><Plus size={18} />Nova Entrega</button><button className={`relative flex h-12 w-12 items-center justify-center rounded-xl border ${ui.card2}`}><Bell size={21} /><span className="absolute right-3 top-3 h-2 w-2 rounded-full bg-[#ffc400]" /></button></div></header>
 }
 
 function MenuLateral({ ui, tema, setTema }: any) {
@@ -270,14 +270,14 @@ function MenuLateral({ ui, tema, setTema }: any) {
     { texto: "Dashboard", href: "/empresa", icon: <Home />, ativo: true },
     { texto: "Entregas", href: "/empresa/entregas", icon: <Truck /> },
     { texto: "Motoristas", href: "/empresa/motoristas", icon: <UserRound /> },
-    { texto: "Veículos", href: "/empresa/veiculos", icon: <Car /> },
+    { texto: "VeÃ­culos", href: "/empresa/veiculos", icon: <Car /> },
     { texto: "Clientes", href: "/empresa/clientes", icon: <UsersRound /> },
     { texto: "CRM", href: "/empresa/crm", icon: <BarChart3 /> },
     { texto: "Financeiro", href: "/empresa/financeiro", icon: <Wallet /> },
-    { texto: "Relatórios", href: "/empresa/relatorios", icon: <FileText /> },
+    { texto: "RelatÃ³rios", href: "/empresa/relatorios", icon: <FileText /> },
     { texto: "Mapa", href: "/empresa/mapa", icon: <MapPinned /> },
     { texto: "Analytics", href: "/empresa/analytics", icon: <BarChart3 />, badge: "IA" },
-    { texto: "Configurações", href: "/empresa/configuracoes", icon: <Settings /> },
+    { texto: "ConfiguraÃ§Ãµes", href: "/empresa/configuracoes", icon: <Settings /> },
   ]
 
   return (
@@ -325,8 +325,8 @@ function MenuLateral({ ui, tema, setTema }: any) {
 
       <div className={`mt-8 flex items-center justify-between rounded-full border p-2 ${ui.card2}`}>
         <span className="px-4 text-xs font-bold">TEMA</span>
-        <button onClick={() => setTema("dark")} className={`flex h-9 w-9 items-center justify-center rounded-full ${tema === "dark" ? "bg-[#ffc400] text-black" : ""}`}>☀</button>
-        <button onClick={() => setTema("light")} className={`flex h-9 w-9 items-center justify-center rounded-full ${tema === "light" ? "bg-[#ffc400] text-black" : ""}`}>◐</button>
+        <button onClick={() => setTema("dark")} className={`flex h-9 w-9 items-center justify-center rounded-full ${tema === "dark" ? "bg-[#ffc400] text-black" : ""}`}>â˜€</button>
+        <button onClick={() => setTema("light")} className={`flex h-9 w-9 items-center justify-center rounded-full ${tema === "light" ? "bg-[#ffc400] text-black" : ""}`}>â—</button>
       </div>
     </aside>
   )
@@ -387,11 +387,11 @@ function CRM({ ui, mobile }: any) {
 }
 
 function Exportar({ ui }: any) {
-  return <div><p className={`text-sm ${ui.textoFraco}`}>Gere relatórios personalizados por cliente ou geral da operação.</p><select className={`mt-4 h-11 w-full rounded-xl border px-3 text-sm outline-none ${ui.card2}`}><option>Relatório Geral</option><option>Por Cliente</option><option>Financeiro</option></select><div className="mt-5 grid grid-cols-2 gap-3"><button className="flex h-12 items-center justify-center gap-2 rounded-xl bg-[#ffc400] font-black text-black"><Download size={18} />PDF</button><button className="flex h-12 items-center justify-center gap-2 rounded-xl bg-green-600 font-black text-white"><FileText size={18} />Excel</button></div></div>
+  return <div><p className={`text-sm ${ui.textoFraco}`}>Gere relatÃ³rios personalizados por cliente ou geral da operaÃ§Ã£o.</p><select className={`mt-4 h-11 w-full rounded-xl border px-3 text-sm outline-none ${ui.card2}`}><option>RelatÃ³rio Geral</option><option>Por Cliente</option><option>Financeiro</option></select><div className="mt-5 grid grid-cols-2 gap-3"><button className="flex h-12 items-center justify-center gap-2 rounded-xl bg-[#ffc400] font-black text-black"><Download size={18} />PDF</button><button className="flex h-12 items-center justify-center gap-2 rounded-xl bg-green-600 font-black text-white"><FileText size={18} />Excel</button></div></div>
 }
 
 function MapaSaoPaulo({ ui, mobile }: any) {
-  return <div className={`grid ${mobile ? "grid-cols-1" : "grid-cols-[1fr_0.9fr]"} gap-4`}><div className={`relative h-[260px] overflow-hidden rounded-2xl border ${ui.card2}`}><img src={imagens.mapaSaoPaulo} alt="Mapa de São Paulo" className="absolute inset-0 h-full w-full object-contain p-4 opacity-95" onError={(e) => { e.currentTarget.style.display = "none" }} /><div className="absolute left-4 top-4 rounded-xl bg-black/45 px-3 py-2 text-xs text-white">Mapa de São Paulo</div></div><div className="space-y-2"><p className={`text-sm font-bold ${ui.textoFraco}`}>Top Destinos SP</p>{destinos.map((destino) => <div key={destino.cidade} className="flex items-center justify-between text-sm"><span>{destino.cidade}</span><strong>{destino.total}</strong></div>)}<button className="pt-1 text-sm font-bold text-[#ffc400]">Ver mapa completo</button></div></div>
+  return <div className={`grid ${mobile ? "grid-cols-1" : "grid-cols-[1fr_0.9fr]"} gap-4`}><div className={`relative h-[260px] overflow-hidden rounded-2xl border ${ui.card2}`}><img src={imagens.mapaSaoPaulo} alt="Mapa de SÃ£o Paulo" className="absolute inset-0 h-full w-full object-contain p-4 opacity-95" onError={(e) => { e.currentTarget.style.display = "none" }} /><div className="absolute left-4 top-4 rounded-xl bg-black/45 px-3 py-2 text-xs text-white">Mapa de SÃ£o Paulo</div></div><div className="space-y-2"><p className={`text-sm font-bold ${ui.textoFraco}`}>Top Destinos SP</p>{destinos.map((destino) => <div key={destino.cidade} className="flex items-center justify-between text-sm"><span>{destino.cidade}</span><strong>{destino.total}</strong></div>)}<button className="pt-1 text-sm font-bold text-[#ffc400]">Ver mapa completo</button></div></div>
 }
 
 function Financeiro({ ui, mobile }: any) {
@@ -405,11 +405,11 @@ function Financeiro({ ui, mobile }: any) {
   const percentualLucro = ((lucroLiquido / faturamentoBruto) * 100).toFixed(2).replace(".", ",")
 
   const itens = [
-    ["Faturamento Bruto", "R$ 24.560,00", "+ entrada total do período", "text-green-400"],
+    ["Faturamento Bruto", "R$ 24.560,00", "+ entrada total do perÃ­odo", "text-green-400"],
     ["Repasse Motorista", "R$ 8.340,00", "- valor repassado aos motoristas", "text-red-400"],
-    ["Faturamento Líquido", "R$ 16.220,00", "= bruto menos repasse", "text-green-400"],
+    ["Faturamento LÃ­quido", "R$ 16.220,00", "= bruto menos repasse", "text-green-400"],
     ["Despesas", "R$ 5.420,00", `${percentualDespesas}% do faturamento bruto`, "text-red-400"],
-    ["Lucro Líquido", "R$ 10.800,00", `${percentualLucro}% do faturamento bruto`, "text-green-400"],
+    ["Lucro LÃ­quido", "R$ 10.800,00", `${percentualLucro}% do faturamento bruto`, "text-green-400"],
   ]
 
   return <div className={`grid ${mobile ? "grid-cols-1" : "grid-cols-5"} gap-3`}>{itens.map(([titulo, valor, detalhe, cor]) => <div key={titulo} className={`rounded-xl border p-4 ${ui.card2}`}><p className={`text-xs ${ui.textoFraco}`}>{titulo}</p><p className="mt-3 text-[22px] font-black">{valor}</p><p className={`mt-2 text-xs ${cor}`}>{detalhe}</p></div>)}</div>
@@ -420,11 +420,11 @@ function Tabela({ ui }: any) {
 }
 
 function ListaMobile({ ui }: any) {
-  return <div className="space-y-3">{entregas.map((entrega) => <div key={entrega.id} className={`rounded-xl border p-4 ${ui.card2}`}><div className="flex items-start justify-between gap-3"><div><p className={`text-sm ${ui.textoFraco}`}>{entrega.id} • {entrega.data}</p><p className="mt-1 font-bold">{entrega.cliente}</p><p className={`mt-1 text-sm ${ui.textoFraco}`}>{entrega.origem} → {entrega.destino}</p><p className="mt-2 text-sm font-bold">{entrega.valor}</p></div><Status status={entrega.status} /></div></div>)}</div>
+  return <div className="space-y-3">{entregas.map((entrega) => <div key={entrega.id} className={`rounded-xl border p-4 ${ui.card2}`}><div className="flex items-start justify-between gap-3"><div><p className={`text-sm ${ui.textoFraco}`}>{entrega.id} â€¢ {entrega.data}</p><p className="mt-1 font-bold">{entrega.cliente}</p><p className={`mt-1 text-sm ${ui.textoFraco}`}>{entrega.origem} â†’ {entrega.destino}</p><p className="mt-2 text-sm font-bold">{entrega.valor}</p></div><Status status={entrega.status} /></div></div>)}</div>
 }
 
 function Status({ status }: { status: StatusEntrega }) {
-  const classe = status === "Concluída" ? "bg-green-600" : status === "Em Andamento" ? "bg-blue-600" : "bg-red-600"
+  const classe = status === "ConcluÃ­da" ? "bg-green-600" : status === "Em Andamento" ? "bg-blue-600" : "bg-red-600"
   return <span className={`rounded-md px-3 py-1 text-xs font-bold text-white ${classe}`}>{status}</span>
 }
 
