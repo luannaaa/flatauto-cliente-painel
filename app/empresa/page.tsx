@@ -133,7 +133,7 @@ export default function PainelEmpresa() {
 
           <div className="mt-5 grid grid-cols-[1.25fr_0.75fr] gap-5">
             <Card ui={ui} titulo="Resumo Financeiro" acao="Este mês"><Financeiro ui={ui} /></Card>
-            <Card ui={ui} titulo="Entregas Capital" acao="Mapa São Paulo"><MapaSaoPaulo ui={ui} /></Card>
+            <Card ui={ui} titulo="Entregas Capital SP" acao="Capital SP"><MapaSaoPaulo ui={ui} /></Card>
           </div>
 
           <div className="mt-5"><Card ui={ui} titulo="Entregas Recentes" acao="Ver todas"><Tabela ui={ui} /></Card></div>
@@ -174,7 +174,7 @@ export default function PainelEmpresa() {
 
           <div className="mt-4"><Card ui={ui} titulo="Entregas por Período" acao="7 dias"><GraficoLinha mobile /></Card></div>
           <div className="mt-4"><Card ui={ui} titulo="CRM - Pipeline" acao="Ver tudo"><CRM ui={ui} mobile /></Card></div>
-          <div className="mt-4"><Card ui={ui} titulo="Entregas por Destino"><MapaSaoPaulo ui={ui} mobile /></Card></div>
+          <div className="mt-4"><Card ui={ui} titulo="Entregas Capital SP"><MapaSaoPaulo ui={ui} mobile /></Card></div>
           <div className="mt-4"><Card ui={ui} titulo="Resumo Financeiro" acao="Este mês"><Financeiro ui={ui} mobile /></Card></div>
           <div className="mt-4"><Card ui={ui} titulo="Entregas Recentes"><ListaMobile ui={ui} /></Card></div>
         </div>
@@ -391,7 +391,37 @@ function Exportar({ ui }: any) {
 }
 
 function MapaSaoPaulo({ ui, mobile }: any) {
-  return <div className={`grid ${mobile ? "grid-cols-1" : "grid-cols-[1fr_0.9fr]"} gap-4`}><div className={`relative h-[260px] overflow-hidden rounded-2xl border ${ui.card2}`}><img src={imagens.mapaSaoPaulo} alt="Mapa de São Paulo" className="absolute inset-0 h-full w-full object-contain p-4 opacity-95" onError={(e) => { e.currentTarget.style.display = "none" }} /><div className="absolute left-4 top-4 rounded-xl bg-black/45 px-3 py-2 text-xs text-white">Mapa de São Paulo</div></div><div className="space-y-2"><p className={`text-sm font-bold ${ui.textoFraco}`}>Top Destinos SP</p>{destinos.map((destino) => <div key={destino.cidade} className="flex items-center justify-between text-sm"><span>{destino.cidade}</span><strong>{destino.total}</strong></div>)}<button className="pt-1 text-sm font-bold text-[#ffc400]">Ver mapa completo</button></div></div>
+  return (
+    <div className={`grid ${mobile ? "grid-cols-1" : "grid-cols-[1fr_0.9fr]"} gap-4`}>
+      <div className={`relative h-[260px] overflow-hidden rounded-2xl border ${ui.card2}`}>
+        <img
+          src={imagens.mapaSaoPaulo}
+          alt="Mapa da capital de São Paulo"
+          className="absolute inset-0 h-full w-full object-contain p-4 opacity-95"
+          onError={(e) => {
+            e.currentTarget.style.display = "none"
+          }}
+        />
+
+        <div className="absolute left-4 top-4 rounded-xl bg-black/45 px-3 py-2 text-xs text-white">
+          Capital SP
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <p className={`text-sm font-bold ${ui.textoFraco}`}>Entregas Capital SP</p>
+
+        {destinos.map((destino) => (
+          <div key={destino.cidade} className="flex items-center justify-between text-sm">
+            <span>{destino.cidade}</span>
+            <strong>{destino.total}</strong>
+          </div>
+        ))}
+
+        <button className="pt-1 text-sm font-bold text-[#ffc400]">Ver mapa completo</button>
+      </div>
+    </div>
+  )
 }
 
 function Financeiro({ ui, mobile }: any) {
@@ -401,35 +431,42 @@ function Financeiro({ ui, mobile }: any) {
   const despesas = 5420
   const lucroLiquido = faturamentoLiquido - despesas
 
-  const percentualDespesas = ((despesas / faturamentoBruto) * 100).toFixed(2).replace(".", ",")
-  const percentualLucro = ((lucroLiquido / faturamentoBruto) * 100).toFixed(2).replace(".", ",")
+  const percentualRepasse = ((repasseMotorista / faturamentoBruto) * 100)
+    .toFixed(2)
+    .replace(".", ",")
+
+  const percentualLiquido = ((faturamentoLiquido / faturamentoBruto) * 100)
+    .toFixed(2)
+    .replace(".", ",")
+
+  const percentualDespesas = ((despesas / faturamentoBruto) * 100)
+    .toFixed(2)
+    .replace(".", ",")
+
+  const percentualLucro = ((lucroLiquido / faturamentoBruto) * 100)
+    .toFixed(2)
+    .replace(".", ",")
 
   const itens = [
-  [
-    "Repasse Motorista",
-    "R$ 8.340,00",
-    `${percentualRepasse}% do faturamento bruto`,
-    "text-red-400",
-  ],
-  [
-    "Faturamento Líquido",
-    "R$ 16.220,00",
-    `${percentualLiquido}% do faturamento bruto`,
-    "text-green-400",
-  ],
-  [
-    "Despesas",
-    "R$ 5.420,00",
-    `${percentualDespesas}% do faturamento bruto`,
-    "text-red-400",
-  ],
-  [
-    "Lucro Líquido",
-    "R$ 10.800,00",
-    `${percentualLucro}% do faturamento bruto`,
-    "text-green-400",
-  ],
-]
+    ["Faturamento Bruto", "R$ 24.560,00", "+ entrada total do período", "text-green-400"],
+    ["Repasse Motorista", "R$ 8.340,00", percentualRepasse + "% do faturamento bruto", "text-red-400"],
+    ["Faturamento Líquido", "R$ 16.220,00", percentualLiquido + "% do faturamento bruto", "text-green-400"],
+    ["Despesas", "R$ 5.420,00", percentualDespesas + "% do faturamento bruto", "text-red-400"],
+    ["Lucro Líquido", "R$ 10.800,00", percentualLucro + "% do faturamento bruto", "text-green-400"],
+  ]
+
+  return (
+    <div className={`grid ${mobile ? "grid-cols-1" : "grid-cols-5"} gap-3`}>
+      {itens.map(([titulo, valor, detalhe, cor]) => (
+        <div key={String(titulo)} className={`rounded-xl border p-4 ${ui.card2}`}>
+          <p className={`text-xs ${ui.textoFraco}`}>{titulo}</p>
+          <p className="mt-3 text-[22px] font-black">{valor}</p>
+          <p className={`mt-2 text-xs ${cor}`}>{detalhe}</p>
+        </div>
+      ))}
+    </div>
+  )
+}
 
 function Tabela({ ui }: any) {
   return <div className="overflow-x-auto"><table className="w-full min-w-[980px] text-left text-sm"><thead><tr className={`border-b ${ui.linha} ${ui.textoFraco}`}><th className="pb-4">ID</th><th className="pb-4">Data</th><th className="pb-4">Cliente</th><th className="pb-4">Origem</th><th className="pb-4">Destino</th><th className="pb-4">Motorista</th><th className="pb-4">Valor</th><th className="pb-4">Status</th></tr></thead><tbody>{entregas.map((entrega) => <tr key={entrega.id} className={`border-b ${ui.linha}`}><td className="py-4">{entrega.id}</td><td>{entrega.data}</td><td>{entrega.cliente}</td><td>{entrega.origem}</td><td>{entrega.destino}</td><td>{entrega.motorista}</td><td>{entrega.valor}</td><td><Status status={entrega.status} /></td></tr>)}</tbody></table></div>
