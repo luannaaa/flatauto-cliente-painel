@@ -41,7 +41,7 @@ export default function PainelClienteMobile({ nomeCompleto }: PainelClienteMobil
 
   return (
     <main className="min-h-screen overflow-x-hidden bg-black text-white">
-      <div className="mx-auto w-full max-w-[430px] px-4 pb-10 pt-7">
+      <div className="mx-auto w-full max-w-[430px] px-4 pb-32 pt-7">
         <header className="flex items-center justify-between">
           <Image
             src="/logo.png"
@@ -413,7 +413,7 @@ function BottomMenu({
   irPara: (rota: string) => void
 }) {
   return (
-    <nav className="mt-6 flex h-[82px] w-full items-center justify-between rounded-[28px] border border-white/10 bg-[#07090d] px-5 shadow-[0_0_35px_rgba(0,0,0,0.9)]">
+    <nav className="fixed bottom-4 left-1/2 z-50 flex h-[82px] w-[calc(100%-24px)] max-w-[430px] -translate-x-1/2 items-center justify-between rounded-[28px] border border-white/10 bg-[#07090d] px-5 shadow-[0_0_35px_rgba(0,0,0,0.9)]">
       <Menu
         icon={<HomeIcon />}
         label="Início"
