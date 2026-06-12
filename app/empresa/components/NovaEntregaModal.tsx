@@ -82,6 +82,10 @@ export default function NovaEntregaModal({ ui, fechar }: any) {
   const [data, setData] = useState("18/05/2026")
   const [horario, setHorario] = useState("14:30")
   const [valor, setValor] = useState("R$ 0,00")
+  const [peso, setPeso] = useState("")
+  const [altura, setAltura] = useState("")
+  const [largura, setLargura] = useState("")
+  const [comprimento, setComprimento] = useState("")
   const [tipoTransporte, setTipoTransporte] = useState("")
   const [observacoes, setObservacoes] = useState("")
 
@@ -330,6 +334,44 @@ export default function NovaEntregaModal({ ui, fechar }: any) {
                 />
               </div>
 
+              <div className="grid gap-3 sm:grid-cols-4 sm:gap-4">
+                <Campo
+                  ui={ui}
+                  icon={<Truck size={18} />}
+                  label="Peso aproximado"
+                  placeholder="Ex: 800 kg"
+                  value={peso}
+                  onChange={setPeso}
+                />
+
+                <Campo
+                  ui={ui}
+                  icon={<ClipboardList size={18} />}
+                  label="Altura"
+                  placeholder="Ex: 1,80 m"
+                  value={altura}
+                  onChange={setAltura}
+                />
+
+                <Campo
+                  ui={ui}
+                  icon={<ClipboardList size={18} />}
+                  label="Largura"
+                  placeholder="Ex: 1,20 m"
+                  value={largura}
+                  onChange={setLargura}
+                />
+
+                <Campo
+                  ui={ui}
+                  icon={<ClipboardList size={18} />}
+                  label="Comprimento"
+                  placeholder="Ex: 2,50 m"
+                  value={comprimento}
+                  onChange={setComprimento}
+                />
+              </div>
+
               <SelectCampo
                 ui={ui}
                 label="Tipo de transporte"
@@ -370,6 +412,15 @@ export default function NovaEntregaModal({ ui, fechar }: any) {
                 <ResumoLinha label="Status inicial" valor="Em andamento" />
                 <ResumoLinha label="Origem" valor={origem || "A preencher"} />
                 <ResumoLinha label="Destino" valor={destino || "A preencher"} />
+                <ResumoLinha label="Peso" valor={peso || "A preencher"} />
+                <ResumoLinha
+                  label="Cubagem"
+                  valor={
+                    altura || largura || comprimento
+                      ? `${altura || "0"} x ${largura || "0"} x ${comprimento || "0"}`
+                      : "A preencher"
+                  }
+                />
                 <ResumoLinha
                   label="Transporte"
                   valor={

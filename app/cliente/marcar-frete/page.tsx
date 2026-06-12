@@ -334,6 +334,12 @@ export default function MarcarFrete() {
           <Campo label="Data de entrega" type="date" />
           <Campo label="Peso aproximado" placeholder="Ex: 800 kg" />
 
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <Campo label="Altura" placeholder="Ex: 1,80 m" />
+            <Campo label="Largura" placeholder="Ex: 1,20 m" />
+            <Campo label="Comprimento" placeholder="Ex: 2,50 m" />
+          </div>
+
           <SelectCampo
             label="Tipo da carga"
             placeholder="Selecione o tipo de carga"
