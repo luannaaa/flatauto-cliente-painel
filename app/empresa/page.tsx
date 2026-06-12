@@ -133,7 +133,7 @@ export default function PainelEmpresa() {
 
           <div className="mt-5 grid grid-cols-[1.25fr_0.75fr] gap-5">
             <Card ui={ui} titulo="Resumo Financeiro" acao="Este mês"><Financeiro ui={ui} /></Card>
-            <Card ui={ui} titulo="Entregas por Destino" acao="Mapa São Paulo"><MapaSaoPaulo ui={ui} /></Card>
+            <Card ui={ui} titulo="Entregas Capital" acao="Mapa São Paulo"><MapaSaoPaulo ui={ui} /></Card>
           </div>
 
           <div className="mt-5"><Card ui={ui} titulo="Entregas Recentes" acao="Ver todas"><Tabela ui={ui} /></Card></div>
@@ -406,8 +406,8 @@ function Financeiro({ ui, mobile }: any) {
 
   const itens = [
     ["Faturamento Bruto", "R$ 24.560,00", "+ entrada total do período", "text-green-400"],
-    ["Repasse Motorista", "R$ 8.340,00", "- valor repassado aos motoristas", "text-red-400"],
-    ["Faturamento Líquido", "R$ 16.220,00", "= bruto menos repasse", "text-green-400"],
+    ["Repasse Motorista", "R$ 8.340,00", "${percentualRepasse}% do faturamento bruto", "text-red-400"],
+    ["Faturamento Líquido", "R$ 16.220,00", "${percentualLiquido}% do faturamento bruto", "text-green-400"],
     ["Despesas", "R$ 5.420,00", `${percentualDespesas}% do faturamento bruto`, "text-red-400"],
     ["Lucro Líquido", "R$ 10.800,00", `${percentualLucro}% do faturamento bruto`, "text-green-400"],
   ]
