@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, type ChangeEvent } from "react"
 import {
   X,
   MapPin,
@@ -94,6 +94,9 @@ export default function NovaEntregaModal({ ui, fechar }: any) {
 
   const [carregandoOrigem, setCarregandoOrigem] = useState(false)
   const [carregandoDestino, setCarregandoDestino] = useState(false)
+
+  const [lendoNota, setLendoNota] = useState(false)
+  const [textoNota, setTextoNota] = useState("")
 
   useEffect(() => {
     const overflowOriginal = document.body.style.overflow
@@ -215,6 +218,44 @@ export default function NovaEntregaModal({ ui, fechar }: any) {
     }
   }
 
+  async function lerNotaFiscal(event: ChangeEvent<HTMLInputElement>) {
+    const arquivo = event.target.files?.[0]
+    if (!arquivo) return
+
+    setLendoNota(true)
+    setTextoNota("")
+
+    try {
+      const formData = new FormData()
+      formData.append("arquivo", arquivo)
+
+      const resposta = await fetch(`${window.location.origin}/api/ler-nota`, {
+        method: "POST",
+        body: formData,
+      })
+
+      const dados = await resposta.json()
+
+      if (!resposta.ok) {
+        console.error("ERRO DO BACKEND:", dados)
+        alert(dados.erro || "Erro ao ler a nota fiscal.")
+        return
+      }
+
+      setOrigem(dados.localSaida || "")
+      setCepOrigem(dados.cepOrigem ? formatarCep(dados.cepOrigem) : "")
+      setDestino(dados.destinoFinal || "")
+      setCepDestino(dados.cepDestino ? formatarCep(dados.cepDestino) : "")
+      setTextoNota(dados.textoEncontrado || "nota-lida")
+    } catch (error) {
+      console.error("ERRO COMPLETO AO LER NOTA:", error)
+      alert("Erro ao conectar com o backend da nota fiscal. Veja o console/terminal.")
+    } finally {
+      setLendoNota(false)
+    }
+  }
+
+
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-0 backdrop-blur-sm sm:items-center sm:p-4">
       <section className={`flex max-h-[92vh] w-full flex-col overflow-hidden rounded-t-[28px] border sm:max-w-[980px] sm:rounded-[30px] ${ui.card}`}>
@@ -234,10 +275,53 @@ export default function NovaEntregaModal({ ui, fechar }: any) {
         <div className="flex-1 overflow-y-auto px-4 py-4 sm:p-6">
           <div className="grid gap-5 lg:grid-cols-[1.35fr_0.8fr]">
             <div className="space-y-4 sm:space-y-5">
-              <button className="flex h-14 w-full items-center justify-center gap-3 rounded-2xl border border-[#ffc400]/50 bg-[#ffc400]/15 px-4 font-black text-[#ffc400]">
+              <label className="flex h-14 w-full cursor-pointer items-center justify-center gap-3 rounded-2xl border border-[#ffc400]/50 bg-[#ffc400]/15 px-4 font-black text-[#ffc400]">
                 <FileSearch size={22} />
-                Ler nota fiscal
-              </button>
+                {lendoNota ? "Lendo nota fiscal..." : "Ler nota fiscal"}
+                <input
+                  type="file"
+                  accept=".jpg,.jpeg,.png,.pdf"
+                  onChange={lerNotaFiscal}
+                  className="hidden"
+                />
+              </label>
+
+              {(lendoNota || textoNota) && (
+                <div className={`rounded-2xl border p-4 ${
+                  textoNota && origem && destino
+                    ? "border-green-500/30 bg-green-500/10"
+                    : "border-[#ffc400]/30 bg-[#ffc400]/10"
+                }`}>
+                  <div className="flex items-start gap-3">
+                    <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full border text-lg font-black ${
+                      textoNota && origem && destino
+                        ? "border-green-500/40 text-green-400"
+                        : "border-[#ffc400]/40 text-[#ffc400]"
+                    }`}>
+                      {lendoNota ? "…" : textoNota && origem && destino ? "✓" : "!"}
+                    </div>
+
+                    <div className="flex-1">
+                      <p className="text-sm font-black text-[#ffc400]">
+                        {lendoNota
+                          ? "Lendo dados da nota fiscal..."
+                          : textoNota && origem && destino
+                            ? "Endereços encontrados na nota"
+                            : "Confira os endereços preenchidos"}
+                      </p>
+
+                      <div className="mt-3 grid gap-2 text-xs sm:grid-cols-2">
+                        <ResumoLinha label="Origem" valor={origem || "Não identificada"} />
+                        <ResumoLinha label="Destino" valor={destino || "Não identificado"} />
+                      </div>
+
+                      <p className="mt-3 text-xs opacity-60">
+                        Se algum endereço estiver errado, ajuste manualmente antes de salvar a entrega.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <div className="grid gap-3 sm:grid-cols-2 sm:gap-4">
                 <div>

@@ -394,12 +394,42 @@ export default function MarcarFrete() {
               />
             </div>
 
-            {textoNota && (
-              <div className="mt-4 rounded-[16px] border border-[#ffc400]/20 bg-black p-4">
-                <p className="text-[13px] font-bold text-[#ffc400]">Texto encontrado na nota:</p>
-                <p className="mt-2 max-h-[140px] overflow-auto text-[12px] leading-relaxed text-white/50">
-                  {textoNota}
-                </p>
+            {(lendoNota || textoNota) && (
+              <div className="mt-4 rounded-[16px] border border-[#ffc400]/25 bg-[#050505] p-4">
+                <div className="flex items-start gap-3">
+                  <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border ${
+                    textoNota && localSaida && destinoFinal
+                      ? "border-green-500/40 bg-green-500/10 text-green-400"
+                      : "border-[#ffc400]/40 bg-[#ffc400]/10 text-[#ffc400]"
+                  }`}>
+                    {lendoNota ? "…" : textoNota && localSaida && destinoFinal ? "✓" : "!"}
+                  </div>
+
+                  <div className="flex-1">
+                    <p className="text-[13px] font-black text-[#ffc400]">
+                      {lendoNota
+                        ? "Lendo nota fiscal..."
+                        : textoNota && localSaida && destinoFinal
+                          ? "Endereços encontrados na nota"
+                          : "Confira os dados da nota"}
+                    </p>
+
+                    <div className="mt-3 space-y-2 text-[12px] leading-relaxed text-white/65">
+                      <p>
+                        <span className="font-bold text-white">Origem:</span>{" "}
+                        {localSaida || "Não identificada automaticamente"}
+                      </p>
+                      <p>
+                        <span className="font-bold text-white">Destino:</span>{" "}
+                        {destinoFinal || "Não identificado automaticamente"}
+                      </p>
+                    </div>
+
+                    <p className="mt-3 text-[11px] leading-relaxed text-white/40">
+                      Se algum endereço estiver errado, ajuste manualmente antes de solicitar a entrega.
+                    </p>
+                  </div>
+                </div>
               </div>
             )}
           </div>
