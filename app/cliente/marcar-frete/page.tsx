@@ -296,112 +296,6 @@ export default function MarcarFrete() {
         </section>
 
         <section className="mt-6 space-y-4">
-          <div>
-            <Campo
-              label="Origem"
-              placeholder="Digite CEP ou endereço de origem"
-              value={localSaida}
-              onChange={(valor) => buscarEndereco(valor, "origem")}
-            />
-
-            {carregandoOrigem && (
-              <p className="mt-2 text-sm font-bold text-[#ffc400]">Buscando origem...</p>
-            )}
-
-            {sugestoesOrigem.length > 0 && (
-              <Sugestoes
-                sugestoes={sugestoesOrigem}
-                onSelecionar={(item) => selecionarSugestao(item, "origem")}
-              />
-            )}
-          </div>
-
-          <Campo
-            label="CEP de origem"
-            placeholder="Digite somente o CEP de origem"
-            value={cepOrigem}
-            onChange={(valor) => alterarCep(valor, "origem")}
-          />
-
-          <div>
-            <Campo
-              label="Destino"
-              placeholder="Digite CEP ou endereço de destino"
-              value={destinoFinal}
-              onChange={(valor) => buscarEndereco(valor, "destino")}
-            />
-
-            {carregandoDestino && (
-              <p className="mt-2 text-sm font-bold text-[#ffc400]">Buscando destino...</p>
-            )}
-
-            {sugestoesDestino.length > 0 && (
-              <Sugestoes
-                sugestoes={sugestoesDestino}
-                onSelecionar={(item) => selecionarSugestao(item, "destino")}
-              />
-            )}
-          </div>
-
-          <Campo
-            label="CEP de destino"
-            placeholder="Digite somente o CEP de destino"
-            value={cepDestino}
-            onChange={(valor) => alterarCep(valor, "destino")}
-          />
-
-          <button
-            onClick={() => setSegundaParada(!segundaParada)}
-            className="w-full rounded-[20px] border border-[#ffc400]/35 bg-[#ffc400]/10 px-4 py-4 text-left font-bold text-[#ffc400]"
-          >
-            {segundaParada ? "− Remover segunda parada" : "+ Adicionar segunda parada"}
-          </button>
-
-          {segundaParada && (
-            <Campo
-              label="Segunda parada"
-              placeholder="Digite CEP ou endereço da parada"
-            />
-          )}
-
-          <Campo label="Data de coleta" type="date" />
-          <Campo label="Data de entrega" type="date" />
-          <Campo label="Peso aproximado" placeholder="Ex: 800 kg" />
-
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <Campo label="Altura" placeholder="Ex: 1,80 m" />
-            <Campo label="Largura" placeholder="Ex: 1,20 m" />
-            <Campo label="Comprimento" placeholder="Ex: 2,50 m" />
-          </div>
-
-          <SelectCampo
-            label="Tipo da carga"
-            placeholder="Selecione o tipo de carga"
-            options={[
-              "Móveis",
-              "Caixas",
-              "Material de obra",
-              "Eletrodomésticos",
-              "Mercadorias",
-              "Carga frágil",
-              "Outros",
-            ]}
-          />
-
-          <SelectCampo
-            label="Tipo de transporte"
-            placeholder="Selecione o tipo de transporte"
-            options={[
-              "Motoboy",
-              "Carro utilitário",
-              "Fiorino / pequeno utilitário",
-              "Van",
-              "VUC",
-              "Caminhão pequeno",
-              "Caminhão médio",
-            ]}
-          />
-
           <div className="rounded-[22px] border border-white/10 bg-[#080808] p-4">
             <label className="mb-3 block text-[15px] font-bold text-white/80">Importar nota fiscal</label>
 
@@ -510,6 +404,114 @@ export default function MarcarFrete() {
               </div>
             )}
           </div>
+
+
+          <div>
+            <Campo
+              label="Origem"
+              placeholder="Digite CEP ou endereço de origem"
+              value={localSaida}
+              onChange={(valor) => buscarEndereco(valor, "origem")}
+            />
+
+            {carregandoOrigem && (
+              <p className="mt-2 text-sm font-bold text-[#ffc400]">Buscando origem...</p>
+            )}
+
+            {sugestoesOrigem.length > 0 && (
+              <Sugestoes
+                sugestoes={sugestoesOrigem}
+                onSelecionar={(item) => selecionarSugestao(item, "origem")}
+              />
+            )}
+          </div>
+
+          <Campo
+            label="CEP de origem"
+            placeholder="Digite somente o CEP de origem"
+            value={cepOrigem}
+            onChange={(valor) => alterarCep(valor, "origem")}
+          />
+
+          <div>
+            <Campo
+              label="Destino"
+              placeholder="Digite CEP ou endereço de destino"
+              value={destinoFinal}
+              onChange={(valor) => buscarEndereco(valor, "destino")}
+            />
+
+            {carregandoDestino && (
+              <p className="mt-2 text-sm font-bold text-[#ffc400]">Buscando destino...</p>
+            )}
+
+            {sugestoesDestino.length > 0 && (
+              <Sugestoes
+                sugestoes={sugestoesDestino}
+                onSelecionar={(item) => selecionarSugestao(item, "destino")}
+              />
+            )}
+          </div>
+
+          <Campo
+            label="CEP de destino"
+            placeholder="Digite somente o CEP de destino"
+            value={cepDestino}
+            onChange={(valor) => alterarCep(valor, "destino")}
+          />
+
+          <button
+            onClick={() => setSegundaParada(!segundaParada)}
+            className="w-full rounded-[20px] border border-[#ffc400]/35 bg-[#ffc400]/10 px-4 py-4 text-left font-bold text-[#ffc400]"
+          >
+            {segundaParada ? "− Remover segunda parada" : "+ Adicionar segunda parada"}
+          </button>
+
+          {segundaParada && (
+            <Campo
+              label="Segunda parada"
+              placeholder="Digite CEP ou endereço da parada"
+            />
+          )}
+
+          <Campo label="Data de coleta" type="date" />
+          <Campo label="Data de entrega" type="date" />
+          <Campo label="Peso aproximado" placeholder="Ex: 800 kg" />
+
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <Campo label="Altura" placeholder="Ex: 1,80 m" />
+            <Campo label="Largura" placeholder="Ex: 1,20 m" />
+            <Campo label="Comprimento" placeholder="Ex: 2,50 m" />
+          </div>
+
+          <SelectCampo
+            label="Tipo da carga"
+            placeholder="Selecione o tipo de carga"
+            options={[
+              "Móveis",
+              "Caixas",
+              "Material de obra",
+              "Eletrodomésticos",
+              "Mercadorias",
+              "Carga frágil",
+              "Outros",
+            ]}
+          />
+
+          <SelectCampo
+            label="Tipo de transporte"
+            placeholder="Selecione o tipo de transporte"
+            options={[
+              "Motoboy",
+              "Carro utilitário",
+              "Fiorino / pequeno utilitário",
+              "Van",
+              "VUC",
+              "Caminhão pequeno",
+              "Caminhão médio",
+            ]}
+          />
+
 
           <div className="rounded-[22px] border border-white/10 bg-[#080808] p-4">
             <label className="mb-3 block text-[15px] font-bold text-white/80">Observações</label>
