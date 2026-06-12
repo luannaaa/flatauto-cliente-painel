@@ -406,8 +406,8 @@ function Financeiro({ ui, mobile }: any) {
 
   const itens = [
     ["Faturamento Bruto", "R$ 24.560,00", "+ entrada total do período", "text-green-400"],
-    ["Repasse Motorista", "R$ 8.340,00", "${percentualRepasse}% do faturamento bruto", "text-red-400"],
-    ["Faturamento Líquido", "R$ 16.220,00", "${percentualLiquido}% do faturamento bruto", "text-green-400"],
+    ["Repasse Motorista", "R$ 8.340,00", `${percentualRepasse}% do faturamento bruto`, "text-red-400"],
+    ["Faturamento Líquido", "R$ 16.220,00", `${percentualLiquido}% do faturamento bruto`, "text-green-400"],
     ["Despesas", "R$ 5.420,00", `${percentualDespesas}% do faturamento bruto`, "text-red-400"],
     ["Lucro Líquido", "R$ 10.800,00", `${percentualLucro}% do faturamento bruto`, "text-green-400"],
   ]
