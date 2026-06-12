@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, type ChangeEvent } from "react"
+import { useEffect, useRef, useState } from "react"
 import {
   X,
   MapPin,
@@ -82,21 +82,25 @@ export default function NovaEntregaModal({ ui, fechar }: any) {
   const [data, setData] = useState("18/05/2026")
   const [horario, setHorario] = useState("14:30")
   const [valor, setValor] = useState("R$ 0,00")
+  const [tipoTransporte, setTipoTransporte] = useState("")
   const [peso, setPeso] = useState("")
   const [altura, setAltura] = useState("")
   const [largura, setLargura] = useState("")
   const [comprimento, setComprimento] = useState("")
-  const [tipoTransporte, setTipoTransporte] = useState("")
   const [observacoes, setObservacoes] = useState("")
+
+  const inputNotaRef = useRef<HTMLInputElement | null>(null)
+  const [arquivoNota, setArquivoNota] = useState<File | null>(null)
+  const [lendoNota, setLendoNota] = useState(false)
+  const [notaProcessada, setNotaProcessada] = useState(false)
+  const [erroNota, setErroNota] = useState("")
+  const [textoNota, setTextoNota] = useState("")
 
   const [sugestoesOrigem, setSugestoesOrigem] = useState<SugestaoLocalizacao[]>([])
   const [sugestoesDestino, setSugestoesDestino] = useState<SugestaoLocalizacao[]>([])
 
   const [carregandoOrigem, setCarregandoOrigem] = useState(false)
   const [carregandoDestino, setCarregandoDestino] = useState(false)
-
-  const [lendoNota, setLendoNota] = useState(false)
-  const [textoNota, setTextoNota] = useState("")
 
   useEffect(() => {
     const overflowOriginal = document.body.style.overflow
@@ -218,43 +222,51 @@ export default function NovaEntregaModal({ ui, fechar }: any) {
     }
   }
 
-  async function lerNotaFiscal(event: ChangeEvent<HTMLInputElement>) {
-    const arquivo = event.target.files?.[0]
-    if (!arquivo) return
+  async function lerNotaFiscal(file: File | null) {
+    if (!file) return
 
+    setArquivoNota(file)
     setLendoNota(true)
+    setNotaProcessada(false)
+    setErroNota("")
     setTextoNota("")
 
     try {
       const formData = new FormData()
-      formData.append("arquivo", arquivo)
+      formData.append("arquivo", file)
 
-      const resposta = await fetch(`${window.location.origin}/api/ler-nota`, {
+      const resposta = await fetch("/api/ler-nota", {
         method: "POST",
         body: formData,
       })
 
-      const dados = await resposta.json()
-
       if (!resposta.ok) {
-        console.error("ERRO DO BACKEND:", dados)
-        alert(dados.erro || "Erro ao ler a nota fiscal.")
-        return
+        throw new Error("Não foi possível ler a nota fiscal.")
       }
 
-      setOrigem(dados.localSaida || "")
-      setCepOrigem(dados.cepOrigem ? formatarCep(dados.cepOrigem) : "")
-      setDestino(dados.destinoFinal || "")
-      setCepDestino(dados.cepDestino ? formatarCep(dados.cepDestino) : "")
-      setTextoNota(dados.textoEncontrado || "nota-lida")
+      const dados = await resposta.json()
+
+      if (dados.localSaida) setOrigem(dados.localSaida)
+      if (dados.cepOrigem) setCepOrigem(formatarCep(dados.cepOrigem))
+      if (dados.destinoFinal) setDestino(dados.destinoFinal)
+      if (dados.cepDestino) setCepDestino(formatarCep(dados.cepDestino))
+      if (dados.textoEncontrado) setTextoNota(String(dados.textoEncontrado))
+
+      setNotaProcessada(true)
     } catch (error) {
-      console.error("ERRO COMPLETO AO LER NOTA:", error)
-      alert("Erro ao conectar com o backend da nota fiscal. Veja o console/terminal.")
+      console.error("Erro ao ler nota fiscal:", error)
+      setErroNota("Não conseguimos ler a nota fiscal. Você pode preencher os endereços manualmente.")
     } finally {
       setLendoNota(false)
+      if (inputNotaRef.current) {
+        inputNotaRef.current.value = ""
+      }
     }
   }
 
+  const enderecoOrigemOk = Boolean(origem.trim() || cepOrigem.trim())
+  const enderecoDestinoOk = Boolean(destino.trim() || cepDestino.trim())
+  const notaConferidaOk = notaProcessada && enderecoOrigemOk && enderecoDestinoOk && !erroNota
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-0 backdrop-blur-sm sm:items-center sm:p-4">
@@ -275,52 +287,31 @@ export default function NovaEntregaModal({ ui, fechar }: any) {
         <div className="flex-1 overflow-y-auto px-4 py-4 sm:p-6">
           <div className="grid gap-5 lg:grid-cols-[1.35fr_0.8fr]">
             <div className="space-y-4 sm:space-y-5">
-              <label className="flex h-14 w-full cursor-pointer items-center justify-center gap-3 rounded-2xl border border-[#ffc400]/50 bg-[#ffc400]/15 px-4 font-black text-[#ffc400]">
+              <label className="flex h-14 w-full cursor-pointer items-center justify-center gap-3 rounded-2xl border border-[#ffc400]/50 bg-[#ffc400]/15 px-4 font-black text-[#ffc400] transition hover:bg-[#ffc400]/20">
                 <FileSearch size={22} />
                 {lendoNota ? "Lendo nota fiscal..." : "Ler nota fiscal"}
                 <input
+                  ref={inputNotaRef}
                   type="file"
-                  accept=".jpg,.jpeg,.png,.pdf"
-                  onChange={lerNotaFiscal}
+                  accept=".pdf,.png,.jpg,.jpeg,image/png,image/jpeg,application/pdf"
+                  onChange={(event) => lerNotaFiscal(event.target.files?.[0] || null)}
                   className="hidden"
                 />
               </label>
 
-              {(lendoNota || textoNota) && (
-                <div className={`rounded-2xl border p-4 ${
-                  textoNota && origem && destino
-                    ? "border-green-500/30 bg-green-500/10"
-                    : "border-[#ffc400]/30 bg-[#ffc400]/10"
-                }`}>
-                  <div className="flex items-start gap-3">
-                    <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full border text-lg font-black ${
-                      textoNota && origem && destino
-                        ? "border-green-500/40 text-green-400"
-                        : "border-[#ffc400]/40 text-[#ffc400]"
-                    }`}>
-                      {lendoNota ? "…" : textoNota && origem && destino ? "✓" : "!"}
-                    </div>
-
-                    <div className="flex-1">
-                      <p className="text-sm font-black text-[#ffc400]">
-                        {lendoNota
-                          ? "Lendo dados da nota fiscal..."
-                          : textoNota && origem && destino
-                            ? "Endereços encontrados na nota"
-                            : "Confira os endereços preenchidos"}
-                      </p>
-
-                      <div className="mt-3 grid gap-2 text-xs sm:grid-cols-2">
-                        <ResumoLinha label="Origem" valor={origem || "Não identificada"} />
-                        <ResumoLinha label="Destino" valor={destino || "Não identificado"} />
-                      </div>
-
-                      <p className="mt-3 text-xs opacity-60">
-                        Se algum endereço estiver errado, ajuste manualmente antes de salvar a entrega.
-                      </p>
-                    </div>
-                  </div>
-                </div>
+              {(arquivoNota || lendoNota || notaProcessada || erroNota) && (
+                <NotaFiscalCard
+                  ui={ui}
+                  nomeArquivo={arquivoNota?.name || "Nota fiscal"}
+                  lendo={lendoNota}
+                  ok={notaConferidaOk}
+                  erro={erroNota}
+                  origemOk={enderecoOrigemOk}
+                  destinoOk={enderecoDestinoOk}
+                  origem={origem || cepOrigem}
+                  destino={destino || cepDestino}
+                  textoNota={textoNota}
+                />
               )}
 
               <div className="grid gap-3 sm:grid-cols-2 sm:gap-4">
@@ -422,8 +413,8 @@ export default function NovaEntregaModal({ ui, fechar }: any) {
                 <Campo
                   ui={ui}
                   icon={<Truck size={18} />}
-                  label="Peso aproximado"
-                  placeholder="Ex: 800 kg"
+                  label="Peso"
+                  placeholder="Ex: 80 kg"
                   value={peso}
                   onChange={setPeso}
                 />
@@ -432,7 +423,7 @@ export default function NovaEntregaModal({ ui, fechar }: any) {
                   ui={ui}
                   icon={<ClipboardList size={18} />}
                   label="Altura"
-                  placeholder="Ex: 1,80 m"
+                  placeholder="Ex: 1,20 m"
                   value={altura}
                   onChange={setAltura}
                 />
@@ -441,7 +432,7 @@ export default function NovaEntregaModal({ ui, fechar }: any) {
                   ui={ui}
                   icon={<ClipboardList size={18} />}
                   label="Largura"
-                  placeholder="Ex: 1,20 m"
+                  placeholder="Ex: 0,80 m"
                   value={largura}
                   onChange={setLargura}
                 />
@@ -450,7 +441,7 @@ export default function NovaEntregaModal({ ui, fechar }: any) {
                   ui={ui}
                   icon={<ClipboardList size={18} />}
                   label="Comprimento"
-                  placeholder="Ex: 2,50 m"
+                  placeholder="Ex: 1,50 m"
                   value={comprimento}
                   onChange={setComprimento}
                 />
@@ -528,6 +519,75 @@ export default function NovaEntregaModal({ ui, fechar }: any) {
           </div>
         </div>
       </section>
+    </div>
+  )
+}
+
+
+function NotaFiscalCard({
+  ui,
+  nomeArquivo,
+  lendo,
+  ok,
+  erro,
+  origemOk,
+  destinoOk,
+  origem,
+  destino,
+  textoNota,
+}: any) {
+  return (
+    <div className={`rounded-2xl border p-4 ${ui.card2}`}>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-xs font-black uppercase text-[#ffc400]">Conferência da nota fiscal</p>
+          <h3 className="mt-1 text-sm font-black">{nomeArquivo}</h3>
+          <p className={`mt-1 text-xs ${ui.textoFraco}`}>
+            {lendo
+              ? "Lendo a nota e tentando preencher origem e destino..."
+              : erro
+                ? erro
+                : ok
+                  ? "Endereços encontrados. Confira se está tudo certo antes de salvar."
+                  : "Nota lida. Confira os campos antes de salvar."}
+          </p>
+        </div>
+
+        <div
+          className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border text-xl ${
+            lendo
+              ? "border-[#ffc400]/40 bg-[#ffc400]/10 text-[#ffc400]"
+              : ok
+                ? "border-green-500/40 bg-green-500/10 text-green-400"
+                : "border-red-500/40 bg-red-500/10 text-red-400"
+          }`}
+        >
+          {lendo ? "…" : ok ? "✓" : "!"}
+        </div>
+      </div>
+
+      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+        <div className="rounded-xl border border-white/10 bg-black/10 p-3">
+          <p className="text-xs font-black text-white/45">Origem</p>
+          <p className="mt-1 text-sm font-bold">{origemOk ? origem : "Não encontrada"}</p>
+        </div>
+
+        <div className="rounded-xl border border-white/10 bg-black/10 p-3">
+          <p className="text-xs font-black text-white/45">Destino</p>
+          <p className="mt-1 text-sm font-bold">{destinoOk ? destino : "Não encontrado"}</p>
+        </div>
+      </div>
+
+      {textoNota && (
+        <details className="mt-3 rounded-xl border border-white/10 bg-black/10 p-3">
+          <summary className="cursor-pointer text-xs font-black text-[#ffc400]">
+            Ver texto lido da nota
+          </summary>
+          <p className="mt-2 max-h-28 overflow-y-auto whitespace-pre-wrap text-xs opacity-70">
+            {textoNota}
+          </p>
+        </details>
+      )}
     </div>
   )
 }
