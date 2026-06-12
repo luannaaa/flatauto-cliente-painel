@@ -133,7 +133,7 @@ export default function PainelEmpresa() {
 
           <div className="mt-5 grid grid-cols-[1.25fr_0.75fr] gap-5">
             <Card ui={ui} titulo="Resumo Financeiro" acao="Este mês"><Financeiro ui={ui} /></Card>
-            <Card ui={ui} titulo="Entregas por Destino" acao="Mapa São Paulo"><MapaSaoPaulo ui={ui} /></Card>
+            <Card ui={ui} titulo="Capital de SP" acao="Mapa da Capital de SP"><MapaSaoPaulo ui={ui} /></Card>
           </div>
 
           <div className="mt-5"><Card ui={ui} titulo="Entregas Recentes" acao="Ver todas"><Tabela ui={ui} /></Card></div>
@@ -174,7 +174,7 @@ export default function PainelEmpresa() {
 
           <div className="mt-4"><Card ui={ui} titulo="Entregas por Período" acao="7 dias"><GraficoLinha mobile /></Card></div>
           <div className="mt-4"><Card ui={ui} titulo="CRM - Pipeline" acao="Ver tudo"><CRM ui={ui} mobile /></Card></div>
-          <div className="mt-4"><Card ui={ui} titulo="Entregas por Destino"><MapaSaoPaulo ui={ui} mobile /></Card></div>
+          <div className="mt-4"><Card ui={ui} titulo="Capital de SP"><MapaSaoPaulo ui={ui} mobile /></Card></div>
           <div className="mt-4"><Card ui={ui} titulo="Resumo Financeiro" acao="Este mês"><Financeiro ui={ui} mobile /></Card></div>
           <div className="mt-4"><Card ui={ui} titulo="Entregas Recentes"><ListaMobile ui={ui} /></Card></div>
         </div>
