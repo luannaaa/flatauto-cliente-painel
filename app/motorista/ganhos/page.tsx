@@ -139,13 +139,19 @@ export default function GanhosPage() {
             </p>
           </div>
 
-          <div className="flex h-[210px] items-end gap-3 rounded-2xl border border-white/10 bg-[#070b0f] p-4">
+          <div className="flex h-[240px] items-end gap-2 overflow-hidden rounded-2xl border border-white/10 bg-[#070b0f] px-3 pb-6 pt-4">
             {dados[periodo].map((item) => {
-              const altura = Math.max((item.valor / maiorValor) * 100, 12)
+              const altura = Math.min(
+                Math.max((item.valor / maiorValor) * 92, 12),
+                92
+              )
 
               return (
-                <div key={item.label} className="flex flex-1 flex-col items-center gap-2">
-                  <div className="flex h-[150px] w-full items-end">
+                <div
+                  key={item.label}
+                  className="flex min-w-0 flex-1 flex-col items-center gap-2"
+                >
+                  <div className="flex h-[135px] w-full items-end overflow-hidden">
                     <div
                       className="w-full rounded-t-xl bg-[#ffc400] shadow-[0_0_18px_rgba(255,196,0,0.35)]"
                       style={{ height: `${altura}%` }}
@@ -156,7 +162,7 @@ export default function GanhosPage() {
                     {item.label}
                   </p>
 
-                  <p className="text-[11px] font-black text-[#ffc400]">
+                  <p className="whitespace-nowrap text-[10px] font-black text-[#ffc400]">
                     R$ {item.valor},00
                   </p>
                 </div>
