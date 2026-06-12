@@ -37,15 +37,15 @@ const imagens = {
 }
 
 const entregas = [
-  { id: "#1287", data: "18/05/2026", cliente: "Auto PeÃ§as Brasil", origem: "SÃ£o Paulo - SP", destino: "Campinas - SP", motorista: "Marcos VinÃ­cius", valor: "R$ 1.250,00", status: "ConcluÃ­da" as StatusEntrega },
+  { id: "#1287", data: "18/05/2026", cliente: "Auto PeÃ§as Brasil", origem: "São Paulo - SP", destino: "Campinas - SP", motorista: "Marcos VinÃ­cius", valor: "R$ 1.250,00", status: "ConcluÃ­da" as StatusEntrega },
   { id: "#1286", data: "18/05/2026", cliente: "Construtora Nova", origem: "Santos - SP", destino: "RibeirÃ£o Preto - SP", motorista: "JoÃ£o Silva", valor: "R$ 2.340,00", status: "Em Andamento" as StatusEntrega },
-  { id: "#1285", data: "17/05/2026", cliente: "Mercado Central", origem: "Campinas - SP", destino: "SÃ£o Paulo - SP", motorista: "Carlos Alberto", valor: "R$ 980,00", status: "ConcluÃ­da" as StatusEntrega },
-  { id: "#1284", data: "17/05/2026", cliente: "IndÃºstria ABC", origem: "SÃ£o Paulo - SP", destino: "Sorocaba - SP", motorista: "Rafael Costa", valor: "R$ 1.870,00", status: "Cancelada" as StatusEntrega },
+  { id: "#1285", data: "17/05/2026", cliente: "Mercado Central", origem: "Campinas - SP", destino: "São Paulo - SP", motorista: "Carlos Alberto", valor: "R$ 980,00", status: "ConcluÃ­da" as StatusEntrega },
+  { id: "#1284", data: "17/05/2026", cliente: "IndÃºstria ABC", origem: "São Paulo - SP", destino: "Sorocaba - SP", motorista: "Rafael Costa", valor: "R$ 1.870,00", status: "Cancelada" as StatusEntrega },
   { id: "#1283", data: "16/05/2026", cliente: "Lojas Silva", origem: "RibeirÃ£o Preto - SP", destino: "Santos - SP", motorista: "Lucas Martins", valor: "R$ 1.450,00", status: "ConcluÃ­da" as StatusEntrega },
 ]
 
 const destinos = [
-  { cidade: "SÃ£o Paulo - SP", total: 42 },
+  { cidade: "São Paulo - SP", total: 42 },
   { cidade: "Campinas - SP", total: 18 },
   { cidade: "RibeirÃ£o Preto - SP", total: 12 },
   { cidade: "Sorocaba - SP", total: 10 },
@@ -53,10 +53,10 @@ const destinos = [
 ]
 
 const crmColunas = [
-  { nome: "Novos Leads", total: 8, cor: "border-[#ffc400]/35 bg-[#ffc400]/8", itens: [{ nome: "Empresa ABC", local: "SÃ£o Paulo - SP", valor: "R$ 12.500" }, { nome: "IndÃºstria Lima", local: "Campinas - SP", valor: "R$ 8.750" }] },
-  { nome: "Contato Inicial", total: 5, cor: "border-[#d89711]/35 bg-[#d89711]/8", itens: [{ nome: "ComÃ©rcio Forte", local: "Santos - SP", valor: "R$ 23.000" }, { nome: "Log Express", local: "SÃ£o Paulo - SP", valor: "R$ 15.400" }] },
+  { nome: "Novos Leads", total: 8, cor: "border-[#ffc400]/35 bg-[#ffc400]/8", itens: [{ nome: "Empresa ABC", local: "São Paulo - SP", valor: "R$ 12.500" }, { nome: "IndÃºstria Lima", local: "Campinas - SP", valor: "R$ 8.750" }] },
+  { nome: "Contato Inicial", total: 5, cor: "border-[#d89711]/35 bg-[#d89711]/8", itens: [{ nome: "ComÃ©rcio Forte", local: "Santos - SP", valor: "R$ 23.000" }, { nome: "Log Express", local: "São Paulo - SP", valor: "R$ 15.400" }] },
   { nome: "Em andamento", total: 7, cor: "border-sky-500/35 bg-sky-500/8", itens: [{ nome: "Distribuidora X", local: "RibeirÃ£o Preto - SP", valor: "R$ 27.800" }, { nome: "Transportes Betta", local: "Sorocaba - SP", valor: "R$ 16.600" }] },
-  { nome: "NegÃ³cio Fechado", total: 12, cor: "border-green-500/35 bg-green-500/8", itens: [{ nome: "Mercado Central", local: "SÃ£o Paulo - SP", valor: "R$ 31.200" }, { nome: "Global Foods", local: "Curitiba - PR", valor: "R$ 22.500" }] },
+  { nome: "NegÃ³cio Fechado", total: 12, cor: "border-green-500/35 bg-green-500/8", itens: [{ nome: "Mercado Central", local: "São Paulo - SP", valor: "R$ 31.200" }, { nome: "Global Foods", local: "Curitiba - PR", valor: "R$ 22.500" }] },
 ]
 
 export default function PainelEmpresa() {
@@ -133,7 +133,7 @@ export default function PainelEmpresa() {
 
           <div className="mt-5 grid grid-cols-[1.25fr_0.75fr] gap-5">
             <Card ui={ui} titulo="Resumo Financeiro" acao="Este mÃªs"><Financeiro ui={ui} /></Card>
-            <Card ui={ui} titulo="Entregas por Destino" acao="Mapa Sao Paulo"><MapaSaoPaulo ui={ui} /></Card>
+            <Card ui={ui} titulo="Entregas por Destino" acao="Mapa da Capital de São Paulo"><MapaSaoPaulo ui={ui} /></Card>
           </div>
 
           <div className="mt-5"><Card ui={ui} titulo="Entregas Recentes" acao="Ver todas"><Tabela ui={ui} /></Card></div>
@@ -391,7 +391,7 @@ function Exportar({ ui }: any) {
 }
 
 function MapaSaoPaulo({ ui, mobile }: any) {
-  return <div className={`grid ${mobile ? "grid-cols-1" : "grid-cols-[1fr_0.9fr]"} gap-4`}><div className={`relative h-[320px] overflow-hidden rounded-2xl border ${ui.card2}`}><img src={`${imagens.mapaSaoPaulo}?v=2`} alt="Sao Paulo Capital" className="absolute inset-0 h-full w-full object-contain p-1 opacity-100" onError={(e) => { e.currentTarget.style.display = "none" }} /><div className="absolute left-4 top-4 rounded-xl bg-black/45 px-3 py-2 text-xs text-white">Sao Paulo Capital</div></div><div className="space-y-2"><p className={`text-sm font-bold ${ui.textoFraco}`}>Top Destinos SP</p>{destinos.map((destino) => <div key={destino.cidade} className="flex items-center justify-between text-sm"><span>{destino.cidade}</span><strong>{destino.total}</strong></div>)}<button className="pt-1 text-sm font-bold text-[#ffc400]">Ver mapa completo</button></div></div>
+  return <div className={`grid ${mobile ? "grid-cols-1" : "grid-cols-[1fr_0.9fr]"} gap-4`}><div className={`relative h-[320px] overflow-hidden rounded-2xl border ${ui.card2}`}><img src={`${imagens.mapaSaoPaulo}?v=2`} alt="Capital de São Paulo" className="absolute inset-0 h-full w-full object-contain p-1 opacity-100" onError={(e) => { e.currentTarget.style.display = "none" }} /><div className="absolute left-4 top-4 rounded-xl bg-black/45 px-3 py-2 text-xs text-white">Capital de São Paulo</div></div><div className="space-y-2"><p className={`text-sm font-bold ${ui.textoFraco}`}>Top Destinos SP</p>{destinos.map((destino) => <div key={destino.cidade} className="flex items-center justify-between text-sm"><span>{destino.cidade}</span><strong>{destino.total}</strong></div>)}<button className="pt-1 text-sm font-bold text-[#ffc400]">Ver mapa completo</button></div></div>
 }
 
 function Financeiro({ ui, mobile }: any) {
@@ -439,5 +439,6 @@ function NavMobile({ icon, texto, ativo, claro, href = "/empresa" }: any) {
     </Link>
   )
 }
+
 
 
