@@ -1292,6 +1292,7 @@ function CadastroMotoristaWeb({
   onCadastroFinalizado: () => void
 }) {
   const [nome, setNome] = useState(dadosBase.nome)
+  const [cpfMotorista, setCpfMotorista] = useState("")
   const [modeloCaminhao, setModeloCaminhao] = useState("")
   const [placaCaminhao, setPlacaCaminhao] = useState("")
   const [tipoCaminhao, setTipoCaminhao] = useState("")
@@ -1321,6 +1322,7 @@ function CadastroMotoristaWeb({
 
     if (
       !nome ||
+      !cpfMotorista ||
       !modeloCaminhao ||
       !placaCaminhao ||
       !tipoCaminhao ||
@@ -1465,6 +1467,13 @@ function CadastroMotoristaWeb({
               placeholder="Nome completo"
               value={nome}
               onChange={setNome}
+            />
+
+            <MobileDriverInput
+              icon={imagens.documento}
+              placeholder="CPF do motorista"
+              value={cpfMotorista}
+              onChange={setCpfMotorista}
             />
 
             <MobileDriverInput
@@ -1632,6 +1641,15 @@ function CadastroMotoristaWeb({
                 placeholder="Digite seu nome completo"
                 value={nome}
                 onChange={setNome}
+              />
+
+              <DriverField
+                icon={imagens.documento}
+                label="CPF do motorista"
+                placeholder="Digite o CPF do motorista"
+                value={cpfMotorista}
+                onChange={setCpfMotorista}
+                dots
               />
 
               <DriverField
