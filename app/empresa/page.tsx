@@ -133,7 +133,7 @@ export default function PainelEmpresa() {
 
           <div className="mt-5 grid grid-cols-[1.25fr_0.75fr] gap-5">
             <Card ui={ui} titulo="Resumo Financeiro" acao="Este mÃªs"><Financeiro ui={ui} /></Card>
-            <Card ui={ui} titulo="Entregas por Destino" acao="Mapa SÃ£o Paulo"><MapaSaoPaulo ui={ui} /></Card>
+            <Card ui={ui} titulo="Entregas por Destino" acao="Mapa Sao Paulo"><MapaSaoPaulo ui={ui} /></Card>
           </div>
 
           <div className="mt-5"><Card ui={ui} titulo="Entregas Recentes" acao="Ver todas"><Tabela ui={ui} /></Card></div>
@@ -391,7 +391,7 @@ function Exportar({ ui }: any) {
 }
 
 function MapaSaoPaulo({ ui, mobile }: any) {
-  return <div className={`grid ${mobile ? "grid-cols-1" : "grid-cols-[1fr_0.9fr]"} gap-4`}><div className={`relative h-[320px] overflow-hidden rounded-2xl border ${ui.card2}`}><img src={imagens.mapaSaoPaulo} alt="São Paulo Capital" className="absolute inset-0 h-full w-full object-contain p-1 opacity-100" onError={(e) => { e.currentTarget.style.display = "none" }} /><div className="absolute left-4 top-4 rounded-xl bg-black/45 px-3 py-2 text-xs text-white">São Paulo Capital</div></div><div className="space-y-2"><p className={`text-sm font-bold ${ui.textoFraco}`}>Top Destinos SP</p>{destinos.map((destino) => <div key={destino.cidade} className="flex items-center justify-between text-sm"><span>{destino.cidade}</span><strong>{destino.total}</strong></div>)}<button className="pt-1 text-sm font-bold text-[#ffc400]">Ver mapa completo</button></div></div>
+  return <div className={`grid ${mobile ? "grid-cols-1" : "grid-cols-[1fr_0.9fr]"} gap-4`}><div className={`relative h-[320px] overflow-hidden rounded-2xl border ${ui.card2}`}><img src={`${imagens.mapaSaoPaulo}?v=2`} alt="Sao Paulo Capital" className="absolute inset-0 h-full w-full object-contain p-1 opacity-100" onError={(e) => { e.currentTarget.style.display = "none" }} /><div className="absolute left-4 top-4 rounded-xl bg-black/45 px-3 py-2 text-xs text-white">Sao Paulo Capital</div></div><div className="space-y-2"><p className={`text-sm font-bold ${ui.textoFraco}`}>Top Destinos SP</p>{destinos.map((destino) => <div key={destino.cidade} className="flex items-center justify-between text-sm"><span>{destino.cidade}</span><strong>{destino.total}</strong></div>)}<button className="pt-1 text-sm font-bold text-[#ffc400]">Ver mapa completo</button></div></div>
 }
 
 function Financeiro({ ui, mobile }: any) {
@@ -439,3 +439,5 @@ function NavMobile({ icon, texto, ativo, claro, href = "/empresa" }: any) {
     </Link>
   )
 }
+
+
