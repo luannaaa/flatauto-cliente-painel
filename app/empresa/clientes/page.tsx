@@ -45,7 +45,7 @@ const clientesIniciais: Cliente[] = [
     nome: "Mercado Central",
     responsavel: "Carlos Silva",
     tipo: "Empresa",
-    documento: "12.345.678/0001-90",
+    documento: "CNPJ: 12.345.678/0001-90",
     telefone: "(81) 99999-2020",
     email: "contato@mercadocentral.com",
     cidade: "Recife - PE",
@@ -59,7 +59,7 @@ const clientesIniciais: Cliente[] = [
     nome: "Auto Peças Brasil",
     responsavel: "Mariana Costa",
     tipo: "Empresa",
-    documento: "45.789.120/0001-11",
+    documento: "CNPJ: 45.789.120/0001-11",
     telefone: "(81) 98888-1122",
     email: "financeiro@autopecas.com",
     cidade: "Jaboatão - PE",
@@ -67,6 +67,34 @@ const clientesIniciais: Cliente[] = [
     ultimaEntrega: "07/06/2026",
     valorMovimentado: "R$ 5.980,00",
     status: "Ativo",
+  },
+  {
+    id: 3,
+    nome: "João Ferreira",
+    responsavel: "João Ferreira",
+    tipo: "Pessoa física",
+    documento: "CPF: 123.456.789-10",
+    telefone: "(81) 97777-3344",
+    email: "joaoferreira@email.com",
+    cidade: "Olinda - PE",
+    entregas: 7,
+    ultimaEntrega: "02/06/2026",
+    valorMovimentado: "R$ 1.320,00",
+    status: "Inativo",
+  },
+  {
+    id: 4,
+    nome: "Cliente sem CPF",
+    responsavel: "Aguardando documento",
+    tipo: "Pessoa física",
+    documento: "CPF não informado",
+    telefone: "(81) 96666-7788",
+    email: "semcpf@email.com",
+    cidade: "Recife - PE",
+    entregas: 0,
+    ultimaEntrega: "Nenhuma",
+    valorMovimentado: "R$ 0,00",
+    status: "Inativo",
   },
 ]
 
@@ -114,7 +142,7 @@ export default function ClientesPage() {
       nome: novoCliente.nome || novoCliente.nomeCliente || "Novo Cliente",
       responsavel: novoCliente.responsavel || "A preencher",
       tipo: novoCliente.tipo || "Pessoa física",
-      documento: novoCliente.documento || "A preencher",
+      documento: novoCliente.documento || "CPF/CNPJ não informado",
       telefone: novoCliente.telefone || novoCliente.whatsapp || "A preencher",
       email: novoCliente.email || "A preencher",
       cidade:
@@ -160,8 +188,8 @@ export default function ClientesPage() {
 
   const totalClientes = clientes.length
   const ativos = clientes.filter((cliente) => cliente.status === "Ativo").length
+  const inativos = clientes.filter((cliente) => cliente.status === "Inativo").length
   const empresas = clientes.filter((cliente) => cliente.tipo === "Empresa").length
-  const pessoas = clientes.filter((cliente) => cliente.tipo === "Pessoa física").length
 
   return (
     <main className={`min-h-screen px-4 py-5 sm:px-6 lg:px-10 ${ui.pagina}`}>
@@ -171,7 +199,7 @@ export default function ClientesPage() {
             <p className="text-sm font-black text-[#ffc400]">Área da Empresa</p>
             <h1 className="mt-1 text-2xl font-black sm:text-4xl">Clientes</h1>
             <p className={`mt-2 max-w-2xl text-sm ${ui.textoFraco}`}>
-              Gerencie os clientes e empresas que já solicitaram fretes.
+              Gerencie clientes ativos, inativos, empresas e documentos cadastrados.
             </p>
           </div>
 
@@ -184,11 +212,11 @@ export default function ClientesPage() {
           </button>
         </header>
 
-        <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <CardResumo ui={ui} titulo="Total de clientes" valor={totalClientes} icon={<Users />} />
           <CardResumo ui={ui} titulo="Clientes ativos" valor={ativos} icon={<CheckCircle2 />} verde />
-          <CardResumo ui={ui} titulo="Empresas" valor={empresas} icon={<Building2 />} />
-          <CardResumo ui={ui} titulo="Pessoa física" valor={pessoas} icon={<UserRound />} azul />
+          <CardResumo ui={ui} titulo="Clientes inativos" valor={inativos} icon={<XCircle />} vermelho />
+          <CardResumo ui={ui} titulo="Empresas" valor={empresas} icon={<Building2 />} azul />
         </section>
 
         <section className={`rounded-[26px] border p-4 sm:p-5 ${ui.card}`}>
@@ -196,7 +224,7 @@ export default function ClientesPage() {
             <div className={`flex h-12 flex-1 items-center gap-3 rounded-xl border px-4 ${ui.card2}`}>
               <Search size={19} className="text-[#ffc400]" />
               <input
-                placeholder="Buscar por nome, documento, cidade ou telefone..."
+                placeholder="Buscar por nome, CPF, CNPJ, cidade ou telefone..."
                 className="w-full bg-transparent text-sm outline-none"
               />
             </div>
@@ -429,8 +457,8 @@ function Campo({ ui, label, value, onChange }: any) {
   )
 }
 
-function CardResumo({ titulo, valor, icon, ui, verde, azul }: any) {
-  const cor = verde ? "text-green-500" : azul ? "text-sky-500" : "text-[#ffc400]"
+function CardResumo({ titulo, valor, icon, ui, verde, azul, vermelho }: any) {
+  const cor = vermelho ? "text-red-500" : verde ? "text-green-500" : azul ? "text-sky-500" : "text-[#ffc400]"
 
   return (
     <div className={`rounded-[24px] border p-5 ${ui.card}`}>
