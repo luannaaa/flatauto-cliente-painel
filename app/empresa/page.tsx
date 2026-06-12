@@ -405,15 +405,31 @@ function Financeiro({ ui, mobile }: any) {
   const percentualLucro = ((lucroLiquido / faturamentoBruto) * 100).toFixed(2).replace(".", ",")
 
   const itens = [
-    ["Faturamento Bruto", "R$ 24.560,00", "+ entrada total do período", "text-green-400"],
-    ["Repasse Motorista", "R$ 8.340,00", `${percentualRepasse}% do faturamento bruto`, "text-red-400"],
-    ["Faturamento Líquido", "R$ 16.220,00", `${percentualLiquido}% do faturamento bruto`, "text-green-400"],
-    ["Despesas", "R$ 5.420,00", `${percentualDespesas}% do faturamento bruto`, "text-red-400"],
-    ["Lucro Líquido", "R$ 10.800,00", `${percentualLucro}% do faturamento bruto`, "text-green-400"],
-  ]
-
-  return <div className={`grid ${mobile ? "grid-cols-1" : "grid-cols-5"} gap-3`}>{itens.map(([titulo, valor, detalhe, cor]) => <div key={titulo} className={`rounded-xl border p-4 ${ui.card2}`}><p className={`text-xs ${ui.textoFraco}`}>{titulo}</p><p className="mt-3 text-[22px] font-black">{valor}</p><p className={`mt-2 text-xs ${cor}`}>{detalhe}</p></div>)}</div>
-}
+  [
+    "Repasse Motorista",
+    "R$ 8.340,00",
+    `${percentualRepasse}% do faturamento bruto`,
+    "text-red-400",
+  ],
+  [
+    "Faturamento Líquido",
+    "R$ 16.220,00",
+    `${percentualLiquido}% do faturamento bruto`,
+    "text-green-400",
+  ],
+  [
+    "Despesas",
+    "R$ 5.420,00",
+    `${percentualDespesas}% do faturamento bruto`,
+    "text-red-400",
+  ],
+  [
+    "Lucro Líquido",
+    "R$ 10.800,00",
+    `${percentualLucro}% do faturamento bruto`,
+    "text-green-400",
+  ],
+]
 
 function Tabela({ ui }: any) {
   return <div className="overflow-x-auto"><table className="w-full min-w-[980px] text-left text-sm"><thead><tr className={`border-b ${ui.linha} ${ui.textoFraco}`}><th className="pb-4">ID</th><th className="pb-4">Data</th><th className="pb-4">Cliente</th><th className="pb-4">Origem</th><th className="pb-4">Destino</th><th className="pb-4">Motorista</th><th className="pb-4">Valor</th><th className="pb-4">Status</th></tr></thead><tbody>{entregas.map((entrega) => <tr key={entrega.id} className={`border-b ${ui.linha}`}><td className="py-4">{entrega.id}</td><td>{entrega.data}</td><td>{entrega.cliente}</td><td>{entrega.origem}</td><td>{entrega.destino}</td><td>{entrega.motorista}</td><td>{entrega.valor}</td><td><Status status={entrega.status} /></td></tr>)}</tbody></table></div>
