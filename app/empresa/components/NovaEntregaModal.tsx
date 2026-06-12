@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react"
 import {
   X,
+  Check,
   MapPin,
   CalendarDays,
   Clock,
@@ -93,6 +94,7 @@ export default function NovaEntregaModal({ ui, fechar }: any) {
   const [arquivoNota, setArquivoNota] = useState<File | null>(null)
   const [lendoNota, setLendoNota] = useState(false)
   const [notaProcessada, setNotaProcessada] = useState(false)
+  const [notaConfirmada, setNotaConfirmada] = useState(false)
   const [erroNota, setErroNota] = useState("")
   const [textoNota, setTextoNota] = useState("")
 
@@ -228,6 +230,7 @@ export default function NovaEntregaModal({ ui, fechar }: any) {
     setArquivoNota(file)
     setLendoNota(true)
     setNotaProcessada(false)
+    setNotaConfirmada(false)
     setErroNota("")
     setTextoNota("")
 
@@ -261,6 +264,31 @@ export default function NovaEntregaModal({ ui, fechar }: any) {
       if (inputNotaRef.current) {
         inputNotaRef.current.value = ""
       }
+    }
+  }
+
+
+  function confirmarNotaFiscal() {
+    setNotaConfirmada(true)
+  }
+
+  function limparNotaFiscal() {
+    setArquivoNota(null)
+    setLendoNota(false)
+    setNotaProcessada(false)
+    setNotaConfirmada(false)
+    setErroNota("")
+    setTextoNota("")
+
+    setOrigem("")
+    setCepOrigem("")
+    setDestino("")
+    setCepDestino("")
+    setSugestoesOrigem([])
+    setSugestoesDestino([])
+
+    if (inputNotaRef.current) {
+      inputNotaRef.current.value = ""
     }
   }
 
@@ -311,6 +339,9 @@ export default function NovaEntregaModal({ ui, fechar }: any) {
                   origem={origem || cepOrigem}
                   destino={destino || cepDestino}
                   textoNota={textoNota}
+                  confirmado={notaConfirmada}
+                  onConfirmar={confirmarNotaFiscal}
+                  onLimpar={limparNotaFiscal}
                 />
               )}
 
@@ -535,6 +566,9 @@ function NotaFiscalCard({
   origem,
   destino,
   textoNota,
+  confirmado,
+  onConfirmar,
+  onLimpar,
 }: any) {
   return (
     <div className={`rounded-2xl border p-4 ${ui.card2}`}>
@@ -548,21 +582,46 @@ function NotaFiscalCard({
               : erro
                 ? erro
                 : ok
-                  ? "Endereços encontrados. Confira se está tudo certo antes de salvar."
+                  ? confirmado
+                    ? "Nota confirmada. Esses endereços serão mantidos na entrega."
+                    : "Endereços encontrados. Clique no ✓ para confirmar ou no X para apagar e tentar de novo."
                   : "Nota lida. Confira os campos antes de salvar."}
           </p>
         </div>
 
-        <div
-          className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border text-xl ${
-            lendo
-              ? "border-[#ffc400]/40 bg-[#ffc400]/10 text-[#ffc400]"
-              : ok
-                ? "border-green-500/40 bg-green-500/10 text-green-400"
-                : "border-red-500/40 bg-red-500/10 text-red-400"
-          }`}
-        >
-          {lendo ? "…" : ok ? "✓" : "!"}
+        <div className="flex shrink-0 items-center gap-2">
+          {!lendo && (
+            <>
+              <button
+                type="button"
+                onClick={onLimpar}
+                title="Apagar dados da nota"
+                className="flex h-11 w-11 items-center justify-center rounded-2xl border border-red-500/45 bg-red-500/10 text-red-400 transition hover:bg-red-500/20"
+              >
+                <X size={22} strokeWidth={3} />
+              </button>
+
+              <button
+                type="button"
+                onClick={onConfirmar}
+                disabled={!ok}
+                title="Confirmar dados da nota"
+                className={`flex h-11 w-11 items-center justify-center rounded-2xl border transition ${
+                  ok
+                    ? "border-green-500/45 bg-green-500/10 text-green-400 hover:bg-green-500/20"
+                    : "cursor-not-allowed border-white/10 bg-white/[0.04] text-white/25"
+                }`}
+              >
+                <Check size={22} strokeWidth={3} />
+              </button>
+            </>
+          )}
+
+          {lendo && (
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[#ffc400]/40 bg-[#ffc400]/10 text-xl text-[#ffc400]">
+              …
+            </div>
+          )}
         </div>
       </div>
 

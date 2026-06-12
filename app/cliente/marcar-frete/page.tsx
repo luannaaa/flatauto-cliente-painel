@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, type ChangeEvent } from "react"
+import { useEffect, useRef, useState, type ChangeEvent } from "react"
 
 type TipoEndereco = "origem" | "destino"
 
@@ -72,8 +72,11 @@ export default function MarcarFrete() {
   const [destinoFinal, setDestinoFinal] = useState("")
   const [cepDestino, setCepDestino] = useState("")
 
+  const inputNotaRef = useRef<HTMLInputElement | null>(null)
+  const [arquivoNota, setArquivoNota] = useState<File | null>(null)
   const [lendoNota, setLendoNota] = useState(false)
   const [textoNota, setTextoNota] = useState("")
+  const [notaAprovada, setNotaAprovada] = useState(false)
 
   const [sugestoesOrigem, setSugestoesOrigem] = useState<SugestaoLocalizacao[]>([])
   const [sugestoesDestino, setSugestoesDestino] = useState<SugestaoLocalizacao[]>([])
@@ -210,8 +213,10 @@ export default function MarcarFrete() {
     const arquivo = event.target.files?.[0]
     if (!arquivo) return
 
+    setArquivoNota(arquivo)
     setLendoNota(true)
     setTextoNota("")
+    setNotaAprovada(false)
 
     try {
       const formData = new FormData()
@@ -240,6 +245,35 @@ export default function MarcarFrete() {
       alert("Erro ao conectar com o backend da nota fiscal. Veja o console/terminal.")
     } finally {
       setLendoNota(false)
+    }
+  }
+
+
+  function aprovarNotaFiscal() {
+    setNotaAprovada(true)
+  }
+
+  function apagarDadosNotaFiscal() {
+    setArquivoNota(null)
+    setLendoNota(false)
+    setTextoNota("")
+    setNotaAprovada(false)
+
+    setLocalSaida("")
+    setCepOrigem("")
+    setDestinoFinal("")
+    setCepDestino("")
+
+    setLatitudeOrigem("")
+    setLongitudeOrigem("")
+    setLatitudeDestino("")
+    setLongitudeDestino("")
+
+    setSugestoesOrigem([])
+    setSugestoesDestino([])
+
+    if (inputNotaRef.current) {
+      inputNotaRef.current.value = ""
     }
   }
 
@@ -387,6 +421,7 @@ export default function MarcarFrete() {
               )}
 
               <input
+                ref={inputNotaRef}
                 type="file"
                 accept=".jpg,.jpeg,.png,.pdf"
                 onChange={lerNotaFiscal}
@@ -394,42 +429,84 @@ export default function MarcarFrete() {
               />
             </div>
 
-            {(lendoNota || textoNota) && (
-              <div className="mt-4 rounded-[16px] border border-[#ffc400]/25 bg-[#050505] p-4">
-                <div className="flex items-start gap-3">
-                  <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border ${
-                    textoNota && localSaida && destinoFinal
-                      ? "border-green-500/40 bg-green-500/10 text-green-400"
-                      : "border-[#ffc400]/40 bg-[#ffc400]/10 text-[#ffc400]"
-                  }`}>
-                    {lendoNota ? "…" : textoNota && localSaida && destinoFinal ? "✓" : "!"}
+            {(lendoNota || arquivoNota || textoNota) && (
+              <div className="mt-4 rounded-[18px] border border-[#ffc400]/25 bg-[#050505] p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[13px] font-black uppercase text-[#ffc400]">
+                      Conferência da nota fiscal
+                    </p>
+
+                    <p className="mt-2 break-all text-[13px] font-black text-white">
+                      {arquivoNota?.name || "Nota fiscal selecionada"}
+                    </p>
+
+                    <p className="mt-2 text-[12px] leading-relaxed text-white/55">
+                      {lendoNota
+                        ? "Lendo nota fiscal e tentando encontrar origem, destino e CEPs..."
+                        : notaAprovada
+                          ? "Nota aprovada. Os dados serão mantidos para solicitar a entrega."
+                          : "Endereços encontrados. Confira se está tudo certo antes de solicitar."}
+                    </p>
                   </div>
 
-                  <div className="flex-1">
-                    <p className="text-[13px] font-black text-[#ffc400]">
-                      {lendoNota
-                        ? "Lendo nota fiscal..."
-                        : textoNota && localSaida && destinoFinal
-                          ? "Endereços encontrados na nota"
-                          : "Confira os dados da nota"}
-                    </p>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={apagarDadosNotaFiscal}
+                      disabled={lendoNota}
+                      title="Apagar tudo"
+                      className="flex h-11 w-11 items-center justify-center rounded-xl border border-red-500/60 bg-red-500/10 text-2xl font-black text-red-400 disabled:opacity-50"
+                    >
+                      ×
+                    </button>
 
-                    <div className="mt-3 space-y-2 text-[12px] leading-relaxed text-white/65">
-                      <p>
-                        <span className="font-bold text-white">Origem:</span>{" "}
-                        {localSaida || "Não identificada automaticamente"}
-                      </p>
-                      <p>
-                        <span className="font-bold text-white">Destino:</span>{" "}
-                        {destinoFinal || "Não identificado automaticamente"}
-                      </p>
-                    </div>
-
-                    <p className="mt-3 text-[11px] leading-relaxed text-white/40">
-                      Se algum endereço estiver errado, ajuste manualmente antes de solicitar a entrega.
-                    </p>
+                    <button
+                      type="button"
+                      onClick={aprovarNotaFiscal}
+                      disabled={lendoNota}
+                      title="Aprovar dados"
+                      className="flex h-11 w-11 items-center justify-center rounded-xl border border-green-500/60 bg-green-500/10 text-2xl font-black text-green-400 disabled:opacity-50"
+                    >
+                      ✓
+                    </button>
                   </div>
                 </div>
+
+                {(localSaida || destinoFinal) && (
+                  <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <div className="rounded-[14px] border border-white/10 bg-black/40 p-3">
+                      <p className="text-[11px] font-black uppercase text-white/45">Origem</p>
+                      <p className="mt-2 text-[13px] font-black leading-relaxed text-white">
+                        {localSaida || "Não identificada"}
+                      </p>
+                      {cepOrigem && (
+                        <p className="mt-2 text-[12px] font-bold text-[#ffc400]">CEP: {cepOrigem}</p>
+                      )}
+                    </div>
+
+                    <div className="rounded-[14px] border border-white/10 bg-black/40 p-3">
+                      <p className="text-[11px] font-black uppercase text-white/45">Destino</p>
+                      <p className="mt-2 text-[13px] font-black leading-relaxed text-white">
+                        {destinoFinal || "Não identificado"}
+                      </p>
+                      {cepDestino && (
+                        <p className="mt-2 text-[12px] font-bold text-[#ffc400]">CEP: {cepDestino}</p>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {textoNota && (
+                  <details className="mt-3 rounded-[14px] border border-white/10 bg-black/40 p-3">
+                    <summary className="cursor-pointer text-[12px] font-black text-[#ffc400]">
+                      Ver texto lido da nota
+                    </summary>
+                    <p className="mt-3 max-h-40 overflow-y-auto whitespace-pre-wrap text-[11px] leading-relaxed text-white/55">
+                      {textoNota}
+                    </p>
+                  </details>
+                )}
               </div>
             )}
           </div>
