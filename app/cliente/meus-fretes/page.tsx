@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect } from "react"
-import { etapaAtiva, etapasFrete, freteAoVivo } from "../../data/freteAoVivo"
+import { etapaAtiva, etapasFrete, freteAoVivo } from "@/app/data/freteAoVivo"
 
 function useVoltarCelularParaPainel() {
   useEffect(() => {
