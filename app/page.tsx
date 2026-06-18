@@ -701,32 +701,10 @@ function CadastroClienteCompleto({
   const [documento, setDocumento] = useState("")
   const [nomeResponsavel, setNomeResponsavel] = useState(dadosBase.nome)
   const [telefone, setTelefone] = useState("")
-  const [tipoFrete, setTipoFrete] = useState("")
-  const [tipoCarga, setTipoCarga] = useState("")
-  const [origemFrete, setOrigemFrete] = useState("")
-  const [destinoEntrega, setDestinoEntrega] = useState("")
-  const [observacoes, setObservacoes] = useState("")
   const [documentoCliente, setDocumentoCliente] = useState<File | null>(null)
 
   const [loading, setLoading] = useState(false)
   const [mensagem, setMensagem] = useState("")
-
-  const opcoesTipoCarga = [
-    ["mercadorias", "Mercadorias"],
-    ["alimentos", "Alimentos"],
-    ["equipamentos", "Equipamentos"],
-    ["mudancas-moveis", "Mudanças e móveis"],
-    ["eletrodomesticos", "Eletrodomésticos"],
-    ["itens-frageis", "Itens frágeis"],
-    ["outros", "Outros"],
-  ]
-
-  const opcoesTipoFrete = [
-    ["moto", "Moto"],
-    ["carro", "Carro"],
-    ["van", "Van"],
-    ["caminhao", "Caminhão"],
-  ]
 
   async function finalizarCadastroCliente() {
     setMensagem("")
@@ -737,10 +715,7 @@ function CadastroClienteCompleto({
         !endereco ||
         !documento ||
         !nomeResponsavel ||
-        !telefone ||
-        !tipoFrete ||
-        !tipoCarga ||
-        !destinoEntrega
+        !telefone
       ) {
         setMensagem("Preencha os dados principais da empresa.")
         return
@@ -909,35 +884,6 @@ function CadastroClienteCompleto({
                   onChange={setTelefone}
                 />
 
-                <MobileClienteSelect
-                  icon={imagens.modeloCaminhao}
-                  value={tipoFrete}
-                  onChange={setTipoFrete}
-                  placeholder="Tipo de frete"
-                  options={opcoesTipoFrete}
-                />
-
-                <MobileClienteSelect
-                  icon={imagens.tipoCarga}
-                  value={tipoCarga}
-                  onChange={setTipoCarga}
-                  placeholder="Tipo de carga"
-                  options={opcoesTipoCarga}
-                />
-
-                <MobileDriverInput
-                  icon={imagens.destinoEntrega}
-                  placeholder="Destino da entrega"
-                  value={destinoEntrega}
-                  onChange={setDestinoEntrega}
-                />
-
-                <MobileDriverInput
-                  icon={imagens.documento}
-                  placeholder="Observações da carga/operação"
-                  value={observacoes}
-                  onChange={setObservacoes}
-                />
               </>
             ) : (
               <>
@@ -1133,43 +1079,6 @@ function CadastroClienteCompleto({
                     dots
                   />
 
-                  <ClienteSelect
-                    icon={imagens.modeloCaminhao}
-                    label="Tipo de frete"
-                    value={tipoFrete}
-                    onChange={setTipoFrete}
-                    placeholder="Selecione o tipo de frete"
-                    dots
-                    options={opcoesTipoFrete}
-                  />
-
-                  <ClienteSelect
-                    icon={imagens.tipoCarga}
-                    label="Tipo de carga"
-                    value={tipoCarga}
-                    onChange={setTipoCarga}
-                    placeholder="Selecione o tipo de carga"
-                    dots
-                    options={opcoesTipoCarga}
-                  />
-
-                  <DriverField
-                    icon={imagens.destinoEntrega}
-                    label="Destino da entrega"
-                    placeholder="Digite o destino da entrega"
-                    value={destinoEntrega}
-                    onChange={setDestinoEntrega}
-                    dots
-                  />
-
-                  <DriverField
-                    icon={imagens.documento}
-                    label="Observações"
-                    placeholder="Descreva as particularidades da carga/operação"
-                    value={observacoes}
-                    onChange={setObservacoes}
-                    dots
-                  />
                 </>
               ) : (
                 <>
@@ -1759,10 +1668,8 @@ function PainelCliente({ onSair }: { onSair: () => void }) {
   const [nomeCompleto, setNomeCompleto] = useState("Cliente")
   const [origem, setOrigem] = useState("")
   const [destino, setDestino] = useState("")
-  const [tipoCarga, setTipoCarga] = useState("")
   const [peso, setPeso] = useState("")
   const [dataHora, setDataHora] = useState("")
-  const [observacoes, setObservacoes] = useState("")
   const [estimativa, setEstimativa] = useState("R$ 320,00 - R$ 450,00")
   const [tempo, setTempo] = useState("32 min")
   const [distancia, setDistancia] = useState("18,6 km")
