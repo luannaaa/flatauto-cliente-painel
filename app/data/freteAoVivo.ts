@@ -1,19 +1,29 @@
 export const freteAoVivo = {
   codigo: "FLA-1024",
   cliente: "Auto Peças Brasil",
+  empresa: "Auto Peças Brasil",
   motorista: "Carlos Henrique",
   veiculo: "VUC",
+  tipoVeiculo: "caminhao" as const,
   placa: "RTA-4H22",
+
   status: "em_rota",
   statusTexto: "Em rota",
+  valor: "R$ 380,00",
+
   previsao: "18 min",
   distancia: "7,4 km",
   progresso: 65,
+
   origem: "Av. Paulista",
   destino: "Moema",
+
   notaFiscal: "NF-e 000123",
   coletaPrevista: "14:30",
   entregaPrevista: "15:10",
+
+  posicaoAtual: "Av. Brigadeiro Luís Antônio",
+  ultimaAtualizacao: "Atualizado agora",
 }
 
 export const etapasFrete = [
