@@ -4,33 +4,39 @@ import { useEffect, useState } from "react"
 import PainelClienteMobile from "./components/PainelClienteMobile"
 
 type Tela = "login" | "cadastro" | "painel"
-type TipoConta = "cliente" | "motorista"
 
 type Cliente = {
   nome: string
   email: string
   senha: string
-  tipo: TipoConta
 }
 
 const STORAGE_CLIENTE = "flatauto_cliente_logado"
 
-const CLIENTE_PADRAO: Cliente = {
+const CLIENTE_TESTE: Cliente = {
   nome: "Cliente",
-  email: "cliente@email.com",
-  senha: "",
-  tipo: "cliente",
+  email: "luanacat249@gmail.com",
+  senha: "123456789",
+}
+
+function isMobile() {
+  if (typeof window === "undefined") return false
+
+  const userAgentMobile = /Android|iPhone|iPad|iPod|Mobile|Mobi/i.test(navigator.userAgent)
+  const larguraMobile = window.innerWidth <= 768
+  const mediaMobile = window.matchMedia("(max-width: 768px)").matches
+
+  return userAgentMobile || larguraMobile || mediaMobile
 }
 
 export default function ClientePage() {
-  const [tela, setTela] = useState<Tela>("painel")
-  const [tipoConta, setTipoConta] = useState<TipoConta>("cliente")
-  const [clienteSalvo, setClienteSalvo] = useState<Cliente | null>(null)
-  const [usuarioLogado, setUsuarioLogado] = useState<Cliente | null>(CLIENTE_PADRAO)
+  const [tela, setTela] = useState<Tela>("login")
+  const [usuarioLogado, setUsuarioLogado] = useState<Cliente | null>(null)
 
   const [nome, setNome] = useState("")
   const [email, setEmail] = useState("")
   const [senha, setSenha] = useState("")
+  const [mensagem, setMensagem] = useState("")
   const [carregou, setCarregou] = useState(false)
 
   useEffect(() => {
@@ -42,6 +48,7 @@ export default function ClientePage() {
       setUsuarioLogado(null)
       setTela("login")
       setCarregou(true)
+      window.history.replaceState(null, "", "/cliente")
       return
     }
 
@@ -50,22 +57,22 @@ export default function ClientePage() {
     if (clienteGuardado) {
       try {
         const cliente = JSON.parse(clienteGuardado) as Cliente
-        setClienteSalvo(cliente)
-        setUsuarioLogado(cliente)
-        setTela("painel")
+
+        if (cliente?.email && cliente?.senha) {
+          setUsuarioLogado(cliente)
+          setTela("painel")
+        } else {
+          localStorage.removeItem(STORAGE_CLIENTE)
+          setTela("login")
+        }
       } catch {
-        localStorage.setItem(STORAGE_CLIENTE, JSON.stringify(CLIENTE_PADRAO))
-        setUsuarioLogado(CLIENTE_PADRAO)
-        setTela("painel")
+        localStorage.removeItem(STORAGE_CLIENTE)
+        setTela("login")
       }
     } else {
-      localStorage.setItem(STORAGE_CLIENTE, JSON.stringify(CLIENTE_PADRAO))
-      setClienteSalvo(CLIENTE_PADRAO)
-      setUsuarioLogado(CLIENTE_PADRAO)
-      setTela("painel")
+      setTela("login")
     }
 
-    window.history.replaceState(null, "", "/cliente")
     setCarregou(true)
   }, [])
 
@@ -73,46 +80,84 @@ export default function ClientePage() {
     setNome("")
     setEmail("")
     setSenha("")
+    setMensagem("")
   }
 
   function salvarLogin(cliente: Cliente) {
     localStorage.setItem(STORAGE_CLIENTE, JSON.stringify(cliente))
-    setClienteSalvo(cliente)
     setUsuarioLogado(cliente)
     setTela("painel")
     window.history.replaceState(null, "", "/cliente")
   }
 
   function criarConta() {
-    if (!nome || !email || !senha) {
-      alert("Preencha nome, e-mail e senha.")
+    const nomeLimpo = nome.trim()
+    const emailLimpo = email.trim().toLowerCase()
+    const senhaLimpa = senha.trim()
+
+    setMensagem("")
+
+    if (!nomeLimpo || !emailLimpo || !senhaLimpa) {
+      setMensagem("Preencha nome, e-mail e senha para criar a conta.")
+      return
+    }
+
+    if (senhaLimpa.length < 6) {
+      setMensagem("A senha precisa ter pelo menos 6 caracteres.")
       return
     }
 
     const novoCliente: Cliente = {
-      nome,
-      email,
-      senha,
-      tipo: tipoConta,
+      nome: nomeLimpo,
+      email: emailLimpo,
+      senha: senhaLimpa,
     }
 
     salvarLogin(novoCliente)
   }
 
   function entrarConta() {
-    if (!email || !senha) {
-      alert("Preencha e-mail e senha.")
+    const emailLimpo = email.trim().toLowerCase()
+    const senhaLimpa = senha.trim()
+
+    setMensagem("")
+
+    if (!emailLimpo || !senhaLimpa) {
+      setMensagem("Digite e-mail e senha para entrar.")
       return
     }
 
-    const clienteParaEntrar: Cliente = clienteSalvo || {
-      nome: nome || "Cliente",
-      email,
-      senha,
-      tipo: "cliente",
+    const clienteGuardado = localStorage.getItem(STORAGE_CLIENTE)
+    let clienteSalvo: Cliente | null = null
+
+    if (clienteGuardado) {
+      try {
+        clienteSalvo = JSON.parse(clienteGuardado) as Cliente
+      } catch {
+        clienteSalvo = null
+        localStorage.removeItem(STORAGE_CLIENTE)
+      }
     }
 
-    salvarLogin(clienteParaEntrar)
+    const loginTesteCorreto =
+      emailLimpo === CLIENTE_TESTE.email &&
+      senhaLimpa === CLIENTE_TESTE.senha
+
+    const loginContaCriadaCorreto =
+      clienteSalvo?.email?.toLowerCase() === emailLimpo &&
+      clienteSalvo?.senha === senhaLimpa
+
+    if (loginTesteCorreto) {
+      salvarLogin(CLIENTE_TESTE)
+      return
+    }
+
+    if (loginContaCriadaCorreto && clienteSalvo) {
+      salvarLogin(clienteSalvo)
+      return
+    }
+
+    setMensagem("E-mail ou senha inválidos. Verifique os dados ou crie uma conta.")
   }
 
   function sair() {
@@ -120,13 +165,32 @@ export default function ClientePage() {
     setUsuarioLogado(null)
     limparCampos()
     setTela("login")
-    window.history.replaceState(null, "", "/cliente?sair=1")
+    window.history.replaceState(null, "", "/cliente")
   }
 
   if (!carregou) {
     return (
       <main className="min-h-screen bg-[#030507] text-white flex items-center justify-center px-4 py-8">
         <p className="text-[#ffc400] font-bold">Carregando...</p>
+      </main>
+    )
+  }
+
+  if (!isMobile()) {
+    return (
+      <main className="min-h-screen bg-[#030507] text-white flex items-center justify-center px-4 py-8">
+        <section className="w-full max-w-[440px] rounded-[24px] border border-[#ffc400]/25 bg-[#05080b] px-6 py-10 text-center shadow-[0_0_40px_rgba(255,196,0,0.08)]">
+          <h1 className="text-[30px] font-extrabold text-[#ffc400]">Instale o app</h1>
+          <p className="mt-4 text-[16px] text-zinc-300">
+            A área do cliente foi preparada para acesso pelo celular.
+          </p>
+          <a
+            href="/"
+            className="mt-7 flex h-14 w-full items-center justify-center rounded-[10px] bg-[#ffc400] text-[16px] font-extrabold text-black"
+          >
+            Voltar
+          </a>
+        </section>
       </main>
     )
   }
@@ -150,36 +214,10 @@ export default function ClientePage() {
 
           <p className="mt-4 text-[16px] text-zinc-300">
             {tela === "login"
-              ? "Acesse sua conta para continuar"
+              ? "Use seus dados corretos para acessar"
               : "Preencha os dados para se cadastrar"}
           </p>
         </div>
-
-        {tela === "cadastro" && (
-          <div className="mt-9 grid grid-cols-2 gap-3">
-            <button
-              onClick={() => setTipoConta("cliente")}
-              className={`h-16 rounded-[14px] border text-[18px] font-bold transition ${
-                tipoConta === "cliente"
-                  ? "border-[#ffc400] bg-[#ffc400] text-black shadow-[0_0_25px_rgba(255,196,0,0.45)]"
-                  : "border-white/20 bg-transparent text-white"
-              }`}
-            >
-              Cliente
-            </button>
-
-            <button
-              onClick={() => setTipoConta("motorista")}
-              className={`h-16 rounded-[14px] border text-[18px] font-bold transition ${
-                tipoConta === "motorista"
-                  ? "border-[#ffc400] bg-[#ffc400] text-black shadow-[0_0_25px_rgba(255,196,0,0.45)]"
-                  : "border-white/20 bg-transparent text-white"
-              }`}
-            >
-              Motorista
-            </button>
-          </div>
-        )}
 
         <div className="mt-6 space-y-4">
           {tela === "cadastro" && (
@@ -208,6 +246,12 @@ export default function ClientePage() {
             className="h-16 w-full rounded-[8px] border border-white/20 bg-[#070b0f] px-5 text-[17px] text-white outline-none placeholder:text-zinc-400"
           />
 
+          {mensagem && (
+            <div className="rounded-[12px] border border-red-500/30 bg-red-500/10 px-4 py-3 text-center text-sm font-bold text-red-300">
+              {mensagem}
+            </div>
+          )}
+
           {tela === "login" ? (
             <button
               onClick={entrarConta}
@@ -220,7 +264,7 @@ export default function ClientePage() {
               onClick={criarConta}
               className="mt-5 h-16 w-full rounded-[10px] bg-[#ffc400] text-[17px] font-extrabold text-black shadow-[0_0_28px_rgba(255,196,0,0.35)]"
             >
-              Criar conta de {tipoConta}
+              Criar conta de cliente
             </button>
           )}
 
@@ -246,6 +290,10 @@ export default function ClientePage() {
             </button>
           )}
         </div>
+
+        <p className="mt-6 text-center text-xs text-white/40">
+          Cliente teste: luanacat249@gmail.com / 123456789
+        </p>
       </section>
     </main>
   )
