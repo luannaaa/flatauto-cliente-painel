@@ -11,7 +11,8 @@ type Cliente = {
   senha: string
 }
 
-const STORAGE_CLIENTE = "flatauto_cliente_logado"
+const STORAGE_LOGIN_CLIENTE = "flatauto_cliente_logado"
+const STORAGE_CONTAS_CLIENTE = "flatauto_clientes_cadastrados"
 
 const CLIENTE_TESTE: Cliente = {
   nome: "Cliente",
@@ -29,6 +30,29 @@ function isMobile() {
   return userAgentMobile || larguraMobile || mediaMobile
 }
 
+function buscarContasSalvas(): Cliente[] {
+  try {
+    const contas = localStorage.getItem(STORAGE_CONTAS_CLIENTE)
+    if (!contas) return []
+    return JSON.parse(contas) as Cliente[]
+  } catch {
+    localStorage.removeItem(STORAGE_CONTAS_CLIENTE)
+    return []
+  }
+}
+
+function salvarContaCriada(cliente: Cliente) {
+  const contas = buscarContasSalvas()
+  const contasSemDuplicar = contas.filter(
+    (conta) => conta.email.toLowerCase() !== cliente.email.toLowerCase()
+  )
+
+  localStorage.setItem(
+    STORAGE_CONTAS_CLIENTE,
+    JSON.stringify([...contasSemDuplicar, cliente])
+  )
+}
+
 export default function ClientePage() {
   const [tela, setTela] = useState<Tela>("login")
   const [usuarioLogado, setUsuarioLogado] = useState<Cliente | null>(null)
@@ -36,6 +60,7 @@ export default function ClientePage() {
   const [nome, setNome] = useState("")
   const [email, setEmail] = useState("")
   const [senha, setSenha] = useState("")
+  const [lembrarLogin, setLembrarLogin] = useState(false)
   const [mensagem, setMensagem] = useState("")
   const [carregou, setCarregou] = useState(false)
 
@@ -44,7 +69,7 @@ export default function ClientePage() {
     const saiu = params.get("sair") === "1"
 
     if (saiu) {
-      localStorage.removeItem(STORAGE_CLIENTE)
+      localStorage.removeItem(STORAGE_LOGIN_CLIENTE)
       setUsuarioLogado(null)
       setTela("login")
       setCarregou(true)
@@ -52,21 +77,32 @@ export default function ClientePage() {
       return
     }
 
-    const clienteGuardado = localStorage.getItem(STORAGE_CLIENTE)
+    const loginSalvo = localStorage.getItem(STORAGE_LOGIN_CLIENTE)
 
-    if (clienteGuardado) {
+    if (loginSalvo) {
       try {
-        const cliente = JSON.parse(clienteGuardado) as Cliente
+        const cliente = JSON.parse(loginSalvo) as Cliente
 
-        if (cliente?.email && cliente?.senha) {
+        const loginTesteCorreto =
+          cliente.email?.toLowerCase() === CLIENTE_TESTE.email &&
+          cliente.senha === CLIENTE_TESTE.senha
+
+        const contas = buscarContasSalvas()
+        const contaCriadaCorreta = contas.some(
+          (conta) =>
+            conta.email.toLowerCase() === cliente.email?.toLowerCase() &&
+            conta.senha === cliente.senha
+        )
+
+        if (loginTesteCorreto || contaCriadaCorreta) {
           setUsuarioLogado(cliente)
           setTela("painel")
         } else {
-          localStorage.removeItem(STORAGE_CLIENTE)
+          localStorage.removeItem(STORAGE_LOGIN_CLIENTE)
           setTela("login")
         }
       } catch {
-        localStorage.removeItem(STORAGE_CLIENTE)
+        localStorage.removeItem(STORAGE_LOGIN_CLIENTE)
         setTela("login")
       }
     } else {
@@ -81,10 +117,16 @@ export default function ClientePage() {
     setEmail("")
     setSenha("")
     setMensagem("")
+    setLembrarLogin(false)
   }
 
-  function salvarLogin(cliente: Cliente) {
-    localStorage.setItem(STORAGE_CLIENTE, JSON.stringify(cliente))
+  function entrarNoPainel(cliente: Cliente) {
+    if (lembrarLogin) {
+      localStorage.setItem(STORAGE_LOGIN_CLIENTE, JSON.stringify(cliente))
+    } else {
+      localStorage.removeItem(STORAGE_LOGIN_CLIENTE)
+    }
+
     setUsuarioLogado(cliente)
     setTela("painel")
     window.history.replaceState(null, "", "/cliente")
@@ -107,13 +149,19 @@ export default function ClientePage() {
       return
     }
 
+    if (emailLimpo === CLIENTE_TESTE.email) {
+      setMensagem("Esse e-mail já existe. Use a senha correta para entrar.")
+      return
+    }
+
     const novoCliente: Cliente = {
       nome: nomeLimpo,
       email: emailLimpo,
       senha: senhaLimpa,
     }
 
-    salvarLogin(novoCliente)
+    salvarContaCriada(novoCliente)
+    entrarNoPainel(novoCliente)
   }
 
   function entrarConta() {
@@ -127,33 +175,29 @@ export default function ClientePage() {
       return
     }
 
-    const clienteGuardado = localStorage.getItem(STORAGE_CLIENTE)
-    let clienteSalvo: Cliente | null = null
-
-    if (clienteGuardado) {
-      try {
-        clienteSalvo = JSON.parse(clienteGuardado) as Cliente
-      } catch {
-        clienteSalvo = null
-        localStorage.removeItem(STORAGE_CLIENTE)
-      }
-    }
-
     const loginTesteCorreto =
       emailLimpo === CLIENTE_TESTE.email &&
       senhaLimpa === CLIENTE_TESTE.senha
 
-    const loginContaCriadaCorreto =
-      clienteSalvo?.email?.toLowerCase() === emailLimpo &&
-      clienteSalvo?.senha === senhaLimpa
-
-    if (loginTesteCorreto) {
-      salvarLogin(CLIENTE_TESTE)
+    if (emailLimpo === CLIENTE_TESTE.email && !loginTesteCorreto) {
+      setMensagem("Senha incorreta para esse e-mail. Verifique a senha ou crie outra conta.")
       return
     }
 
-    if (loginContaCriadaCorreto && clienteSalvo) {
-      salvarLogin(clienteSalvo)
+    if (loginTesteCorreto) {
+      entrarNoPainel(CLIENTE_TESTE)
+      return
+    }
+
+    const contas = buscarContasSalvas()
+    const contaEncontrada = contas.find(
+      (conta) =>
+        conta.email.toLowerCase() === emailLimpo &&
+        conta.senha === senhaLimpa
+    )
+
+    if (contaEncontrada) {
+      entrarNoPainel(contaEncontrada)
       return
     }
 
@@ -161,7 +205,7 @@ export default function ClientePage() {
   }
 
   function sair() {
-    localStorage.removeItem(STORAGE_CLIENTE)
+    localStorage.removeItem(STORAGE_LOGIN_CLIENTE)
     setUsuarioLogado(null)
     limparCampos()
     setTela("login")
@@ -245,6 +289,19 @@ export default function ClientePage() {
             onChange={(e) => setSenha(e.target.value)}
             className="h-16 w-full rounded-[8px] border border-white/20 bg-[#070b0f] px-5 text-[17px] text-white outline-none placeholder:text-zinc-400"
           />
+
+          <label className="flex cursor-pointer items-center gap-3 rounded-[12px] border border-white/10 bg-[#070b0f] px-4 py-4">
+            <input
+              type="checkbox"
+              checked={lembrarLogin}
+              onChange={(e) => setLembrarLogin(e.target.checked)}
+              className="h-5 w-5 accent-[#ffc400]"
+            />
+
+            <span className="text-sm font-bold text-white/75">
+              Salvar login neste celular
+            </span>
+          </label>
 
           {mensagem && (
             <div className="rounded-[12px] border border-red-500/30 bg-red-500/10 px-4 py-3 text-center text-sm font-bold text-red-300">
