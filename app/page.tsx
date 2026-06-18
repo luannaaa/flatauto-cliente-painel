@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { supabase } from "../lib/supabase"
 import TelaBloqueio from "./cliente/components/TelaBloqueio"
 import PainelClienteMobile from "./cliente/components/PainelClienteMobile"
 type TipoConta = "cliente" | "motorista"
@@ -391,7 +392,7 @@ function LoginForm({
   const [mensagem, setMensagem] = useState("")
   const [loading, setLoading] = useState(false)
 
-  function entrarComEmail() {
+  async function entrarComEmail() {
     if (loading) return
 
     const emailLimpo = email.trim().toLowerCase()
@@ -399,44 +400,71 @@ function LoginForm({
 
     setMensagem("")
 
-   // LOGIN EMPRESA TESTE
-if (
-  emailLimpo === "luanacat249@gmail.com" &&
-  senhaLimpa === "12345678"
-) {
-  window.location.href = "/empresa"
-  return
-}
-
-// LOGIN MOTORISTA TESTE
-if (
-  emailLimpo === "luanacat249@gmail.com" &&
-  senhaLimpa === "luke2003"
-) {
-  window.location.href = "/motorista"
-  return
-}
-
-    // CAMPOS VAZIOSg
     if (!emailLimpo || !senhaLimpa) {
-      setMensagem("Digite e-mail e senha para testar.")
+      setMensagem("Digite e-mail e senha para entrar.")
       return
     }
 
-    // CLIENTE NO COMPUTADOR = BLOQUEADO
+    // LOGIN EMPRESA TESTE
+    if (
+      emailLimpo === "luanacat249@gmail.com" &&
+      senhaLimpa === "12345678"
+    ) {
+      window.location.href = "/empresa"
+      return
+    }
+
+    // LOGIN MOTORISTA TESTE
+    if (
+      emailLimpo === "luanacat249@gmail.com" &&
+      senhaLimpa === "luke2003"
+    ) {
+      window.location.href = "/motorista"
+      return
+    }
+
+    // LOGIN CLIENTE TESTE
+    if (
+      emailLimpo === "luanacat249@gmail.com" &&
+      senhaLimpa === "123456789"
+    ) {
+      if (!isMobile()) {
+        setScreen("bloqueado")
+        return
+      }
+
+      setLoading(true)
+
+      setTimeout(() => {
+        setMensagem("")
+        setLoading(false)
+        onLoginSuccess()
+      }, 400)
+
+      return
+    }
+
+    // LOGIN REAL SUPABASE
+    setLoading(true)
+
+    const { error } = await supabase.auth.signInWithPassword({
+      email: emailLimpo,
+      password: senhaLimpa,
+    })
+
+    setLoading(false)
+
+    if (error) {
+      setMensagem("E-mail ou senha inválidos. Verifique os dados ou crie uma conta.")
+      return
+    }
+
     if (!isMobile()) {
       setScreen("bloqueado")
       return
     }
 
-    // CLIENTE NO CELULAR = ENTRA NORMAL
-    setLoading(true)
-
-    setTimeout(() => {
-      setMensagem("Login liberado sem banco por enquanto.")
-      setLoading(false)
-      onLoginSuccess()
-    }, 400)
+    onLoginSuccess()
   }
 
   const inputClass =
@@ -726,13 +754,32 @@ function CadastroClienteCompleto({
 
     setLoading(true)
 
+    const { error } = await supabase.auth.signUp({
+      email: dadosBase.email.trim().toLowerCase(),
+      password: dadosBase.senha,
+      options: {
+        data: {
+          nome: ehEmpresa ? nomeResponsavel : nome,
+          tipo: ehEmpresa ? "empresa" : "cliente",
+          telefone,
+          documento,
+          endereco,
+          nome_empresa: ehEmpresa ? nomeEmpresa : "",
+        },
+      },
+    })
+
+    setLoading(false)
+
+    if (error) {
+      setMensagem("Não foi possível criar a conta. Verifique o e-mail ou tente outra senha.")
+      return
+    }
+
+    setMensagem("Cadastro criado com sucesso!")
     setTimeout(() => {
-      setMensagem("Cadastro criado com sucesso! Banco entra depois.")
-      setLoading(false)
-      setTimeout(() => {
-        onCadastroFinalizado()
-      }, 600)
-    }, 500)
+      onCadastroFinalizado()
+    }, 600)
   }
 
   return (
@@ -1335,13 +1382,34 @@ function CadastroMotoristaWeb({
 
     setLoading(true)
 
+    const { error } = await supabase.auth.signUp({
+      email: dadosBase.email.trim().toLowerCase(),
+      password: dadosBase.senha,
+      options: {
+        data: {
+          nome,
+          tipo: "motorista",
+          cpf: cpfMotorista,
+          modelo_caminhao: modeloCaminhao,
+          placa_caminhao: placaCaminhao,
+          tipo_caminhao: tipoCaminhao,
+          capacidade_carga: capacidadeCarga,
+          regiao_atuacao: regiaoAtuacao,
+        },
+      },
+    })
+
+    setLoading(false)
+
+    if (error) {
+      setMensagem("Não foi possível criar o motorista. Verifique o e-mail ou tente outra senha.")
+      return
+    }
+
+    setMensagem("Cadastro de motorista criado com sucesso!")
     setTimeout(() => {
-      setMensagem("Cadastro de motorista criado com sucesso! Banco entra depois.")
-      setLoading(false)
-      setTimeout(() => {
-        onCadastroFinalizado()
-      }, 600)
-    }, 500)
+      onCadastroFinalizado()
+    }, 600)
   }
 
   return (
