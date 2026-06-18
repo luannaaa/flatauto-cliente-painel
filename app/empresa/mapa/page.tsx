@@ -1,16 +1,8 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import {
-  Bike,
-  Car,
-  Truck,
-  Bus,
-  MapPin,
-  Navigation,
-  Clock,
-  Package,
-} from "lucide-react"
+import { Bike, Car, Truck, Bus, MapPin, Navigation, Clock, Package } from "lucide-react"
+import { freteAoVivo } from "../../data/freteAoVivo"
 
 type Tema = "dark" | "light"
 type Veiculo = "moto" | "carro" | "van" | "caminhao"
@@ -30,14 +22,14 @@ type EntregaMapa = {
 const entregas: EntregaMapa[] = [
   {
     id: 1,
-    cliente: "Auto Peças Brasil",
-    veiculo: "moto",
-    motorista: "João Carlos",
-    origem: "Av. Paulista",
-    destino: "Moema",
-    tempo: "18 min",
+    cliente: freteAoVivo.empresa,
+    veiculo: freteAoVivo.tipoVeiculo,
+    motorista: freteAoVivo.motorista,
+    origem: freteAoVivo.origem,
+    destino: freteAoVivo.destino,
+    tempo: freteAoVivo.previsao,
     status: "Em andamento",
-    posicao: "top-[48%] left-[26%]",
+    posicao: freteAoVivo.posicaoAtual,
   },
   {
     id: 2,
@@ -48,115 +40,69 @@ const entregas: EntregaMapa[] = [
     destino: "Vila Mariana",
     tempo: "27 min",
     status: "Em andamento",
-    posicao: "top-[62%] left-[58%]",
+    posicao: "Simulada",
   },
 ]
 
-function IconeVeiculo({ tipo, size = 22 }: { tipo: Veiculo; size?: number }) {
+function IconeVeiculo({ tipo, size = 20 }: { tipo: Veiculo; size?: number }) {
   if (tipo === "moto") return <Bike size={size} />
   if (tipo === "carro") return <Car size={size} />
   if (tipo === "van") return <Bus size={size} />
   return <Truck size={size} />
 }
 
-function nomeVeiculo(tipo: Veiculo) {
-  if (tipo === "moto") return "Motoboy"
-  if (tipo === "carro") return "Carro"
-  if (tipo === "van") return "Van / Fiorino"
-  return "Caminhão"
-}
-
-export default function MapaPage() {
+export default function MapaEmpresaPage() {
   const [tema, setTema] = useState<Tema>("dark")
   const [selecionada, setSelecionada] = useState<EntregaMapa>(entregas[0])
 
   useEffect(() => {
-    function carregarTema() {
-      const temaSalvo = localStorage.getItem("temaEmpresa")
-      setTema(temaSalvo === "light" || temaSalvo === "claro" ? "light" : "dark")
-    }
-
-    carregarTema()
-    window.addEventListener("storage", carregarTema)
-    window.addEventListener("temaEmpresaAtualizado", carregarTema)
-
-    return () => {
-      window.removeEventListener("storage", carregarTema)
-      window.removeEventListener("temaEmpresaAtualizado", carregarTema)
-    }
+    const temaSalvo = localStorage.getItem("temaEmpresa") as Tema | null
+    if (temaSalvo === "dark" || temaSalvo === "light") setTema(temaSalvo)
   }, [])
 
   const claro = tema === "light"
 
   const ui = {
     pagina: claro ? "bg-[#f6f0df] text-black" : "bg-[#020507] text-white",
-    card: claro
-      ? "border-[#dfd0a5] bg-white/90 shadow-[0_18px_45px_rgba(80,60,20,0.10)]"
-      : "border-white/10 bg-[#10171b]/90 shadow-[0_18px_45px_rgba(0,0,0,0.30)]",
-    card2: claro
-      ? "border-[#dfd0a5] bg-[#f7f0dc]"
-      : "border-white/10 bg-white/[0.045]",
+    card: claro ? "border-[#dfd0a5] bg-white/90" : "border-white/10 bg-[#10171b]",
+    card2: claro ? "border-[#dfd0a5] bg-[#f7f0dc]" : "border-white/10 bg-white/[0.04]",
     textoFraco: claro ? "text-black/55" : "text-white/60",
-    linha: claro ? "border-[#dfd0a5]" : "border-white/10",
   }
 
   return (
-    <main className={`min-h-screen px-4 py-5 sm:px-6 lg:px-10 ${ui.pagina}`}>
-      <div className="mx-auto max-w-7xl space-y-6">
+    <main className={`min-h-screen px-4 py-6 sm:px-8 ${ui.pagina}`}>
+      <div className="mx-auto max-w-[1180px]">
         <header>
           <p className="text-sm font-black text-[#ffc400]">Área da Empresa</p>
-          <h1 className="mt-1 text-2xl font-black sm:text-4xl">Mapa</h1>
-          <p className={`mt-2 max-w-2xl text-sm ${ui.textoFraco}`}>
-            Visual demonstrativo das entregas em andamento. Depois o backend vai
-            puxar a localização real do motorista.
+          <h1 className="text-3xl font-black sm:text-4xl">Mapa</h1>
+          <p className={`mt-2 max-w-[680px] text-sm ${ui.textoFraco}`}>
+            Entregas em andamento interligadas com o motorista e o painel do cliente.
           </p>
         </header>
 
-        <section className="grid gap-5 lg:grid-cols-[0.9fr_1.5fr]">
-          <aside className={`order-2 rounded-[30px] border p-4 sm:p-5 lg:order-1 ${ui.card}`}>
+        <section className="mt-8 grid gap-5 lg:grid-cols-[380px_1fr]">
+          <aside className={`rounded-[28px] border p-5 ${ui.card}`}>
             <h2 className="text-xl font-black">Entregas em andamento</h2>
-            <p className={`mt-1 text-sm ${ui.textoFraco}`}>
-              Toque em uma entrega para ver o veículo no mapa.
-            </p>
+            <p className={`mt-2 text-sm ${ui.textoFraco}`}>Toque em uma entrega para ver o veículo no mapa.</p>
 
             <div className="mt-5 space-y-3">
               {entregas.map((entrega) => (
                 <button
                   key={entrega.id}
                   onClick={() => setSelecionada(entrega)}
-                  className={`w-full rounded-2xl border p-4 text-left transition ${
-                    selecionada.id === entrega.id
-                      ? "border-[#ffc400] bg-[#ffc400]/10"
-                      : ui.card2
-                  }`}
+                  className={`w-full rounded-2xl border p-4 text-left transition ${selecionada.id === entrega.id ? "border-[#ffc400] bg-[#ffc400]/10" : `${ui.card2}`}`}
                 >
-                  <div className="flex items-start gap-3">
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#ffc400] text-black">
+                  <div className="flex gap-3">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#ffc400] text-black">
                       <IconeVeiculo tipo={entrega.veiculo} />
                     </div>
 
-                    <div className="min-w-0 flex-1">
+                    <div>
                       <h3 className="font-black">{entrega.cliente}</h3>
-                      <p className={`mt-1 text-xs font-bold ${ui.textoFraco}`}>
-                        {entrega.motorista} • {nomeVeiculo(entrega.veiculo)}
-                      </p>
-
-                      <div className="mt-3 grid gap-2 text-xs font-bold">
-                        <span className="flex items-center gap-2">
-                          <MapPin size={14} className="text-green-500" />
-                          {entrega.origem}
-                        </span>
-
-                        <span className="flex items-center gap-2">
-                          <Navigation size={14} className="text-red-500" />
-                          {entrega.destino}
-                        </span>
-
-                        <span className="flex items-center gap-2 text-[#ffc400]">
-                          <Clock size={14} />
-                          Falta {entrega.tempo}
-                        </span>
-                      </div>
+                      <p className={`text-xs ${ui.textoFraco}`}>{entrega.motorista} • {entrega.veiculo}</p>
+                      <p className="mt-2 text-xs font-bold text-green-400">📍 {entrega.origem}</p>
+                      <p className="text-xs font-bold text-red-400">📍 {entrega.destino}</p>
+                      <p className="mt-1 text-xs font-bold text-[#ffc400]">⏱ Falta {entrega.tempo}</p>
                     </div>
                   </div>
                 </button>
@@ -164,100 +110,38 @@ export default function MapaPage() {
             </div>
           </aside>
 
-          <section className={`order-1 overflow-hidden rounded-[30px] border lg:order-2 ${ui.card}`}>
-            <div className={`flex flex-col gap-3 border-b p-4 sm:flex-row sm:items-center sm:justify-between ${ui.linha}`}>
+          <section className={`overflow-hidden rounded-[28px] border ${ui.card}`}>
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 p-4">
               <div>
                 <h2 className="text-xl font-black">{selecionada.cliente}</h2>
-                <p className={`mt-1 text-sm ${ui.textoFraco}`}>
-                  {selecionada.origem} → {selecionada.destino}
-                </p>
+                <p className={`text-sm ${ui.textoFraco}`}>{selecionada.origem} → {selecionada.destino}</p>
               </div>
 
-              <span className="flex w-fit items-center gap-2 rounded-full bg-[#ffc400]/15 px-4 py-2 text-xs font-black text-[#ffc400]">
-                <IconeVeiculo tipo={selecionada.veiculo} size={16} />
-                {selecionada.status}
-              </span>
+              <span className="rounded-full bg-[#ffc400]/15 px-4 py-2 text-xs font-black text-[#ffc400]">{selecionada.status}</span>
             </div>
 
-            <div className="relative h-[380px] overflow-hidden bg-[#d9e4d2] md:h-[620px]">
-              <div className="absolute inset-0 opacity-80">
-                <div className="absolute left-[8%] top-[15%] h-[2px] w-[90%] rotate-[18deg] bg-white/80" />
-                <div className="absolute left-[2%] top-[45%] h-[3px] w-[95%] -rotate-[8deg] bg-white/90" />
-                <div className="absolute left-[20%] top-[75%] h-[2px] w-[70%] rotate-[4deg] bg-white/80" />
-                <div className="absolute left-[25%] top-[5%] h-[95%] w-[3px] rotate-[7deg] bg-white/80" />
-                <div className="absolute left-[60%] top-[0%] h-[100%] w-[3px] -rotate-[10deg] bg-white/80" />
+            <div className="relative h-[430px] overflow-hidden bg-[#dbe8d1]">
+              <div className="absolute inset-0 opacity-60">
+                <div className="absolute left-[12%] top-[55%] h-[2px] w-[84%] -rotate-8 bg-white" />
+                <div className="absolute left-[20%] top-[10%] h-[90%] w-[2px] rotate-6 bg-white" />
+                <div className="absolute left-[55%] top-[0] h-[100%] w-[2px] -rotate-8 bg-white" />
+                <div className="absolute left-[34%] top-[70%] h-[2px] w-[70%] rotate-5 bg-white" />
               </div>
 
-              <div className="absolute left-[8%] top-[8%] rounded-xl bg-green-500 px-3 py-2 text-xs font-black text-white">
-                São Paulo - SP
-              </div>
+              <div className="absolute left-[18%] top-[37%] h-20 w-28 rounded-3xl bg-green-400/25" />
+              <div className="absolute right-[12%] top-[20%] h-24 w-32 rounded-3xl bg-green-400/25" />
+              <div className="absolute bottom-[5%] left-[42%] h-28 w-40 rounded-3xl bg-green-400/25" />
+              <div className="absolute left-[21%] top-[58%] h-[4px] w-[53%] -rotate-8 rounded-full bg-[#ffc400]" />
 
-              <div className="absolute left-[18%] top-[30%] h-28 w-40 rounded-[35px] bg-green-500/20" />
-              <div className="absolute right-[10%] top-[18%] h-32 w-48 rounded-[35px] bg-green-500/20" />
-              <div className="absolute bottom-[10%] left-[35%] h-36 w-56 rounded-[35px] bg-green-500/20" />
+              <div className="absolute left-[18%] top-[54%] flex h-9 w-9 items-center justify-center rounded-full bg-green-500 text-white shadow-xl"><MapPin size={18} /></div>
+              <div className="absolute left-[44%] top-[49%] flex h-12 w-12 items-center justify-center rounded-2xl bg-[#ffc400] text-black shadow-[0_0_25px_rgba(255,196,0,0.55)]"><IconeVeiculo tipo={selecionada.veiculo} size={24} /></div>
+              <div className="absolute right-[22%] top-[43%] flex h-9 w-9 items-center justify-center rounded-full bg-red-500 text-white shadow-xl"><MapPin size={18} /></div>
 
-              <div className="absolute left-[18%] top-[50%] h-[4px] w-[52%] -rotate-[10deg] rounded-full bg-[#ffc400]" />
-
-              <div className="absolute left-[16%] top-[48%] flex h-10 w-10 items-center justify-center rounded-full bg-green-600 text-white shadow-lg">
-                <MapPin size={20} />
-              </div>
-
-              <div className="absolute left-[68%] top-[38%] flex h-10 w-10 items-center justify-center rounded-full bg-red-600 text-white shadow-lg">
-                <MapPin size={20} />
-              </div>
-
-              <div
-                className={`absolute z-20 flex h-14 w-14 animate-pulse items-center justify-center rounded-2xl bg-[#ffc400] text-black shadow-[0_10px_35px_rgba(255,196,0,0.45)] ${selecionada.posicao}`}
-              >
-                <IconeVeiculo tipo={selecionada.veiculo} size={30} />
-              </div>
-
-              <div
-                className={`
-                  absolute
-                  hidden
-                  md:block
-                  md:bottom-4
-                  md:left-4
-                  md:right-4
-                  rounded-2xl
-                  border
-                  p-4
-                  backdrop-blur-md
-                  ${
-                    claro
-                      ? "border-[#dfd0a5] bg-white/85"
-                      : "border-white/10 bg-black/70"
-                  }
-                `}
-              >
-                <div className="grid gap-3 md:grid-cols-4">
-                  <Info ui={ui} icon={<Package size={17} />} label="Cliente" value={selecionada.cliente} />
-                  <Info ui={ui} icon={<Truck size={17} />} label="Veículo" value={nomeVeiculo(selecionada.veiculo)} />
-                  <Info ui={ui} icon={<Clock size={17} />} label="Tempo" value={selecionada.tempo} />
-                  <Info ui={ui} icon={<MapPin size={17} />} label="Localização" value="Simulada" />
-                </div>
-              </div>
-            </div>
-
-            <div
-              className={`
-                block
-                border-t
-                p-4
-                md:hidden
-                ${
-                  claro
-                    ? "border-[#dfd0a5] bg-white/95"
-                    : "border-white/10 bg-[#0b1115]/95"
-                }
-              `}
-            >
-              <div className="grid grid-cols-1 gap-3">
-                <Info ui={ui} icon={<Package size={17} />} label="Cliente" value={selecionada.cliente} />
-                <Info ui={ui} icon={<Truck size={17} />} label="Veículo" value={nomeVeiculo(selecionada.veiculo)} />
-                <Info ui={ui} icon={<Clock size={17} />} label="Tempo" value={selecionada.tempo} />
-                <Info ui={ui} icon={<MapPin size={17} />} label="Localização" value="Simulada" />
+              <div className="absolute bottom-4 left-4 right-4 grid gap-2 rounded-2xl bg-black/65 p-3 backdrop-blur-md sm:grid-cols-4">
+                <InfoMapa icon={<Package size={16} />} label="Cliente" valor={selecionada.cliente} />
+                <InfoMapa icon={<IconeVeiculo tipo={selecionada.veiculo} size={16} />} label="Veículo" valor={selecionada.veiculo} />
+                <InfoMapa icon={<Clock size={16} />} label="Tempo" valor={selecionada.tempo} />
+                <InfoMapa icon={<Navigation size={16} />} label="Localização" valor={selecionada.posicao} />
               </div>
             </div>
           </section>
@@ -267,14 +151,11 @@ export default function MapaPage() {
   )
 }
 
-function Info({ ui, icon, label, value }: any) {
+function InfoMapa({ icon, label, valor }: any) {
   return (
-    <div className={`rounded-2xl border p-3 ${ui.card2}`}>
-      <div className="flex items-center gap-2 text-[#ffc400]">
-        {icon}
-        <span className="text-xs font-black">{label}</span>
-      </div>
-      <p className="mt-1 text-sm font-black">{value}</p>
+    <div className="rounded-xl border border-white/10 bg-white/10 p-3">
+      <p className="flex items-center gap-1 text-xs font-bold text-[#ffc400]">{icon}{label}</p>
+      <p className="mt-1 text-sm font-black text-white">{valor}</p>
     </div>
   )
 }
