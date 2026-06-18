@@ -746,7 +746,7 @@ function CadastroClienteCompleto({
         return
       }
     } else {
-      if (!nome || !endereco || !documento || !telefone || !tipoFrete || !tipoCarga || !destinoEntrega) {
+      if (!nome || !endereco || !documento || !telefone) {
         setMensagem("Preencha os dados principais do cliente.")
         return
       }
@@ -969,35 +969,6 @@ function CadastroClienteCompleto({
                   onChange={setTelefone}
                 />
 
-                <MobileClienteSelect
-                  icon={imagens.modeloCaminhao}
-                  value={tipoFrete}
-                  onChange={setTipoFrete}
-                  placeholder="Tipo de frete"
-                  options={opcoesTipoFrete}
-                />
-
-                <MobileClienteSelect
-                  icon={imagens.tipoCarga}
-                  value={tipoCarga}
-                  onChange={setTipoCarga}
-                  placeholder="Tipo de carga"
-                  options={opcoesTipoCarga}
-                />
-
-                <MobileDriverInput
-                  icon={imagens.destinoEntrega}
-                  placeholder="Destino da entrega"
-                  value={destinoEntrega}
-                  onChange={setDestinoEntrega}
-                />
-
-                <MobileDriverInput
-                  icon={imagens.documento}
-                  placeholder="Observações da carga/operação"
-                  value={observacoes}
-                  onChange={setObservacoes}
-                />
               </>
             )}
           </div>
@@ -1238,43 +1209,6 @@ function CadastroClienteCompleto({
                     dots
                   />
 
-                  <ClienteSelect
-                    icon={imagens.modeloCaminhao}
-                    label="Tipo de frete"
-                    value={tipoFrete}
-                    onChange={setTipoFrete}
-                    placeholder="Selecione o tipo de frete"
-                    dots
-                    options={opcoesTipoFrete}
-                  />
-
-                  <ClienteSelect
-                    icon={imagens.tipoCarga}
-                    label="Tipo de carga"
-                    value={tipoCarga}
-                    onChange={setTipoCarga}
-                    placeholder="Selecione o tipo de carga"
-                    dots
-                    options={opcoesTipoCarga}
-                  />
-
-                  <DriverField
-                    icon={imagens.destinoEntrega}
-                    label="Destino da entrega"
-                    placeholder="Digite o destino da entrega"
-                    value={destinoEntrega}
-                    onChange={setDestinoEntrega}
-                    dots
-                  />
-
-                  <DriverField
-                    icon={imagens.documento}
-                    label="Observações"
-                    placeholder="Descreva as particularidades da carga/operação"
-                    value={observacoes}
-                    onChange={setObservacoes}
-                    dots
-                  />
                 </>
               )}
 
