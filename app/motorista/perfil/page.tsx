@@ -1,8 +1,19 @@
+
 "use client"
 
 import { ArrowLeft, UserRound, Truck } from "lucide-react"
 
 export default function PerfilPage() {
+  function sairDaConta() {
+    localStorage.removeItem("motoristaLogado")
+    localStorage.removeItem("tipoVeiculoMotorista")
+    localStorage.removeItem("motoristaNome")
+    localStorage.removeItem("motoristaEmail")
+    localStorage.removeItem("motoristaTelefone")
+
+    window.location.replace("/")
+  }
+
   return (
     <main className="min-h-screen bg-[#020507] px-4 py-5 text-white">
       <div className="mx-auto max-w-[480px] space-y-5">
@@ -66,6 +77,14 @@ export default function PerfilPage() {
             <Info titulo="Ano" valor="2023" />
           </div>
         </div>
+
+        <button
+          type="button"
+          onClick={sairDaConta}
+          className="h-14 w-full rounded-2xl border border-red-500/30 bg-red-500/10 text-base font-black text-red-300"
+        >
+          Sair da conta
+        </button>
       </div>
     </main>
   )
