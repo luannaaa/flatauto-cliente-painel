@@ -2,24 +2,7 @@
 
 import { useEffect } from "react"
 
-function useVoltarCelularParaPainel() {
-  useEffect(() => {
-    window.history.pushState({ telaInternaCliente: true }, "", window.location.href)
-
-    function voltarParaPainel() {
-      window.location.replace("/cliente")
-    }
-
-    window.addEventListener("popstate", voltarParaPainel)
-
-    return () => {
-      window.removeEventListener("popstate", voltarParaPainel)
-    }
-  }, [])
-}
-
 export default function Page() {
-  useVoltarCelularParaPainel()
 
   function voltarPainel() {
     window.location.replace("/cliente")
@@ -37,3 +20,4 @@ export default function Page() {
     </main>
   )
 }
+

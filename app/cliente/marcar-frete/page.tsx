@@ -4,6 +4,20 @@ import { useEffect, useRef, useState, type ChangeEvent } from "react"
 
 type TipoEndereco = "origem" | "destino"
 
+function somenteNumeros(valor: string) {
+  return valor.replace(/[^0-9]/g, "")
+}
+
+function formatarCep(valor: string) {
+  const numeros = somenteNumeros(valor).slice(0, 8)
+  if (numeros.length <= 5) return numeros
+  return `${numeros.slice(0, 5)}-${numeros.slice(5)}`
+}
+
+function montarEnderecoViaCep(dados: ViaCepResposta) {
+  return [dados.logradouro, dados.bairro, dados.localidade, dados.uf].filter(Boolean).join(", ")
+}
+
 type SugestaoLocalizacao = {
   display_name?: string
   lat?: string
@@ -20,49 +34,7 @@ type ViaCepResposta = {
   erro?: boolean
 }
 
-function useVoltarCelularParaPainel() {
-  useEffect(() => {
-    window.history.pushState({ telaInternaCliente: true }, "", window.location.href)
-
-    function voltarParaPainel() {
-      window.location.replace("/cliente")
-    }
-
-    window.addEventListener("popstate", voltarParaPainel)
-
-    return () => {
-      window.removeEventListener("popstate", voltarParaPainel)
-    }
-  }, [])
-}
-
-function somenteNumeros(valor: string) {
-  return valor.replace(/\D/g, "")
-}
-
-function formatarCep(valor: string) {
-  const numeros = somenteNumeros(valor).slice(0, 8)
-
-  if (numeros.length > 5) {
-    return `${numeros.slice(0, 5)}-${numeros.slice(5)}`
-  }
-
-  return numeros
-}
-
-function montarEnderecoViaCep(dados: ViaCepResposta) {
-  const partes = [
-    dados.logradouro,
-    dados.bairro,
-    dados.localidade,
-    dados.uf,
-  ].filter(Boolean)
-
-  return partes.join(", ")
-}
-
 export default function MarcarFrete() {
-  useVoltarCelularParaPainel()
 
   const [segundaParada, setSegundaParada] = useState(false)
 
@@ -609,3 +581,6 @@ function SelectCampo({
     </div>
   )
 }
+
+
+

@@ -3,24 +3,7 @@
 import { useEffect } from "react"
 import { etapaAtiva, etapasFrete, freteAoVivo } from "@/app/data/freteAoVivo"
 
-function useVoltarCelularParaPainel() {
-  useEffect(() => {
-    window.history.pushState({ telaInternaCliente: true }, "", window.location.href)
-
-    function voltarParaPainel() {
-      window.location.replace("/cliente")
-    }
-
-    window.addEventListener("popstate", voltarParaPainel)
-
-    return () => {
-      window.removeEventListener("popstate", voltarParaPainel)
-    }
-  }, [])
-}
-
 export default function Page() {
-  useVoltarCelularParaPainel()
 
   function voltarPainel() {
     window.location.replace("/cliente")
@@ -161,3 +144,4 @@ function FreteItem({ icone, codigo, status, rota }: { icone: string; codigo: str
     </div>
   )
 }
+

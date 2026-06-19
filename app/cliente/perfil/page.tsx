@@ -3,24 +3,7 @@
 import { useEffect, useState, type ChangeEvent } from "react"
 import Image from "next/image"
 
-function useVoltarCelularParaPainel() {
-  useEffect(() => {
-    window.history.pushState({ telaInternaCliente: true }, "", window.location.href)
-
-    function voltarParaPainel() {
-      window.location.replace("/cliente")
-    }
-
-    window.addEventListener("popstate", voltarParaPainel)
-
-    return () => {
-      window.removeEventListener("popstate", voltarParaPainel)
-    }
-  }, [])
-}
-
 export default function PerfilPage() {
-  useVoltarCelularParaPainel()
   const [foto, setFoto] = useState("/foto_perfil_cadastro.png")
 
   function voltarPainel() {
@@ -66,3 +49,4 @@ function Campo({ label, value }: { label: string; value: string }) {
     </div>
   )
 }
+
