@@ -5,9 +5,32 @@ import Image from "next/image"
 
 export default function PerfilPage() {
   const [foto, setFoto] = useState("/foto_perfil_cadastro.png")
+  const [nome, setNome] = useState("Cliente FlatAuto")
+  const [email, setEmail] = useState("cliente@email.com")
+  const [telefone, setTelefone] = useState("(00) 00000-0000")
+
+  useEffect(() => {
+    const nomeSalvo = localStorage.getItem("flatauto_cliente_nome")
+    const emailSalvo = localStorage.getItem("flatauto_cliente_email")
+    const telefoneSalvo = localStorage.getItem("flatauto_cliente_telefone")
+
+    if (nomeSalvo) setNome(nomeSalvo)
+    if (emailSalvo) setEmail(emailSalvo)
+    if (telefoneSalvo) setTelefone(telefoneSalvo)
+  }, [])
 
   function voltarPainel() {
     window.location.replace("/cliente")
+  }
+
+  function sairDaConta() {
+    localStorage.removeItem("flatauto_cliente_logado")
+    localStorage.removeItem("flatauto_cliente_email")
+    localStorage.removeItem("flatauto_cliente_nome")
+    localStorage.removeItem("flatauto_cliente_telefone")
+    localStorage.removeItem("flatauto_clientes_cadastrados")
+
+    window.location.replace("/")
   }
 
   function trocarFoto(event: ChangeEvent<HTMLInputElement>) {
@@ -19,22 +42,48 @@ export default function PerfilPage() {
   return (
     <main className="min-h-screen bg-black px-5 pt-8 text-white">
       <div className="mx-auto max-w-[430px]">
-        <button onClick={voltarPainel} className="font-bold text-[#ffc400]">← Voltar</button>
+        <button onClick={voltarPainel} className="font-bold text-[#ffc400]">
+          ← Voltar
+        </button>
 
         <section className="mt-8 rounded-[26px] border border-[#ffc400]/25 bg-[#080808] p-6 text-center">
           <label className="mx-auto block h-[110px] w-[110px] cursor-pointer overflow-hidden rounded-full border-4 border-[#ffc400] bg-[#ffc400]/15 p-1">
-            <Image src={foto} alt="Perfil" width={110} height={110} className="h-full w-full rounded-full object-cover" />
-            <input type="file" accept="image/*" onChange={trocarFoto} className="hidden" />
+            <Image
+              src={foto}
+              alt="Perfil"
+              width={110}
+              height={110}
+              className="h-full w-full rounded-full object-cover"
+            />
+            <input
+              type="file"
+              accept="image/*"
+              onChange={trocarFoto}
+              className="hidden"
+            />
           </label>
 
-          <p className="mt-3 text-sm font-bold text-[#ffc400]">Trocar foto</p>
-          <h1 className="mt-5 text-[30px] font-black">Perfil do cliente</h1>
+          <p className="mt-3 text-sm font-bold text-[#ffc400]">
+            Trocar foto
+          </p>
+
+          <h1 className="mt-5 text-[30px] font-black">
+            Perfil do cliente
+          </h1>
 
           <div className="mt-6 space-y-4 text-left">
-            <Campo label="Nome" value="Cliente FlatAuto" />
-            <Campo label="E-mail" value="cliente@email.com" />
-            <Campo label="Telefone" value="(00) 00000-0000" />
+            <Campo label="Nome" value={nome} />
+            <Campo label="E-mail" value={email} />
+            <Campo label="Telefone" value={telefone} />
           </div>
+
+          <button
+            type="button"
+            onClick={sairDaConta}
+            className="mt-7 h-14 w-full rounded-[14px] border border-red-500/40 bg-red-500/10 text-[16px] font-black text-red-300"
+          >
+            Sair da conta
+          </button>
         </section>
       </div>
     </main>
@@ -49,4 +98,3 @@ function Campo({ label, value }: { label: string; value: string }) {
     </div>
   )
 }
-
