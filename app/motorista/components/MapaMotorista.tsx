@@ -25,7 +25,7 @@ export default function MapaMotorista() {
   const [tipoVeiculo, setTipoVeiculo] = useState("caminhao")
   const [localizacao, setLocalizacao] = useState<LocalizacaoMotorista | null>(null)
   const [mensagemLocalizacao, setMensagemLocalizacao] = useState(
-    "Buscando localização em tempo real..."
+    "Permita a localização para mostrar sua posição no mapa."
   )
 
   useEffect(() => {
@@ -52,6 +52,7 @@ export default function MapaMotorista() {
           "flatauto_motorista_localizacao",
           JSON.stringify({
             ...novaLocalizacao,
+            tipoVeiculo: tipoSalvo || "caminhao",
             atualizadoEm: new Date().toISOString(),
           })
         )
@@ -73,38 +74,61 @@ export default function MapaMotorista() {
     }
   }, [])
 
+  const mapaUrl = localizacao
+    ? `https://www.openstreetmap.org/export/embed.html?bbox=${localizacao.longitude - 0.01}%2C${localizacao.latitude - 0.01}%2C${localizacao.longitude + 0.01}%2C${localizacao.latitude + 0.01}&layer=mapnik&marker=${localizacao.latitude}%2C${localizacao.longitude}`
+    : ""
+
   return (
     <section className="relative h-[calc(100vh-20px)] min-h-[720px] overflow-hidden rounded-[28px] border border-white/10 bg-[#0b1014] text-white">
       <div className="absolute inset-0 bg-[#dbe8d1]">
-        <div className="absolute inset-0 opacity-60">
-          <div className="absolute left-[8%] top-[55%] h-[2px] w-[92%] -rotate-8 bg-white" />
-          <div className="absolute left-[20%] top-[6%] h-[90%] w-[2px] rotate-6 bg-white" />
-          <div className="absolute left-[58%] top-[0] h-[100%] w-[2px] -rotate-8 bg-white" />
-          <div className="absolute left-[28%] top-[70%] h-[2px] w-[70%] rotate-5 bg-white" />
-        </div>
+        {localizacao ? (
+          <>
+            <iframe
+              title="Mapa real do motorista"
+              src={mapaUrl}
+              className="h-full w-full border-0"
+            />
 
-        <div className="absolute left-[18%] top-[36%] h-20 w-28 rounded-3xl bg-green-400/25" />
-        <div className="absolute right-[10%] top-[18%] h-24 w-32 rounded-3xl bg-green-400/25" />
-        <div className="absolute bottom-[22%] left-[40%] h-28 w-40 rounded-3xl bg-green-400/25" />
+            <div className="pointer-events-none absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center">
+              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[#ffc400] text-black shadow-[0_0_30px_rgba(255,196,0,0.75)]">
+                <IconeVeiculo tipo={tipoVeiculo} />
+              </div>
 
-        <div className="absolute left-[21%] top-[58%] h-[4px] w-[53%] -rotate-8 rounded-full bg-[#ffc400]" />
+              <div className="mt-2 rounded-full bg-black/80 px-3 py-1 text-xs font-black text-[#ffc400]">
+                Você está aqui
+              </div>
+            </div>
 
-        <div className="absolute left-[18%] top-[54%] flex h-10 w-10 items-center justify-center rounded-full bg-green-500 text-white shadow-xl">
-          <MapPin size={20} />
-        </div>
+            <div className="pointer-events-none absolute left-[58%] top-[48%] flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-black shadow-xl">
+              <Car size={25} />
+            </div>
 
-        <div className="absolute left-[44%] top-[49%] flex h-14 w-14 items-center justify-center rounded-2xl bg-[#ffc400] text-black shadow-[0_0_25px_rgba(255,196,0,0.55)]">
-          <IconeVeiculo tipo={tipoVeiculo} />
-        </div>
+            <div className="pointer-events-none absolute left-[38%] top-[55%] flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-black shadow-xl">
+              <Bike size={25} />
+            </div>
+          </>
+        ) : (
+          <div className="flex h-full w-full items-center justify-center bg-[#10171b] px-8 text-center">
+            <div>
+              <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-[#ffc400] text-black">
+                <MapPin size={42} />
+              </div>
 
-        <div className="absolute right-[22%] top-[43%] flex h-10 w-10 items-center justify-center rounded-full bg-red-500 text-white shadow-xl">
-          <MapPin size={20} />
-        </div>
+              <h2 className="mt-5 text-2xl font-black">
+                Aguardando localização
+              </h2>
+
+              <p className="mt-3 text-sm text-white/60">
+                Permita o acesso ao GPS para mostrar o motorista no mapa real.
+              </p>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="absolute left-4 right-4 top-4 rounded-[24px] border border-white/10 bg-black/75 p-4 backdrop-blur-xl">
         <p className="text-xs font-black uppercase text-[#ffc400]">
-          Mapa do motorista
+          Mapa real do motorista
         </p>
 
         <h2 className="mt-1 text-xl font-black">{freteAoVivo.codigo}</h2>
@@ -174,11 +198,11 @@ export default function MapaMotorista() {
 function IconeVeiculo({ tipo }: { tipo: string }) {
   const tipoNormalizado = tipo.toLowerCase()
 
-  if (tipoNormalizado.includes("moto")) return <Bike size={28} />
-  if (tipoNormalizado.includes("carro")) return <Car size={28} />
-  if (tipoNormalizado.includes("van")) return <Bus size={28} />
+  if (tipoNormalizado.includes("moto")) return <Bike size={30} />
+  if (tipoNormalizado.includes("carro")) return <Car size={30} />
+  if (tipoNormalizado.includes("van")) return <Bus size={30} />
 
-  return <Truck size={28} />
+  return <Truck size={30} />
 }
 
 function LinhaMapa({ label, valor, cor }: any) {
