@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from 'react'
 import { supabase } from "../lib/supabase"
 import TelaBloqueio from "./cliente/components/TelaBloqueio"
 import PainelClienteMobile from "./cliente/components/PainelClienteMobile"
@@ -2698,4 +2698,6 @@ function MobileUploadCard({
     </label>
   )
 }
+
+
 
