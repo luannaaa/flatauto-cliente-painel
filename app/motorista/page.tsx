@@ -1,5 +1,5 @@
 "use client"
-
+import MapaMotorista from "./components/MapaMotorista"
 import { useEffect, useRef, useState } from "react"
 import {
   Menu,
@@ -274,36 +274,9 @@ export default function MotoristaPage() {
         </ModalBase>
       )}
 
-      <section className="relative h-[50vh] overflow-hidden bg-[#d9e4d2] pt-16">
-        <div className="absolute left-[7%] top-[24%] z-20 rounded-xl bg-green-600 px-4 py-2 text-sm font-black text-white">
-          Recife - PE
-        </div>
-
-        <div className="absolute inset-0 opacity-80">
-          <div className="absolute left-[-5%] top-[33%] h-[4px] w-[115%] rotate-[12deg] bg-white/90" />
-          <div className="absolute left-[-5%] top-[62%] h-[4px] w-[115%] -rotate-[7deg] bg-white/90" />
-          <div className="absolute left-[23%] top-[10%] h-[100%] w-[4px] rotate-[8deg] bg-white/90" />
-          <div className="absolute left-[70%] top-[0%] h-[100%] w-[4px] -rotate-[9deg] bg-white/90" />
-        </div>
-
-        <div className="absolute left-[18%] top-[38%] h-28 w-40 rounded-[35px] bg-green-500/20" />
-        <div className="absolute right-[10%] top-[22%] h-32 w-48 rounded-[35px] bg-green-500/20" />
-        <div className="absolute bottom-[8%] left-[35%] h-32 w-52 rounded-[35px] bg-green-500/20" />
-
-        <div className="absolute left-[24%] top-[52%] h-[5px] w-[52%] -rotate-[8deg] rounded-full bg-[#ffc400]" />
-
-        <div className="absolute left-[20%] top-[49%] z-20 flex h-14 w-14 items-center justify-center rounded-full bg-green-600 text-white shadow-lg">
-          <MapPin size={27} />
-        </div>
-
-        <div className="absolute left-[72%] top-[38%] z-20 flex h-14 w-14 items-center justify-center rounded-full bg-red-600 text-white shadow-lg">
-          <MapPin size={27} />
-        </div>
-
-        <div className="absolute left-[43%] top-[43%] z-30 flex h-20 w-20 animate-pulse items-center justify-center rounded-3xl bg-[#ffc400] text-black shadow-[0_10px_35px_rgba(255,196,0,0.45)]">
-          <IconeVeiculo tipo={tipoVeiculo} size={42} />
-        </div>
-      </section>
+      <section className="pt-16">
+        <MapaMotorista />
+       </section>
 
       <section className="-mt-4 rounded-t-[34px] bg-[#020507] px-4 pb-8 pt-5">
         <div className="mx-auto max-w-[480px] space-y-4">
