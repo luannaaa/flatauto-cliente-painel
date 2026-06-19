@@ -229,7 +229,7 @@ export default function ClientePage() {
             A área do cliente foi preparada para acesso pelo celular.
           </p>
           <a
-            href="/"
+            href='/cliente'
             className="mt-7 flex h-14 w-full items-center justify-center rounded-[10px] bg-[#ffc400] text-[16px] font-extrabold text-black"
           >
             Voltar
@@ -343,7 +343,7 @@ export default function ClientePage() {
               }}
               className="h-14 w-full rounded-[10px] border border-[#ffc400] text-[16px] font-bold text-[#ffc400]"
             >
-              Voltar para login
+              Voltar ao painel
             </button>
           )}
         </div>
@@ -355,3 +355,4 @@ export default function ClientePage() {
     </main>
   )
 }
+
