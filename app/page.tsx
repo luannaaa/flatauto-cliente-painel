@@ -65,6 +65,85 @@ function isMobile() {
 
   return userAgentMobile || larguraMobile || mediaMobile
 }
+type TipoContaReal = TipoConta | "empresa"
+
+type ContaLocalFlatAuto = {
+  nome: string
+  email: string
+  senha: string
+  tipo: TipoContaReal
+  criadoEm: string
+  dados?: Record<string, string>
+}
+
+const CHAVE_CONTAS_LOCAIS = "flatauto_contas_reais"
+
+function emailTemArroba(email: string) {
+  const emailLimpo = email.trim().toLowerCase()
+  return emailLimpo.includes("@") && emailLimpo.indexOf("@") > 0 && emailLimpo.length >= 3
+}
+
+function carregarContasLocais(): ContaLocalFlatAuto[] {
+  if (typeof window === "undefined") return []
+
+  try {
+    const bruto = localStorage.getItem(CHAVE_CONTAS_LOCAIS)
+    if (!bruto) return []
+
+    const contas = JSON.parse(bruto)
+    return Array.isArray(contas) ? contas : []
+  } catch {
+    return []
+  }
+}
+
+function salvarContaLocal(conta: ContaLocalFlatAuto) {
+  if (typeof window === "undefined") return
+
+  const contas = carregarContasLocais()
+  const email = conta.email.trim().toLowerCase()
+  const semDuplicar = contas.filter((item) => item.email.trim().toLowerCase() !== email)
+
+  localStorage.setItem(
+    CHAVE_CONTAS_LOCAIS,
+    JSON.stringify([...semDuplicar, { ...conta, email }])
+  )
+}
+
+function buscarContaLocal(email: string, senha: string) {
+  const emailLimpo = email.trim().toLowerCase()
+  const senhaLimpa = senha.trim()
+
+  return carregarContasLocais().find(
+    (conta) =>
+      conta.email.trim().toLowerCase() === emailLimpo &&
+      conta.senha === senhaLimpa
+  )
+}
+
+function prepararContaReal(tipo: TipoContaReal, nome: string, email: string) {
+  localStorage.setItem("flatauto_modo_demo", "false")
+  localStorage.setItem("flatauto_usuario_tipo", tipo)
+  localStorage.setItem("flatauto_usuario_nome", nome || "Usuário")
+  localStorage.setItem("flatauto_usuario_email", email.trim().toLowerCase())
+
+  localStorage.removeItem("flatauto_empresa_logada")
+  localStorage.removeItem("flatauto_cliente_logado")
+  localStorage.removeItem("motoristaLogado")
+
+  if (tipo === "empresa") {
+    localStorage.setItem("flatauto_empresa_logada", "true")
+  }
+
+  if (tipo === "cliente") {
+    localStorage.setItem("flatauto_cliente_logado", "true")
+  }
+
+  if (tipo === "motorista") {
+    localStorage.setItem("motoristaLogado", "true")
+  }
+}
+
 
 export default function Home() {
   const [screen, setScreen] = useState<
@@ -111,13 +190,23 @@ export default function Home() {
   }
 
   function finalizarCadastroVisual() {
-    if (!isMobile()) {
-      setScreen("bloqueado")
+    if (cadastroBase.empresa) {
+      window.location.href = "/empresa"
       return
     }
 
     if (cadastroBase.tipo === "motorista") {
+      if (!isMobile()) {
+        setScreen("bloqueado")
+        return
+      }
+
       window.location.href = "/motorista"
+      return
+    }
+
+    if (!isMobile()) {
+      setScreen("bloqueado")
       return
     }
 
@@ -392,6 +481,32 @@ function LoginForm({
   const [mensagem, setMensagem] = useState("")
   const [loading, setLoading] = useState(false)
 
+  function entrarNaContaReal(tipo: TipoContaReal, nome: string, emailConta: string) {
+    prepararContaReal(tipo, nome, emailConta)
+
+    if (tipo === "empresa") {
+      window.location.href = "/empresa"
+      return
+    }
+
+    if (tipo === "motorista") {
+      if (!isMobile()) {
+        setScreen("bloqueado")
+        return
+      }
+
+      window.location.href = "/motorista"
+      return
+    }
+
+    if (!isMobile()) {
+      setScreen("bloqueado")
+      return
+    }
+
+    onLoginSuccess()
+  }
+
   async function entrarComEmail() {
     if (loading) return
 
@@ -405,29 +520,36 @@ function LoginForm({
       return
     }
 
-    // LOGIN EMPRESA TESTE
+    // LOGIN EMPRESA TESTE / DEMO
     if (
       emailLimpo === "luanacat249@gmail.com" &&
       senhaLimpa === "12345678"
     ) {
+      localStorage.setItem("flatauto_modo_demo", "true")
+      localStorage.setItem("flatauto_usuario_tipo", "empresa")
       window.location.href = "/empresa"
       return
     }
 
-    // LOGIN MOTORISTA TESTE
+    // LOGIN MOTORISTA TESTE / DEMO
     if (
       emailLimpo === "luanacat249@gmail.com" &&
       senhaLimpa === "luke2003"
     ) {
+      localStorage.setItem("flatauto_modo_demo", "true")
+      localStorage.setItem("flatauto_usuario_tipo", "motorista")
       window.location.href = "/motorista"
       return
     }
 
-    // LOGIN CLIENTE TESTE
+    // LOGIN CLIENTE TESTE / DEMO
     if (
       emailLimpo === "luanacat249@gmail.com" &&
       senhaLimpa === "123456789"
     ) {
+      localStorage.setItem("flatauto_modo_demo", "true")
+      localStorage.setItem("flatauto_usuario_tipo", "cliente")
+
       if (!isMobile()) {
         setScreen("bloqueado")
         return
@@ -444,27 +566,15 @@ function LoginForm({
       return
     }
 
-    // LOGIN REAL SUPABASE
-    setLoading(true)
+    // LOGIN REAL CRIADO PELO CADASTRO LOCAL
+    const contaLocal = buscarContaLocal(emailLimpo, senhaLimpa)
 
-    const { error } = await supabase.auth.signInWithPassword({
-      email: emailLimpo,
-      password: senhaLimpa,
-    })
-
-    setLoading(false)
-
-    if (error) {
-      setMensagem("E-mail ou senha inválidos. Verifique os dados ou crie uma conta.")
+    if (contaLocal) {
+      entrarNaContaReal(contaLocal.tipo, contaLocal.nome, contaLocal.email)
       return
     }
 
-    if (!isMobile()) {
-      setScreen("bloqueado")
-      return
-    }
-
-    onLoginSuccess()
+    setMensagem("E-mail ou senha inválidos. Verifique os dados ou crie uma conta.")
   }
 
   const inputClass =
@@ -555,6 +665,16 @@ function CadastroForm({
 
     if (!nome || !email || !senha) {
       setMensagem("Preencha nome, e-mail e senha.")
+      return
+    }
+
+    if (!emailTemArroba(email)) {
+      setMensagem("Digite um e-mail com @ para continuar.")
+      return
+    }
+
+    if (senha.trim().length < 4) {
+      setMensagem("Digite uma senha com pelo menos 4 caracteres.")
       return
     }
 
@@ -709,6 +829,19 @@ function CadastroClienteCompleto({
   async function finalizarCadastroCliente() {
     setMensagem("")
 
+    const emailLimpo = dadosBase.email.trim().toLowerCase()
+    const senhaLimpa = dadosBase.senha.trim()
+
+    if (!emailTemArroba(emailLimpo)) {
+      setMensagem("Digite um e-mail com @ para continuar.")
+      return
+    }
+
+    if (senhaLimpa.length < 4) {
+      setMensagem("Digite uma senha com pelo menos 4 caracteres.")
+      return
+    }
+
     if (ehEmpresa) {
       if (
         !nomeEmpresa ||
@@ -728,33 +861,49 @@ function CadastroClienteCompleto({
     }
 
     setLoading(true)
+    if (ehEmpresa) {
+  const { error } = await supabase.from("empresas").insert({
+  email: emailLimpo,
+  nome_empresa: nomeEmpresa,
+  nome_responsavel: nomeResponsavel,
+  telefone,
+  documento_text: documento,
+  endereco,
+})
 
-    const { error } = await supabase.auth.signUp({
-      email: dadosBase.email.trim().toLowerCase(),
-      password: dadosBase.senha,
-      options: {
-        data: {
-          nome: ehEmpresa ? nomeResponsavel : nome,
-          tipo: ehEmpresa ? "empresa" : "cliente",
-          telefone,
-          documento,
-          endereco,
-          nome_empresa: ehEmpresa ? nomeEmpresa : "",
-        },
+  if (error) {
+    setLoading(false)
+    setMensagem(`Erro Supabase: ${error.message}`)
+    return
+  }
+}
+
+    const tipoConta: TipoContaReal = ehEmpresa ? "empresa" : "cliente"
+    const nomeConta = ehEmpresa ? nomeResponsavel : nome
+
+    salvarContaLocal({
+      nome: nomeConta,
+      email: emailLimpo,
+      senha: senhaLimpa,
+      tipo: tipoConta,
+      criadoEm: new Date().toISOString(),
+      dados: {
+        endereco,
+        documento,
+        telefone,
+        nome_empresa: ehEmpresa ? nomeEmpresa : "",
+        nome_responsavel: ehEmpresa ? nomeResponsavel : "",
       },
     })
 
+    prepararContaReal(tipoConta, nomeConta, emailLimpo)
+
     setLoading(false)
+    setMensagem("Conta criada com sucesso! Bem-vindo ao FlatAuto.")
 
-    if (error) {
-      setMensagem("Não foi possível criar a conta. Verifique o e-mail ou tente outra senha.")
-      return
-    }
-
-    setMensagem("Cadastro criado com sucesso!")
     setTimeout(() => {
       onCadastroFinalizado()
-    }, 600)
+    }, 800)
   }
 
   return (
@@ -1210,6 +1359,19 @@ function CadastroMotoristaWeb({
   async function finalizarCadastroMotorista() {
     setMensagem("")
 
+    const emailLimpo = dadosBase.email.trim().toLowerCase()
+    const senhaLimpa = dadosBase.senha.trim()
+
+    if (!emailTemArroba(emailLimpo)) {
+      setMensagem("Digite um e-mail com @ para continuar.")
+      return
+    }
+
+    if (senhaLimpa.length < 4) {
+      setMensagem("Digite uma senha com pelo menos 4 caracteres.")
+      return
+    }
+
     if (
       !nome ||
       !cpfMotorista ||
@@ -1225,34 +1387,31 @@ function CadastroMotoristaWeb({
 
     setLoading(true)
 
-    const { error } = await supabase.auth.signUp({
-      email: dadosBase.email.trim().toLowerCase(),
-      password: dadosBase.senha,
-      options: {
-        data: {
-          nome,
-          tipo: "motorista",
-          cpf: cpfMotorista,
-          modelo_caminhao: modeloCaminhao,
-          placa_caminhao: placaCaminhao,
-          tipo_caminhao: tipoCaminhao,
-          capacidade_carga: capacidadeCarga,
-          regiao_atuacao: regiaoAtuacao,
-        },
+    salvarContaLocal({
+      nome,
+      email: emailLimpo,
+      senha: senhaLimpa,
+      tipo: "motorista",
+      criadoEm: new Date().toISOString(),
+      dados: {
+        cpf: cpfMotorista,
+        modelo_caminhao: modeloCaminhao,
+        placa_caminhao: placaCaminhao,
+        tipo_caminhao: tipoCaminhao,
+        capacidade_carga: capacidadeCarga,
+        regiao_atuacao: regiaoAtuacao,
       },
     })
 
+    prepararContaReal("motorista", nome, emailLimpo)
+    localStorage.setItem("tipoVeiculoMotorista", tipoCaminhao)
+
     setLoading(false)
+    setMensagem("Conta criada com sucesso! Bem-vindo ao FlatAuto.")
 
-    if (error) {
-      setMensagem("Não foi possível criar o motorista. Verifique o e-mail ou tente outra senha.")
-      return
-    }
-
-    setMensagem("Cadastro de motorista criado com sucesso!")
     setTimeout(() => {
       onCadastroFinalizado()
-    }, 600)
+    }, 800)
   }
 
   return (
