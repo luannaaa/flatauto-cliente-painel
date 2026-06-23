@@ -863,13 +863,16 @@ function CadastroClienteCompleto({
     setLoading(true)
     if (ehEmpresa) {
   const { error } = await supabase.from("empresas").insert({
-  email: emailLimpo,
   nome_empresa: nomeEmpresa,
-  nome_responsavel: nomeResponsavel,
+  email: emailLimpo,
+  senha: senhaLimpa,
   telefone,
-  documento_text: documento,
-  endereco,
+  cnpj: documento,
+  responsavel: nomeResponsavel,
+  foto_documento: documentoCliente ? documentoCliente.name : "",
+  logo_empresa: "",
 })
+
 
   if (error) {
     setLoading(false)
