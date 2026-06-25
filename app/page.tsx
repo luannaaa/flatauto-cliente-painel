@@ -1,7 +1,12 @@
 "use client"
 
 import { useEffect, useState } from 'react'
-import { supabase } from "../lib/supabase"
+import { createClient } from "@supabase/supabase-js"
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL || "",
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ""
+)
 import TelaBloqueio from "./cliente/components/TelaBloqueio"
 import PainelClienteMobile from "./cliente/components/PainelClienteMobile"
 type TipoConta = "cliente" | "motorista"
@@ -2860,6 +2865,7 @@ function MobileUploadCard({
     </label>
   )
 }
+
 
 
 
