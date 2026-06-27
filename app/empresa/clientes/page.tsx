@@ -1,7 +1,8 @@
 "use client"
 
 import NovoClienteModal from "../components/NovoClienteModal"
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
+import { supabase } from "../../../lib/supabase"
 import {
   Building2,
   UserRound,
@@ -24,8 +25,28 @@ type Tema = "dark" | "light"
 type TipoCliente = "Empresa" | "Pessoa física"
 type StatusCliente = "Ativo" | "Inativo"
 
-type Cliente = {
-  id: number
+type ClienteSupabase = {
+  id: string
+  empresa_id: string | null
+  nome: string | null
+  responsavel: string | null
+  tipo: TipoCliente | string | null
+  documento: string | null
+  telefone: string | null
+  email: string | null
+  cep: string | null
+  rua: string | null
+  numero: string | null
+  bairro: string | null
+  cidade: string | null
+  estado: string | null
+  status: StatusCliente | string | null
+  observacoes: string | null
+  created_at: string | null
+}
+
+type ClienteTela = {
+  id: string
   nome: string
   responsavel: string
   tipo: TipoCliente
@@ -33,83 +54,69 @@ type Cliente = {
   telefone: string
   email: string
   cidade: string
+  estado: string
+  status: StatusCliente
+  observacoes: string
   entregas: number
   ultimaEntrega: string
   valorMovimentado: string
-  status: StatusCliente
+  created_at: string | null
 }
 
-const clientesIniciais: Cliente[] = [
-  {
-    id: 1,
-    nome: "Mercado Central",
-    responsavel: "Carlos Silva",
-    tipo: "Empresa",
-    documento: "CNPJ: 12.345.678/0001-90",
-    telefone: "(81) 99999-2020",
-    email: "contato@mercadocentral.com",
-    cidade: "Recife - PE",
-    entregas: 28,
-    ultimaEntrega: "08/06/2026",
-    valorMovimentado: "R$ 8.450,00",
-    status: "Ativo",
-  },
-  {
-    id: 2,
-    nome: "Auto Peças Brasil",
-    responsavel: "Mariana Costa",
-    tipo: "Empresa",
-    documento: "CNPJ: 45.789.120/0001-11",
-    telefone: "(81) 98888-1122",
-    email: "financeiro@autopecas.com",
-    cidade: "Jaboatão - PE",
-    entregas: 16,
-    ultimaEntrega: "07/06/2026",
-    valorMovimentado: "R$ 5.980,00",
-    status: "Ativo",
-  },
-  {
-    id: 3,
-    nome: "João Ferreira",
-    responsavel: "João Ferreira",
-    tipo: "Pessoa física",
-    documento: "CPF: 123.456.789-10",
-    telefone: "(81) 97777-3344",
-    email: "joaoferreira@email.com",
-    cidade: "Olinda - PE",
-    entregas: 7,
-    ultimaEntrega: "02/06/2026",
-    valorMovimentado: "R$ 1.320,00",
-    status: "Inativo",
-  },
-  {
-    id: 4,
-    nome: "Cliente sem CPF",
-    responsavel: "Aguardando documento",
-    tipo: "Pessoa física",
-    documento: "CPF não informado",
-    telefone: "(81) 96666-7788",
-    email: "semcpf@email.com",
-    cidade: "Recife - PE",
+function normalizarTema(valor: string | null): Tema {
+  if (valor === "light" || valor === "claro") return "light"
+  return "dark"
+}
+
+function normalizarTipo(valor: any): TipoCliente {
+  return valor === "Pessoa física" ? "Pessoa física" : "Empresa"
+}
+
+function normalizarStatus(valor: any): StatusCliente {
+  return valor === "Inativo" ? "Inativo" : "Ativo"
+}
+
+function formatarData(data: string | null) {
+  if (!data) return "Nenhuma"
+  const d = new Date(data)
+  if (Number.isNaN(d.getTime())) return "Nenhuma"
+  return d.toLocaleDateString("pt-BR")
+}
+
+function paraClienteTela(cliente: ClienteSupabase): ClienteTela {
+  return {
+    id: cliente.id,
+    nome: cliente.nome || "Cliente sem nome",
+    responsavel: cliente.responsavel || cliente.nome || "A preencher",
+    tipo: normalizarTipo(cliente.tipo),
+    documento: cliente.documento || "CPF/CNPJ não informado",
+    telefone: cliente.telefone || "A preencher",
+    email: cliente.email || "A preencher",
+    cidade: cliente.cidade || "A preencher",
+    estado: cliente.estado || "",
+    status: normalizarStatus(cliente.status),
+    observacoes: cliente.observacoes || "",
     entregas: 0,
     ultimaEntrega: "Nenhuma",
     valorMovimentado: "R$ 0,00",
-    status: "Inativo",
-  },
-]
+    created_at: cliente.created_at,
+  }
+}
 
 export default function ClientesPage() {
   const [tema, setTema] = useState<Tema>("dark")
-  const [clientes, setClientes] = useState<Cliente[]>(clientesIniciais)
-  const [menuAberto, setMenuAberto] = useState<number | null>(null)
+  const [clientes, setClientes] = useState<ClienteTela[]>([])
+  const [busca, setBusca] = useState("")
+  const [carregando, setCarregando] = useState(true)
+  const [mensagem, setMensagem] = useState("")
+  const [menuAberto, setMenuAberto] = useState<string | null>(null)
   const [modalNovoCliente, setModalNovoCliente] = useState(false)
-  const [clienteDetalhes, setClienteDetalhes] = useState<Cliente | null>(null)
-  const [clienteEditando, setClienteEditando] = useState<Cliente | null>(null)
+  const [clienteDetalhes, setClienteDetalhes] = useState<ClienteTela | null>(null)
+  const [clienteEditando, setClienteEditando] = useState<ClienteTela | null>(null)
 
   useEffect(() => {
     function carregarTema() {
-      const temaSalvo = localStorage.getItem("temaEmpresa")
-      setTema(temaSalvo === "light" || temaSalvo === "claro" ? "light" : "dark")
+      setTema(normalizarTema(localStorage.getItem("temaEmpresa")))
     }
 
     carregarTema()
@@ -121,6 +128,79 @@ export default function ClientesPage() {
       window.removeEventListener("temaEmpresaAtualizado", carregarTema)
     }
   }, [])
+
+  useEffect(() => {
+    carregarClientes()
+  }, [])
+
+  async function carregarClientes() {
+    setCarregando(true)
+    setMensagem("")
+
+    const empresaId = localStorage.getItem("flatauto_empresa_id")
+
+    let consulta = supabase
+      .from("clientes_empresa")
+      .select("id,empresa_id,nome,email,telefone,documento,responsavel,tipo,status,cep,rua,numero,bairro,cidade,estado,observacoes,created_at")
+      .order("created_at", { ascending: false })
+
+    if (empresaId) {
+      consulta = consulta.eq("empresa_id", empresaId)
+    }
+
+    const { data, error } = await consulta
+
+    if (error) {
+      setClientes([])
+      setMensagem(`Erro Supabase: ${error.message}`)
+      setCarregando(false)
+      return
+    }
+
+    setClientes(((data || []) as ClienteSupabase[]).map(paraClienteTela))
+    setCarregando(false)
+  }
+
+  async function excluirCliente(id: string) {
+    const confirmar = confirm("Deseja excluir este cliente?")
+    if (!confirmar) return
+
+    const { error } = await supabase.from("clientes_empresa").delete().eq("id", id)
+
+    if (error) {
+      alert(`Erro Supabase: ${error.message}`)
+      return
+    }
+
+    setClientes((lista) => lista.filter((cliente) => cliente.id !== id))
+    setMenuAberto(null)
+  }
+
+  async function salvarEdicao(clienteAtualizado: ClienteTela) {
+    const { error } = await supabase
+      .from("clientes_empresa")
+      .update({
+        nome: clienteAtualizado.nome,
+        responsavel: clienteAtualizado.responsavel,
+        tipo: clienteAtualizado.tipo,
+        documento: clienteAtualizado.documento,
+        telefone: clienteAtualizado.telefone,
+        email: clienteAtualizado.email,
+        cidade: clienteAtualizado.cidade,
+        estado: clienteAtualizado.estado,
+        status: clienteAtualizado.status,
+        observacoes: clienteAtualizado.observacoes,
+      })
+      .eq("id", clienteAtualizado.id)
+
+    if (error) {
+      alert(`Erro Supabase: ${error.message}`)
+      return
+    }
+
+    setClienteEditando(null)
+    carregarClientes()
+  }
 
   const claro = tema === "light"
 
@@ -136,55 +216,27 @@ export default function ClientesPage() {
     linha: claro ? "border-[#dfd0a5]" : "border-white/10",
   }
 
-  function adicionarCliente(novoCliente: any) {
-    const clienteFormatado: Cliente = {
-      id: Date.now(),
-      nome: novoCliente.nome || novoCliente.nomeCliente || "Novo Cliente",
-      responsavel: novoCliente.responsavel || "A preencher",
-      tipo: novoCliente.tipo || "Pessoa física",
-      documento: novoCliente.documento || "CPF/CNPJ não informado",
-      telefone: novoCliente.telefone || novoCliente.whatsapp || "A preencher",
-      email: novoCliente.email || "A preencher",
-      cidade:
-        novoCliente.cidade && novoCliente.estado
-          ? `${novoCliente.cidade} - ${novoCliente.estado}`
-          : novoCliente.cidade || "A preencher",
-      entregas: 0,
-      ultimaEntrega: "Nenhuma",
-      valorMovimentado: "R$ 0,00",
-      status: novoCliente.status || "Ativo",
-    }
+  const clientesFiltrados = useMemo(() => {
+    const termo = busca.trim().toLowerCase()
+    if (!termo) return clientes
 
-    setClientes((lista) => [clienteFormatado, ...lista])
-    setModalNovoCliente(false)
-  }
-
-  function excluirCliente(id: number) {
-    const confirmar = confirm("Deseja excluir este cliente?")
-    if (!confirmar) return
-
-    setClientes((lista) => lista.filter((cliente) => cliente.id !== id))
-    setMenuAberto(null)
-  }
-
-  function abrirDetalhes(cliente: Cliente) {
-    setClienteDetalhes(cliente)
-    setMenuAberto(null)
-  }
-
-  function abrirEditar(cliente: Cliente) {
-    setClienteEditando(cliente)
-    setMenuAberto(null)
-  }
-
-  function salvarEdicao(clienteAtualizado: Cliente) {
-    setClientes((lista) =>
-      lista.map((cliente) =>
-        cliente.id === clienteAtualizado.id ? clienteAtualizado : cliente
-      )
+    return clientes.filter((cliente) =>
+      [
+        cliente.nome,
+        cliente.responsavel,
+        cliente.documento,
+        cliente.telefone,
+        cliente.email,
+        cliente.cidade,
+        cliente.estado,
+        cliente.status,
+        cliente.tipo,
+      ]
+        .join(" ")
+        .toLowerCase()
+        .includes(termo)
     )
-    setClienteEditando(null)
-  }
+  }, [busca, clientes])
 
   const totalClientes = clientes.length
   const ativos = clientes.filter((cliente) => cliente.status === "Ativo").length
@@ -199,7 +251,7 @@ export default function ClientesPage() {
             <p className="text-sm font-black text-[#ffc400]">Área da Empresa</p>
             <h1 className="mt-1 text-2xl font-black sm:text-4xl">Clientes</h1>
             <p className={`mt-2 max-w-2xl text-sm ${ui.textoFraco}`}>
-              Gerencie clientes ativos, inativos, empresas e documentos cadastrados.
+              Estrutura limpa, conectada ao Supabase. Cadastre clientes reais para usar nas entregas.
             </p>
           </div>
 
@@ -224,94 +276,118 @@ export default function ClientesPage() {
             <div className={`flex h-12 flex-1 items-center gap-3 rounded-xl border px-4 ${ui.card2}`}>
               <Search size={19} className="text-[#ffc400]" />
               <input
+                value={busca}
+                onChange={(event) => setBusca(event.target.value)}
                 placeholder="Buscar por nome, CPF, CNPJ, cidade ou telefone..."
                 className="w-full bg-transparent text-sm outline-none"
               />
             </div>
 
-            <button className={`flex h-12 items-center justify-center gap-2 rounded-xl border px-4 font-bold ${ui.card2}`}>
+            <button
+              type="button"
+              onClick={carregarClientes}
+              className={`flex h-12 items-center justify-center gap-2 rounded-xl border px-4 font-bold ${ui.card2}`}
+            >
               <Filter size={18} />
-              Filtrar
+              Atualizar
             </button>
           </div>
 
-          <div className="grid gap-4 lg:grid-cols-2">
-            {clientes.map((cliente) => (
-              <article key={cliente.id} className={`relative rounded-[26px] border p-4 sm:p-5 ${ui.card2}`}>
-                <div className="flex items-start gap-4">
-                  <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-[#ffc400] text-black">
-                    {cliente.tipo === "Empresa" ? <Building2 size={30} /> : <UserRound size={30} />}
-                  </div>
+          {mensagem && (
+            <div className="mb-4 rounded-xl border border-[#ffc400]/40 bg-[#ffc400]/10 p-3 text-sm font-bold text-[#ffc400]">
+              {mensagem}
+            </div>
+          )}
 
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <h2 className="text-lg font-black leading-tight">{cliente.nome}</h2>
-                        <p className={`mt-1 text-xs font-bold ${ui.textoFraco}`}>
-                          {cliente.tipo} • {cliente.documento}
-                        </p>
-                      </div>
-
-                      <div className="relative">
-                        <button
-                          type="button"
-                          onClick={() => setMenuAberto(menuAberto === cliente.id ? null : cliente.id)}
-                          className={`flex h-10 w-10 items-center justify-center rounded-xl border ${ui.card}`}
-                        >
-                          <MoreHorizontal size={20} />
-                        </button>
-
-                        {menuAberto === cliente.id && (
-                          <div className={`absolute right-0 top-12 z-50 w-44 rounded-xl border p-2 ${ui.card}`}>
-                            <button
-                              type="button"
-                              onClick={() => abrirDetalhes(cliente)}
-                              className="w-full rounded-lg px-3 py-2 text-left text-sm font-black hover:bg-[#ffc400]/10"
-                            >
-                              Ver detalhes
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={() => abrirEditar(cliente)}
-                              className="w-full rounded-lg px-3 py-2 text-left text-sm font-black hover:bg-[#ffc400]/10"
-                            >
-                              Editar
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={() => excluirCliente(cliente.id)}
-                              className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-black text-red-500 hover:bg-red-500/10"
-                            >
-                              <XCircle size={16} />
-                              Excluir
-                            </button>
-                          </div>
-                        )}
-                      </div>
+          {carregando ? (
+            <Vazio ui={ui} texto="Carregando clientes do Supabase..." />
+          ) : clientesFiltrados.length === 0 ? (
+            <Vazio ui={ui} texto="Nenhum cliente cadastrado ainda. Clique em Novo Cliente para começar." />
+          ) : (
+            <div className="grid gap-4 lg:grid-cols-2">
+              {clientesFiltrados.map((cliente) => (
+                <article key={cliente.id} className={`relative rounded-[26px] border p-4 sm:p-5 ${ui.card2}`}>
+                  <div className="flex items-start gap-4">
+                    <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-[#ffc400] text-black">
+                      {cliente.tipo === "Empresa" ? <Building2 size={30} /> : <UserRound size={30} />}
                     </div>
 
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      <StatusCliente nome={cliente.status} />
-                      <span className="rounded-full bg-[#ffc400]/15 px-3 py-1 text-xs font-black text-[#ffc400]">
-                        {cliente.entregas} entregas
-                      </span>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <h2 className="text-lg font-black leading-tight">{cliente.nome}</h2>
+                          <p className={`mt-1 text-xs font-bold ${ui.textoFraco}`}>
+                            {cliente.tipo} • {cliente.documento}
+                          </p>
+                        </div>
+
+                        <div className="relative">
+                          <button
+                            type="button"
+                            onClick={() => setMenuAberto(menuAberto === cliente.id ? null : cliente.id)}
+                            className={`flex h-10 w-10 items-center justify-center rounded-xl border ${ui.card}`}
+                          >
+                            <MoreHorizontal size={20} />
+                          </button>
+
+                          {menuAberto === cliente.id && (
+                            <div className={`absolute right-0 top-12 z-50 w-44 rounded-xl border p-2 ${ui.card}`}>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setClienteDetalhes(cliente)
+                                  setMenuAberto(null)
+                                }}
+                                className="w-full rounded-lg px-3 py-2 text-left text-sm font-black hover:bg-[#ffc400]/10"
+                              >
+                                Ver detalhes
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setClienteEditando(cliente)
+                                  setMenuAberto(null)
+                                }}
+                                className="w-full rounded-lg px-3 py-2 text-left text-sm font-black hover:bg-[#ffc400]/10"
+                              >
+                                Editar
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => excluirCliente(cliente.id)}
+                                className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-black text-red-500 hover:bg-red-500/10"
+                              >
+                                <XCircle size={16} />
+                                Excluir
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        <StatusCliente nome={cliente.status} />
+                        <span className="rounded-full bg-[#ffc400]/15 px-3 py-1 text-xs font-black text-[#ffc400]">
+                          {cliente.entregas} entregas
+                        </span>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                  <Info ui={ui} icon={<UserRound size={17} />} label="Responsável" value={cliente.responsavel} />
-                  <Info ui={ui} icon={<Phone size={17} />} label="Telefone" value={cliente.telefone} />
-                  <Info ui={ui} icon={<Mail size={17} />} label="E-mail" value={cliente.email} />
-                  <Info ui={ui} icon={<MapPin size={17} />} label="Cidade" value={cliente.cidade} />
-                  <Info ui={ui} icon={<CalendarDays size={17} />} label="Última entrega" value={cliente.ultimaEntrega} />
-                  <Info ui={ui} icon={<Package size={17} />} label="Movimentado" value={cliente.valorMovimentado} />
-                </div>
-              </article>
-            ))}
-          </div>
+                  <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                    <Info ui={ui} icon={<UserRound size={17} />} label="Responsável" value={cliente.responsavel} />
+                    <Info ui={ui} icon={<Phone size={17} />} label="Telefone" value={cliente.telefone} />
+                    <Info ui={ui} icon={<Mail size={17} />} label="E-mail" value={cliente.email} />
+                    <Info ui={ui} icon={<MapPin size={17} />} label="Cidade" value={cliente.cidade} />
+                    <Info ui={ui} icon={<CalendarDays size={17} />} label="Criado em" value={formatarData(cliente.created_at)} />
+                    <Info ui={ui} icon={<Package size={17} />} label="Movimentado" value={cliente.valorMovimentado} />
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
         </section>
       </div>
 
@@ -319,25 +395,19 @@ export default function ClientesPage() {
         <NovoClienteModal
           ui={ui}
           fechar={() => setModalNovoCliente(false)}
-          salvar={adicionarCliente}
+          onClienteSalvo={() => {
+            setModalNovoCliente(false)
+            carregarClientes()
+          }}
         />
       )}
 
       {clienteDetalhes && (
-        <ModalDetalhesCliente
-          ui={ui}
-          cliente={clienteDetalhes}
-          fechar={() => setClienteDetalhes(null)}
-        />
+        <ModalDetalhesCliente ui={ui} cliente={clienteDetalhes} fechar={() => setClienteDetalhes(null)} />
       )}
 
       {clienteEditando && (
-        <ModalEditarCliente
-          ui={ui}
-          cliente={clienteEditando}
-          fechar={() => setClienteEditando(null)}
-          salvar={salvarEdicao}
-        />
+        <ModalEditarCliente ui={ui} cliente={clienteEditando} fechar={() => setClienteEditando(null)} salvar={salvarEdicao} />
       )}
     </main>
   )
@@ -364,9 +434,16 @@ function ModalDetalhesCliente({ ui, cliente, fechar }: any) {
           <Info ui={ui} icon={<Phone size={17} />} label="Telefone" value={cliente.telefone} />
           <Info ui={ui} icon={<Mail size={17} />} label="E-mail" value={cliente.email} />
           <Info ui={ui} icon={<MapPin size={17} />} label="Cidade" value={cliente.cidade} />
-          <Info ui={ui} icon={<CalendarDays size={17} />} label="Última entrega" value={cliente.ultimaEntrega} />
+          <Info ui={ui} icon={<CalendarDays size={17} />} label="Criado em" value={formatarData(cliente.created_at)} />
           <Info ui={ui} icon={<Package size={17} />} label="Movimentado" value={cliente.valorMovimentado} />
         </div>
+
+        {cliente.observacoes && (
+          <div className={`mt-4 rounded-2xl border p-4 ${ui.card2}`}>
+            <p className={`text-xs font-black ${ui.textoFraco}`}>Observações</p>
+            <p className="mt-2 text-sm font-bold">{cliente.observacoes}</p>
+          </div>
+        )}
 
         <button onClick={fechar} className="mt-6 h-12 w-full rounded-xl bg-[#ffc400] font-black text-black">
           Fechar
@@ -377,9 +454,9 @@ function ModalDetalhesCliente({ ui, cliente, fechar }: any) {
 }
 
 function ModalEditarCliente({ ui, cliente, fechar, salvar }: any) {
-  const [form, setForm] = useState<Cliente>(cliente)
+  const [form, setForm] = useState<ClienteTela>(cliente)
 
-  function atualizar(campo: keyof Cliente, valor: any) {
+  function atualizar(campo: keyof ClienteTela, valor: any) {
     setForm((atual) => ({ ...atual, [campo]: valor }))
   }
 
@@ -400,10 +477,11 @@ function ModalEditarCliente({ ui, cliente, fechar, salvar }: any) {
         <div className="mt-6 grid gap-3 sm:grid-cols-2">
           <Campo ui={ui} label="Nome" value={form.nome} onChange={(v: string) => atualizar("nome", v)} />
           <Campo ui={ui} label="Responsável" value={form.responsavel} onChange={(v: string) => atualizar("responsavel", v)} />
-          <Campo ui={ui} label="Documento" value={form.documento} onChange={(v: string) => atualizar("documento", v)} />
+          <Campo ui={ui} label="CPF ou CNPJ" value={form.documento} onChange={(v: string) => atualizar("documento", v)} />
           <Campo ui={ui} label="Telefone" value={form.telefone} onChange={(v: string) => atualizar("telefone", v)} />
           <Campo ui={ui} label="E-mail" value={form.email} onChange={(v: string) => atualizar("email", v)} />
           <Campo ui={ui} label="Cidade" value={form.cidade} onChange={(v: string) => atualizar("cidade", v)} />
+          <Campo ui={ui} label="Estado" value={form.estado} onChange={(v: string) => atualizar("estado", v)} />
 
           <label>
             <span className={`mb-2 block text-xs font-bold sm:text-sm ${ui.textoFraco}`}>Tipo</span>
@@ -489,14 +567,14 @@ function Info({ ui, icon, label, value }: any) {
 }
 
 function StatusCliente({ nome }: { nome: StatusCliente }) {
-  const classe =
-    nome === "Ativo"
-      ? "bg-green-500/15 text-green-500"
-      : "bg-red-500/15 text-red-500"
+  const classe = nome === "Ativo" ? "bg-green-500/15 text-green-500" : "bg-red-500/15 text-red-500"
+  return <span className={`rounded-full px-3 py-1 text-xs font-black ${classe}`}>{nome}</span>
+}
 
+function Vazio({ ui, texto }: any) {
   return (
-    <span className={`rounded-full px-3 py-1 text-xs font-black ${classe}`}>
-      {nome}
-    </span>
+    <div className={`flex min-h-[280px] items-center justify-center rounded-[22px] border border-dashed p-6 text-center ${ui.card2}`}>
+      <p className={`max-w-[360px] text-sm font-bold ${ui.textoFraco}`}>{texto}</p>
+    </div>
   )
 }

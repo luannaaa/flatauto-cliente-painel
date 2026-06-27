@@ -3,12 +3,13 @@
 import { useEffect, useState } from "react"
 import {
   PlugZap,
-  CheckCircle2,
   CircleAlert,
   Settings,
   Users,
   Package,
   RefreshCw,
+  X,
+  ArrowRight,
 } from "lucide-react"
 
 type Tema = "dark" | "light"
@@ -18,7 +19,7 @@ const crms = ["Kommo CRM", "HubSpot", "RD Station", "PipeRun", "Outro CRM"]
 export default function CrmPage() {
   const [tema, setTema] = useState<Tema>("dark")
   const [crmSelecionado, setCrmSelecionado] = useState("")
-  const [conectado, setConectado] = useState(false)
+  const [modalAberto, setModalAberto] = useState(false)
 
   useEffect(() => {
     function carregarTema() {
@@ -43,19 +44,17 @@ export default function CrmPage() {
     card: claro
       ? "border-[#dfd0a5] bg-white/90 shadow-[0_18px_45px_rgba(80,60,20,0.10)]"
       : "border-white/10 bg-[#10171b]/90 shadow-[0_18px_45px_rgba(0,0,0,0.30)]",
-    card2: claro
-      ? "border-[#dfd0a5] bg-[#f7f0dc]"
-      : "border-white/10 bg-white/[0.045]",
+    card2: claro ? "border-[#dfd0a5] bg-[#f7f0dc]" : "border-white/10 bg-white/[0.045]",
     textoFraco: claro ? "text-black/55" : "text-white/60",
   }
 
-  function conectarCrm() {
+  function abrirConexao() {
     if (!crmSelecionado) {
       alert("Selecione um CRM primeiro.")
       return
     }
 
-    setConectado(true)
+    setModalAberto(true)
   }
 
   return (
@@ -65,16 +64,15 @@ export default function CrmPage() {
           <p className="text-sm font-black text-[#ffc400]">Área da Empresa</p>
           <h1 className="mt-1 text-2xl font-black sm:text-4xl">CRM</h1>
           <p className={`mt-2 max-w-2xl text-sm ${ui.textoFraco}`}>
-            Conecte um CRM apenas se a empresa quiser sincronizar clientes,
-            entregas e oportunidades automaticamente.
+            Estrutura preparada para conectar CRM externo futuramente.
           </p>
         </header>
 
         <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <Resumo ui={ui} titulo="Clientes" valor="128" icon={<Users />} />
-          <Resumo ui={ui} titulo="Entregas" valor="342" icon={<Package />} />
-          <Resumo ui={ui} titulo="Sincronização" valor={conectado ? "Ativa" : "Off"} icon={<RefreshCw />} />
-          <Resumo ui={ui} titulo="Status" valor={conectado ? "Conectado" : "Desconectado"} icon={<PlugZap />} />
+          <Resumo ui={ui} titulo="Clientes" valor="—" icon={<Users />} />
+          <Resumo ui={ui} titulo="Entregas" valor="—" icon={<Package />} />
+          <Resumo ui={ui} titulo="Sincronização" valor="Off" icon={<RefreshCw />} />
+          <Resumo ui={ui} titulo="Status" valor="Aguardando" icon={<PlugZap />} />
         </section>
 
         <section className="grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
@@ -86,8 +84,7 @@ export default function CrmPage() {
             <h2 className="mt-6 text-2xl font-black">Conectar CRM</h2>
 
             <p className={`mt-2 text-sm ${ui.textoFraco}`}>
-              Nenhum CRM é obrigatório. Essa opção fica pronta para quando a
-              empresa quiser integrar uma ferramenta externa.
+              Nenhum CRM está conectado. Essa tela fica pronta para integração futura por API ou OAuth.
             </p>
 
             <div className="mt-6 space-y-4">
@@ -114,7 +111,7 @@ export default function CrmPage() {
               </label>
 
               <button
-                onClick={conectarCrm}
+                onClick={abrirConexao}
                 className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#ffc400] font-black text-black"
               >
                 <PlugZap size={19} />
@@ -125,33 +122,27 @@ export default function CrmPage() {
 
           <aside className={`rounded-[30px] border p-5 sm:p-7 ${ui.card}`}>
             <div className="flex items-center gap-3">
-              <div
-                className={`flex h-12 w-12 items-center justify-center rounded-2xl ${
-                  conectado ? "bg-green-500/15 text-green-500" : "bg-red-500/15 text-red-500"
-                }`}
-              >
-                {conectado ? <CheckCircle2 size={26} /> : <CircleAlert size={26} />}
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-red-500/15 text-red-500">
+                <CircleAlert size={26} />
               </div>
 
               <div>
                 <h3 className="text-xl font-black">Status da conexão</h3>
-                <p className={`text-sm ${ui.textoFraco}`}>
-                  {conectado ? `Conectado ao ${crmSelecionado}` : "Nenhum CRM conectado"}
-                </p>
+                <p className={`text-sm ${ui.textoFraco}`}>Nenhum CRM conectado</p>
               </div>
             </div>
 
             <div className={`mt-6 rounded-2xl border p-4 ${ui.card2}`}>
               <p className="font-black">Preparado para backend/API</p>
               <p className={`mt-1 text-sm ${ui.textoFraco}`}>
-                Depois essa conexão vai usar token/API para sincronizar dados reais.
+                A conexão real poderá usar token, OAuth ou API do CRM escolhido.
               </p>
             </div>
 
             <div className={`mt-4 rounded-2xl border p-4 ${ui.card2}`}>
               <div className="flex items-center gap-2 font-black">
                 <Settings size={18} className="text-[#ffc400]" />
-                O que será sincronizado
+                O que poderá ser sincronizado
               </div>
 
               <ul className={`mt-3 space-y-2 text-sm ${ui.textoFraco}`}>
@@ -164,6 +155,43 @@ export default function CrmPage() {
           </aside>
         </section>
       </div>
+
+      {modalAberto && (
+        <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
+          <div className={`w-full max-w-md rounded-[28px] border p-5 ${ui.card}`}>
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-black">Conectar CRM</h2>
+
+              <button onClick={() => setModalAberto(false)} className={`rounded-xl border p-2 ${ui.card2}`}>
+                <X size={20} />
+              </button>
+            </div>
+
+            <p className={`mt-4 text-sm ${ui.textoFraco}`}>
+              Você selecionou <strong>{crmSelecionado}</strong>. A integração real será feita depois com
+              autorização, token ou API do CRM.
+            </p>
+
+            <div className={`mt-5 rounded-2xl border p-4 ${ui.card2}`}>
+              <p className="font-black">Estrutura pronta</p>
+              <p className={`mt-1 text-sm ${ui.textoFraco}`}>
+                Esta etapa ainda não conecta dados reais. Ela apenas prepara o fluxo visual de conexão.
+              </p>
+            </div>
+
+            <button
+              onClick={() => {
+                alert("Integração preparada. A conexão real será configurada na publicação.")
+                setModalAberto(false)
+              }}
+              className="mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#ffc400] font-black text-black"
+            >
+              Continuar
+              <ArrowRight size={19} />
+            </button>
+          </div>
+        </div>
+      )}
     </main>
   )
 }

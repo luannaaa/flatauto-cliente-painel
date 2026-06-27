@@ -1,6 +1,7 @@
 "use client"
 
-import { useEffect, useRef, useState, type ChangeEvent } from "react"
+import { useRef, useState, type ChangeEvent } from "react"
+import { supabase } from "../../../lib/supabase"
 
 type TipoEndereco = "origem" | "destino"
 
@@ -16,6 +17,93 @@ function formatarCep(valor: string) {
 
 function montarEnderecoViaCep(dados: ViaCepResposta) {
   return [dados.logradouro, dados.bairro, dados.localidade, dados.uf].filter(Boolean).join(", ")
+}
+
+function codigoFrete() {
+  return String(Math.floor(1000 + Math.random() * 9000))
+}
+
+function numeroCampo(valor: string) {
+  const limpo = String(valor || "")
+    .replace(/[^\d,.-]/g, "")
+    .replace(",", ".")
+    .trim()
+
+  const numero = Number(limpo)
+  return Number.isNaN(numero) ? null : numero
+}
+
+function formatarMoeda(valor: number) {
+  return valor.toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  })
+}
+
+function calcularPrecoFrete(tipoTransporte: string, origem: string, destino: string, peso: string) {
+  if (!tipoTransporte || !origem.trim() || !destino.trim()) return 0
+
+  const basePorVeiculo: Record<string, number> = {
+    Motoboy: 28,
+    "Carro utilitário": 45,
+    "Fiorino / pequeno utilitário": 75,
+    Van: 120,
+    VUC: 180,
+    "Caminhão pequeno": 250,
+    "Caminhão médio": 360,
+  }
+
+  const base = basePorVeiculo[tipoTransporte] || 80
+  const pesoNumero = numeroCampo(peso) || 0
+  const adicionalPeso = pesoNumero > 0 ? Math.min(pesoNumero * 0.08, 180) : 0
+
+  const textoRota = `${origem} ${destino}`.toLowerCase()
+  const intermunicipal =
+    textoRota.includes("joão pessoa") ||
+    textoRota.includes("joao pessoa") ||
+    textoRota.includes("caruaru") ||
+    textoRota.includes("petrolina") ||
+    textoRota.includes("maceió") ||
+    textoRota.includes("maceio")
+
+  const adicionalRota = intermunicipal ? 180 : 45
+
+  return Math.round(base + adicionalPeso + adicionalRota)
+}
+
+function dataHojeISO() {
+  return new Date().toISOString().slice(0, 10)
+}
+
+function dataAmanhaISO() {
+  const data = new Date()
+  data.setDate(data.getDate() + 1)
+  return data.toISOString().slice(0, 10)
+}
+
+function formatarDataBR(valorISO: string) {
+  if (!valorISO) return ""
+  const partes = valorISO.split("-")
+  if (partes.length !== 3) return valorISO
+  return `${partes[2]}/${partes[1]}/${partes[0]}`
+}
+
+function dataBRparaISO(valorBR: string) {
+  const numeros = somenteNumeros(valorBR).slice(0, 8)
+  if (numeros.length !== 8) return ""
+
+  const dia = numeros.slice(0, 2)
+  const mes = numeros.slice(2, 4)
+  const ano = numeros.slice(4, 8)
+
+  return `${ano}-${mes}-${dia}`
+}
+
+function mascaraDataBR(valor: string) {
+  const numeros = somenteNumeros(valor).slice(0, 8)
+  if (numeros.length <= 2) return numeros
+  if (numeros.length <= 4) return `${numeros.slice(0, 2)}/${numeros.slice(2)}`
+  return `${numeros.slice(0, 2)}/${numeros.slice(2, 4)}/${numeros.slice(4)}`
 }
 
 type SugestaoLocalizacao = {
@@ -35,7 +123,6 @@ type ViaCepResposta = {
 }
 
 export default function MarcarFrete() {
-
   const [segundaParada, setSegundaParada] = useState(false)
 
   const [localSaida, setLocalSaida] = useState("")
@@ -43,6 +130,21 @@ export default function MarcarFrete() {
 
   const [destinoFinal, setDestinoFinal] = useState("")
   const [cepDestino, setCepDestino] = useState("")
+  const [segundaParadaEndereco, setSegundaParadaEndereco] = useState("")
+
+  const [dataColeta, setDataColeta] = useState("")
+  const [dataEntrega, setDataEntrega] = useState("")
+  const [dataColetaBR, setDataColetaBR] = useState("")
+  const [dataEntregaBR, setDataEntregaBR] = useState("")
+  const [modoHorario, setModoHorario] = useState<"agora" | "agendar">("agora")
+  const [horarioColeta, setHorarioColeta] = useState("")
+  const [peso, setPeso] = useState("")
+  const [altura, setAltura] = useState("")
+  const [largura, setLargura] = useState("")
+  const [comprimento, setComprimento] = useState("")
+  const [tipoCarga, setTipoCarga] = useState("")
+  const [tipoTransporte, setTipoTransporte] = useState("")
+  const [observacoes, setObservacoes] = useState("")
 
   const inputNotaRef = useRef<HTMLInputElement | null>(null)
   const [arquivoNota, setArquivoNota] = useState<File | null>(null)
@@ -60,6 +162,9 @@ export default function MarcarFrete() {
   const [longitudeOrigem, setLongitudeOrigem] = useState("")
   const [latitudeDestino, setLatitudeDestino] = useState("")
   const [longitudeDestino, setLongitudeDestino] = useState("")
+
+  const [salvando, setSalvando] = useState(false)
+  const [mensagem, setMensagem] = useState("")
 
   function voltarPainel() {
     window.location.replace("/cliente")
@@ -220,7 +325,6 @@ export default function MarcarFrete() {
     }
   }
 
-
   function aprovarNotaFiscal() {
     setNotaAprovada(true)
   }
@@ -249,6 +353,140 @@ export default function MarcarFrete() {
     }
   }
 
+  function escolherDataColeta(valorISO: string) {
+    setDataColeta(valorISO)
+    setDataColetaBR(formatarDataBR(valorISO))
+  }
+
+  function escolherDataEntrega(valorISO: string) {
+    setDataEntrega(valorISO)
+    setDataEntregaBR(formatarDataBR(valorISO))
+  }
+
+  function digitarDataColeta(valorBR: string) {
+    const mascarada = mascaraDataBR(valorBR)
+    setDataColetaBR(mascarada)
+
+    const iso = dataBRparaISO(mascarada)
+    if (iso) setDataColeta(iso)
+  }
+
+  function digitarDataEntrega(valorBR: string) {
+    const mascarada = mascaraDataBR(valorBR)
+    setDataEntregaBR(mascarada)
+
+    const iso = dataBRparaISO(mascarada)
+    if (iso) setDataEntrega(iso)
+  }
+
+  async function solicitarEntrega() {
+    if (salvando) return
+
+    setMensagem("")
+
+    const clienteId = localStorage.getItem("flatauto_cliente_id")
+
+    if (!clienteId) {
+      setMensagem("Cliente não encontrado no login. Saia e entre novamente.")
+      return
+    }
+
+    if (!localSaida.trim() || !destinoFinal.trim()) {
+      setMensagem("Preencha origem e destino.")
+      return
+    }
+
+    if (!dataColeta) {
+      setMensagem("Escolha quando será a coleta.")
+      return
+    }
+
+    if (!tipoCarga || !tipoTransporte) {
+      setMensagem("Informe o tipo da carga e o tipo de transporte.")
+      return
+    }
+
+    if (modoHorario === "agendar" && !horarioColeta) {
+      setMensagem("Escolha o horário da coleta.")
+      return
+    }
+
+    setSalvando(true)
+
+    const alturaNumero = numeroCampo(altura)
+    const larguraNumero = numeroCampo(largura)
+    const comprimentoNumero = numeroCampo(comprimento)
+
+    const cubagem =
+      alturaNumero && larguraNumero && comprimentoNumero
+        ? alturaNumero * larguraNumero * comprimentoNumero
+        : null
+
+    const descricaoCarga = [
+      tipoCarga,
+      segundaParada && segundaParadaEndereco ? `Segunda parada: ${segundaParadaEndereco}` : "",
+      observacoes ? `Observação: ${observacoes}` : "",
+      arquivoNota ? `Nota: ${arquivoNota.name}` : "",
+    ]
+      .filter(Boolean)
+      .join(" | ")
+
+    const payload = {
+      cliente_id: clienteId,
+      motorista_id: null,
+      empresa_id: null,
+      codigo: codigoFrete(),
+      origem: localSaida.trim(),
+      destino: destinoFinal.trim(),
+      endereco_origem: localSaida.trim(),
+      endereco_destino: destinoFinal.trim(),
+      cep_origem: cepOrigem || null,
+      cep_destino: cepDestino || null,
+      descricao_carga: descricaoCarga || tipoCarga,
+      peso: numeroCampo(peso),
+      altura: alturaNumero,
+      largura: larguraNumero,
+      comprimento: comprimentoNumero,
+      cubagem,
+      valor: precoEstimado > 0 ? formatarMoeda(precoEstimado) : "A calcular",
+      valor_frete: precoEstimado,
+      tipo_carga: tipoCarga,
+      tipo_transporte: tipoTransporte,
+      status: modoHorario === "agora" ? "Aguardando" : "Agendado",
+      data_frete: dataColeta,
+      data_entrega: dataEntrega || dataColeta,
+      horario: modoHorario === "agora" ? "Agora" : horarioColeta,
+      observacoes: observacoes || null,
+    }
+
+    const { data, error } = await supabase
+      .from("fretes")
+      .insert(payload as any)
+      .select("*")
+      .maybeSingle()
+
+    setSalvando(false)
+
+    if (error) {
+      setMensagem(`Erro Supabase: ${error.message}`)
+      return
+    }
+
+    if (!data) {
+      setMensagem("Não foi possível confirmar o frete no Supabase.")
+      return
+    }
+
+    setMensagem("Entrega solicitada e salva no Supabase. Agora ela aparece para motoristas da região.")
+
+    setTimeout(() => {
+      window.location.replace("/cliente/meus-fretes")
+    }, 900)
+  }
+
+  const precoEstimado = calcularPrecoFrete(tipoTransporte, localSaida, destinoFinal, peso)
+  const motoristaRecebe = Math.round(precoEstimado * 0.8)
+
   return (
     <main className="min-h-screen bg-black text-white">
       <div className="mx-auto w-full max-w-[430px] px-4 pb-10 pt-7">
@@ -263,7 +501,7 @@ export default function MarcarFrete() {
         <section className="mt-8 rounded-[26px] border border-[#ffc400]/25 bg-[#080808] p-5">
           <h2 className="text-[28px] font-black leading-tight">Nova solicitação</h2>
           <p className="mt-2 text-[15px] leading-relaxed text-white/55">
-            Digite o CEP ou o endereço. Se informar o CEP, o sistema preenche o endereço automaticamente.
+            Digite origem, destino, escolha solicitar agora ou marque um horário para a coleta.
           </p>
         </section>
 
@@ -377,7 +615,6 @@ export default function MarcarFrete() {
             )}
           </div>
 
-
           <div>
             <Campo
               label="Origem"
@@ -433,6 +670,7 @@ export default function MarcarFrete() {
           />
 
           <button
+            type="button"
             onClick={() => setSegundaParada(!segundaParada)}
             className="w-full rounded-[20px] border border-[#ffc400]/35 bg-[#ffc400]/10 px-4 py-4 text-left font-bold text-[#ffc400]"
           >
@@ -443,22 +681,157 @@ export default function MarcarFrete() {
             <Campo
               label="Segunda parada"
               placeholder="Digite CEP ou endereço da parada"
+              value={segundaParadaEndereco}
+              onChange={setSegundaParadaEndereco}
             />
           )}
 
-          <Campo label="Data de coleta" type="date" />
-          <Campo label="Data de entrega" type="date" />
-          <Campo label="Peso aproximado" placeholder="Ex: 800 kg" />
+          <div className="rounded-[22px] border border-white/10 bg-[#080808] p-4">
+            <label className="mb-3 block text-[15px] font-bold text-white/80">
+              Quando quer coletar?
+            </label>
+
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => escolherDataColeta(dataHojeISO())}
+                className={`h-12 rounded-[16px] border font-black ${
+                  dataColeta === dataHojeISO()
+                    ? "border-[#ffc400] bg-[#ffc400] text-black"
+                    : "border-white/10 bg-black text-white/70"
+                }`}
+              >
+                Hoje
+              </button>
+
+              <button
+                type="button"
+                onClick={() => escolherDataColeta(dataAmanhaISO())}
+                className={`h-12 rounded-[16px] border font-black ${
+                  dataColeta === dataAmanhaISO()
+                    ? "border-[#ffc400] bg-[#ffc400] text-black"
+                    : "border-white/10 bg-black text-white/70"
+                }`}
+              >
+                Amanhã
+              </button>
+            </div>
+
+            <input
+              type="text"
+              inputMode="numeric"
+              value={dataColetaBR}
+              onChange={(event) => digitarDataColeta(event.target.value)}
+              placeholder="DD/MM/AAAA"
+              className="mt-3 h-[52px] w-full rounded-[16px] border border-white/10 bg-black px-4 text-white outline-none placeholder:text-white/35 focus:border-[#ffc400]/60"
+            />
+
+            <div className="mt-4 grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setModoHorario("agora")
+                  setHorarioColeta("")
+                  if (!dataColeta) escolherDataColeta(dataHojeISO())
+                }}
+                className={`h-12 rounded-[16px] border font-black ${
+                  modoHorario === "agora"
+                    ? "border-[#ffc400] bg-[#ffc400] text-black"
+                    : "border-white/10 bg-black text-white/70"
+                }`}
+              >
+                Solicitar agora
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setModoHorario("agendar")}
+                className={`h-12 rounded-[16px] border font-black ${
+                  modoHorario === "agendar"
+                    ? "border-[#ffc400] bg-[#ffc400] text-black"
+                    : "border-white/10 bg-black text-white/70"
+                }`}
+              >
+                Marcar horário
+              </button>
+            </div>
+
+            {modoHorario === "agendar" && (
+              <div className="mt-3">
+                <label className="mb-2 block text-[13px] font-black uppercase text-white/45">
+                  Horário da coleta
+                </label>
+
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="Ex: 14:55"
+                  value={horarioColeta}
+                  onChange={(event) => {
+                    let valor = event.target.value.replace(/[^0-9]/g, "").slice(0,4)
+
+                    if (valor.length > 2) {
+                      valor = valor.slice(0,2) + ":" + valor.slice(2)
+                    }
+
+                    setHorarioColeta(valor)
+                  }}
+                  className="h-[52px] w-full rounded-[16px] border border-white/10 bg-black px-4 text-white outline-none placeholder:text-white/35 focus:border-[#ffc400]/60"
+                />
+
+                <p className="mt-2 text-xs font-bold text-white/45">
+                  Digite no formato 24 horas (ex.: 08:30, 14:55 ou 20:10).
+                </p>
+              </div>
+            )}
+          </div>
+
+          <div className="rounded-[22px] border border-white/10 bg-[#080808] p-4">
+            <label className="mb-3 block text-[15px] font-bold text-white/80">
+              Entrega prevista
+            </label>
+
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => escolherDataEntrega(dataColeta || dataHojeISO())}
+                className="h-12 rounded-[16px] border border-[#ffc400]/35 bg-[#ffc400]/10 font-black text-[#ffc400]"
+              >
+                Mesmo dia
+              </button>
+
+              <button
+                type="button"
+                onClick={() => escolherDataEntrega(dataAmanhaISO())}
+                className="h-12 rounded-[16px] border border-white/10 bg-black font-black text-white/70"
+              >
+                Próximo dia
+              </button>
+            </div>
+
+            <input
+              type="text"
+              inputMode="numeric"
+              value={dataEntregaBR}
+              onChange={(event) => digitarDataEntrega(event.target.value)}
+              placeholder="DD/MM/AAAA"
+              className="mt-3 h-[52px] w-full rounded-[16px] border border-white/10 bg-black px-4 text-white outline-none placeholder:text-white/35 focus:border-[#ffc400]/60"
+            />
+          </div>
+
+          <Campo label="Peso aproximado" placeholder="Ex: 800 kg" value={peso} onChange={setPeso} />
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <Campo label="Altura" placeholder="Ex: 1,80 m" />
-            <Campo label="Largura" placeholder="Ex: 1,20 m" />
-            <Campo label="Comprimento" placeholder="Ex: 2,50 m" />
+            <Campo label="Altura" placeholder="Ex: 1,80 m" value={altura} onChange={setAltura} />
+            <Campo label="Largura" placeholder="Ex: 1,20 m" value={largura} onChange={setLargura} />
+            <Campo label="Comprimento" placeholder="Ex: 2,50 m" value={comprimento} onChange={setComprimento} />
           </div>
 
           <SelectCampo
             label="Tipo da carga"
             placeholder="Selecione o tipo de carga"
+            value={tipoCarga}
+            onChange={setTipoCarga}
             options={[
               "Móveis",
               "Caixas",
@@ -473,6 +846,8 @@ export default function MarcarFrete() {
           <SelectCampo
             label="Tipo de transporte"
             placeholder="Selecione o tipo de transporte"
+            value={tipoTransporte}
+            onChange={setTipoTransporte}
             options={[
               "Motoboy",
               "Carro utilitário",
@@ -484,18 +859,50 @@ export default function MarcarFrete() {
             ]}
           />
 
+          {precoEstimado > 0 && (
+            <div className="rounded-[24px] border border-[#ffc400]/30 bg-[#ffc400]/10 p-5">
+              <p className="text-xs font-black uppercase text-[#ffc400]">
+                Preço estimado
+              </p>
+
+              <h3 className="mt-2 text-3xl font-black text-[#ffc400]">
+                {formatarMoeda(precoEstimado)}
+              </h3>
+
+              <p className="mt-2 text-sm font-bold text-white/65">
+                Motorista recebe aproximadamente {formatarMoeda(motoristaRecebe)}.
+              </p>
+
+              <p className="mt-2 text-xs leading-relaxed text-white/45">
+                O valor é calculado pelo tipo de veículo, rota e peso informado. Depois podemos trocar por cálculo real com distância do mapa.
+              </p>
+            </div>
+          )}
 
           <div className="rounded-[22px] border border-white/10 bg-[#080808] p-4">
             <label className="mb-3 block text-[15px] font-bold text-white/80">Observações</label>
             <textarea
+              value={observacoes}
+              onChange={(event) => setObservacoes(event.target.value)}
               placeholder="Ex: carga frágil, precisa de ajudante, condomínio..."
               className="min-h-[96px] w-full resize-none rounded-[16px] border border-white/10 bg-black px-4 py-3 text-white outline-none placeholder:text-white/35 focus:border-[#ffc400]/60"
             />
           </div>
         </section>
 
-        <button className="mt-8 h-[58px] w-full rounded-[20px] bg-[#ffc400] text-[18px] font-black text-black">
-          Solicitar entrega
+        {mensagem && (
+          <p className="mt-5 text-center text-sm font-black text-[#ffc400]">
+            {mensagem}
+          </p>
+        )}
+
+        <button
+          type="button"
+          onClick={solicitarEntrega}
+          disabled={salvando}
+          className="mt-8 h-[58px] w-full rounded-[20px] bg-[#ffc400] text-[18px] font-black text-black disabled:opacity-60"
+        >
+          {salvando ? "Salvando no Supabase..." : "Solicitar entrega"}
         </button>
       </div>
     </main>
@@ -556,16 +963,21 @@ function SelectCampo({
   label,
   placeholder,
   options,
+  value,
+  onChange,
 }: {
   label: string
   placeholder: string
   options: string[]
+  value: string
+  onChange: (valor: string) => void
 }) {
   return (
     <div className="rounded-[22px] border border-white/10 bg-[#080808] p-4">
       <label className="mb-3 block text-[15px] font-bold text-white/80">{label}</label>
       <select
-        defaultValue=""
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
         className="h-[52px] w-full rounded-[16px] border border-white/10 bg-black px-4 text-white outline-none focus:border-[#ffc400]/60"
       >
         <option value="" disabled>
@@ -581,6 +993,3 @@ function SelectCampo({
     </div>
   )
 }
-
-
-

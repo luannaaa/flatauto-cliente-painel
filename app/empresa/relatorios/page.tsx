@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
+import { supabase } from "../../../lib/supabase"
 import {
   BarChart3,
   CalendarDays,
@@ -16,20 +17,56 @@ import {
 } from "lucide-react"
 
 type Tema = "dark" | "light"
+type StatusRelatorio = "Concluída" | "Em andamento" | "Cancelada"
 
-const entregas = [
-  { id: "#1287", cliente: "Auto Peças Brasil", data: "2026-06-08", status: "Concluída", origem: "Recife", destino: "Jaboatão", tipo: "Carro" },
-  { id: "#1286", cliente: "Construtora Nova", data: "2026-06-08", status: "Em andamento", origem: "Olinda", destino: "Recife", tipo: "Caminhão" },
-  { id: "#1285", cliente: "Mercado Central", data: "2026-06-07", status: "Concluída", origem: "Recife", destino: "Paulista", tipo: "Moto" },
-  { id: "#1284", cliente: "Indústria ABC", data: "2026-06-06", status: "Cancelada", origem: "Camaragibe", destino: "Cabo", tipo: "Van" },
-  { id: "#1283", cliente: "Loja Center", data: "2026-06-05", status: "Concluída", origem: "Recife", destino: "Olinda", tipo: "Fiorino" },
-]
+type EntregaRelatorio = {
+  id: string
+  cliente: string
+  data: string
+  status: StatusRelatorio
+  origem: string
+  destino: string
+  tipo: string
+}
+
+function hojeISO() {
+  return new Date().toISOString().slice(0, 10)
+}
+
+function primeiroDiaMesISO() {
+  const agora = new Date()
+  return new Date(agora.getFullYear(), agora.getMonth(), 1).toISOString().slice(0, 10)
+}
+
+function normalizarStatus(status?: string | null): StatusRelatorio {
+  const texto = String(status || "").toLowerCase()
+
+  if (texto.includes("conclu") || texto.includes("entreg")) return "Concluída"
+  if (texto.includes("cancel")) return "Cancelada"
+
+  return "Em andamento"
+}
+
+function pegarDataFrete(frete: any) {
+  const data = frete.data_frete || frete.data_entrega || frete.created_at
+
+  if (!data) return ""
+
+  if (String(data).includes("T")) {
+    return new Date(data).toISOString().slice(0, 10)
+  }
+
+  return String(data).slice(0, 10)
+}
 
 export default function RelatoriosPage() {
   const [tema, setTema] = useState<Tema>("dark")
-  const [inicio, setInicio] = useState("2026-06-01")
-  const [fim, setFim] = useState("2026-06-30")
+  const [inicio, setInicio] = useState(primeiroDiaMesISO())
+  const [fim, setFim] = useState(hojeISO())
   const [busca, setBusca] = useState("")
+  const [entregas, setEntregas] = useState<EntregaRelatorio[]>([])
+  const [carregando, setCarregando] = useState(true)
+  const [erro, setErro] = useState("")
 
   useEffect(() => {
     function carregarTema() {
@@ -47,6 +84,72 @@ export default function RelatoriosPage() {
     }
   }, [])
 
+  useEffect(() => {
+    carregarRelatorios()
+  }, [])
+
+  async function carregarRelatorios() {
+    setCarregando(true)
+    setErro("")
+
+    const empresaId = localStorage.getItem("flatauto_empresa_id")
+
+    if (!empresaId) {
+      setErro("Empresa não encontrada no login.")
+      setEntregas([])
+      setCarregando(false)
+      return
+    }
+
+    const [fretesResp, clientesResp] = await Promise.all([
+      supabase
+        .from("fretes")
+        .select("*")
+        .eq("empresa_id", empresaId)
+        .order("created_at", { ascending: false }),
+
+      supabase
+        .from("clientes_empresa")
+        .select("id,nome,responsavel")
+        .eq("empresa_id", empresaId),
+    ])
+
+    if (fretesResp.error) {
+      setErro(`Erro Supabase: ${fretesResp.error.message}`)
+      setEntregas([])
+      setCarregando(false)
+      return
+    }
+
+    if (clientesResp.error) {
+      console.error("Erro ao buscar clientes:", clientesResp.error.message)
+    }
+
+    const clientes = Array.isArray(clientesResp.data) ? clientesResp.data : []
+
+    const clientesPorId = new Map(
+      clientes.map((cliente: any) => [
+        cliente.id,
+        cliente.nome || cliente.responsavel || "Cliente",
+      ])
+    )
+
+    const fretes = Array.isArray(fretesResp.data) ? fretesResp.data : []
+
+    const formatadas: EntregaRelatorio[] = fretes.map((frete: any) => ({
+      id: frete.codigo || frete.id,
+      cliente: clientesPorId.get(frete.cliente_id) || "Não informado",
+      data: pegarDataFrete(frete),
+      status: normalizarStatus(frete.status),
+      origem: frete.origem || frete.endereco_origem || "Não informado",
+      destino: frete.destino || frete.endereco_destino || "Não informado",
+      tipo: frete.tipo_transporte || frete.tipo_carga || "Não informado",
+    }))
+
+    setEntregas(formatadas)
+    setCarregando(false)
+  }
+
   const claro = tema === "light"
 
   const ui = {
@@ -58,16 +161,16 @@ export default function RelatoriosPage() {
       ? "border-[#dfd0a5] bg-[#f7f0dc]"
       : "border-white/10 bg-white/[0.045]",
     textoFraco: claro ? "text-black/55" : "text-white/60",
-    linha: claro ? "border-[#dfd0a5]" : "border-white/10",
   }
 
   const filtradas = useMemo(() => {
     return entregas.filter((item) => {
       const dentroData = item.data >= inicio && item.data <= fim
-      const texto = `${item.id} ${item.cliente} ${item.origem} ${item.destino} ${item.tipo}`.toLowerCase()
+      const texto = `${item.id} ${item.cliente} ${item.origem} ${item.destino} ${item.tipo} ${item.status}`.toLowerCase()
+
       return dentroData && texto.includes(busca.toLowerCase())
     })
-  }, [inicio, fim, busca])
+  }, [entregas, inicio, fim, busca])
 
   const concluidas = filtradas.filter((e) => e.status === "Concluída").length
   const andamento = filtradas.filter((e) => e.status === "Em andamento").length
@@ -127,6 +230,12 @@ export default function RelatoriosPage() {
           </div>
         </header>
 
+        {erro && (
+          <div className="rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-sm font-bold text-red-400">
+            {erro}
+          </div>
+        )}
+
         <section className={`rounded-[26px] border p-4 sm:p-5 ${ui.card}`}>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <CampoData ui={ui} label="Data inicial" value={inicio} onChange={setInicio} />
@@ -142,9 +251,12 @@ export default function RelatoriosPage() {
               />
             </div>
 
-            <button className="flex h-12 items-center justify-center gap-2 rounded-xl bg-[#ffc400] px-4 font-black text-black sm:mt-7">
+            <button
+              onClick={carregarRelatorios}
+              className="flex h-12 items-center justify-center gap-2 rounded-xl bg-[#ffc400] px-4 font-black text-black sm:mt-7"
+            >
               <Filter size={18} />
-              Filtrar
+              Atualizar
             </button>
           </div>
         </section>
@@ -166,29 +278,39 @@ export default function RelatoriosPage() {
             </div>
           </div>
 
-          <div className="grid gap-4 lg:grid-cols-2">
-            {filtradas.map((entrega) => (
-              <article key={entrega.id} className={`rounded-[22px] border p-4 ${ui.card2}`}>
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <h3 className="font-black">{entrega.cliente}</h3>
-                    <p className={`mt-1 text-xs font-bold ${ui.textoFraco}`}>
-                      {entrega.id} • {entrega.data}
-                    </p>
+          {carregando ? (
+            <div className={`rounded-2xl border border-dashed p-8 text-center ${ui.card2}`}>
+              <p className={`text-sm ${ui.textoFraco}`}>Carregando dados reais do Supabase...</p>
+            </div>
+          ) : filtradas.length === 0 ? (
+            <div className={`rounded-2xl border border-dashed p-8 text-center ${ui.card2}`}>
+              <p className={`text-sm ${ui.textoFraco}`}>Nenhuma entrega encontrada nesse período.</p>
+            </div>
+          ) : (
+            <div className="grid gap-4 lg:grid-cols-2">
+              {filtradas.map((entrega) => (
+                <article key={entrega.id} className={`rounded-[22px] border p-4 ${ui.card2}`}>
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <h3 className="font-black">{entrega.cliente}</h3>
+                      <p className={`mt-1 text-xs font-bold ${ui.textoFraco}`}>
+                        {entrega.id} • {entrega.data}
+                      </p>
+                    </div>
+
+                    <Status nome={entrega.status} />
                   </div>
 
-                  <Status nome={entrega.status} />
-                </div>
-
-                <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                  <Info ui={ui} icon={<Package size={17} />} label="Tipo" value={entrega.tipo} />
-                  <Info ui={ui} icon={<CalendarDays size={17} />} label="Data" value={entrega.data} />
-                  <Info ui={ui} icon={<Truck size={17} />} label="Origem" value={entrega.origem} />
-                  <Info ui={ui} icon={<Truck size={17} />} label="Destino" value={entrega.destino} />
-                </div>
-              </article>
-            ))}
-          </div>
+                  <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                    <Info ui={ui} icon={<Package size={17} />} label="Tipo" value={entrega.tipo} />
+                    <Info ui={ui} icon={<CalendarDays size={17} />} label="Data" value={entrega.data} />
+                    <Info ui={ui} icon={<Truck size={17} />} label="Origem" value={entrega.origem} />
+                    <Info ui={ui} icon={<Truck size={17} />} label="Destino" value={entrega.destino} />
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
         </section>
       </div>
     </main>

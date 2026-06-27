@@ -1,431 +1,299 @@
 "use client"
-import MapaMotorista from "./components/MapaMotorista"
-import { useEffect, useRef, useState } from "react"
-import {
-  Menu,
-  X,
-  MapPin,
-  Bike,
-  Car,
-  Truck,
-  Bus,
-  CalendarDays,
-  Clock,
-  DollarSign,
-  UserRound,
-  Settings,
-  LogOut,
-  CheckCircle2,
-  Navigation,
-} from "lucide-react"
 
-type Veiculo = "moto" | "carro" | "van" | "caminhao"
+import { useEffect, useMemo, useState } from "react"
+import Link from "next/link"
+import { CalendarDays, CheckCircle2, Clock, DollarSign, Menu, Navigation, Package, UserRound, X } from "lucide-react"
+import { supabase } from "../../lib/supabase"
 
-type Corrida = {
+type Frete = {
   id: string
-  origem: string
-  destino: string
-  tipoCarga: string
-  tempoEstimado: string
-  valorEstimado: string
-  observacaoCliente: string
+  motorista_id?: string | null
+  origem?: string | null
+  destino?: string | null
+  endereco_origem?: string | null
+  endereco_destino?: string | null
+  status?: string | null
+  data_frete?: string | null
+  data_entrega?: string | null
+  horario?: string | null
+  valor_frete?: number | null
+  aceito_em?: string | null
+  created_at?: string | null
 }
 
-type Agendamento = {
-  id: string
-  cliente: string
-  local: string
-  endereco: string
-  destino: string
-  tipoPacote: string
-  horario: string
-  observacaoCliente: string
-  origemTipo: "cliente" | "empresa"
+type Localizacao = { latitude: number; longitude: number }
+
+function hojeISO() {
+  return new Date().toISOString().slice(0, 10)
 }
 
-const corridasDisponiveis: Corrida[] = [
-  {
-    id: "corrida-001",
-    origem: "Recife Antigo",
-    destino: "Boa Viagem",
-    tipoCarga: "Documentos",
-    tempoEstimado: "22 min",
-    valorEstimado: "R$ 38,00",
-    observacaoCliente: "Tomar cuidado na entrega. Entregar apenas ao responsável.",
-  },
-  {
-    id: "corrida-002",
-    origem: "Mercado Central",
-    destino: "Olinda",
-    tipoCarga: "Mercadorias pequenas",
-    tempoEstimado: "34 min",
-    valorEstimado: "R$ 52,00",
-    observacaoCliente: "Produto embalado. Cliente pediu retirada na portaria.",
-  },
-]
+function dataDoFrete(frete: Frete) {
+  const data = frete.data_frete || frete.data_entrega || frete.created_at || ""
+  return String(data).slice(0, 10)
+}
 
-const agendamentosPrincipais: Agendamento[] = [
-  {
-    id: "agenda-001",
-    cliente: "Mercado Central",
-    local: "Boa Viagem",
-    endereco: "Av. Conselheiro Aguiar, Boa Viagem",
-    destino: "Olinda",
-    tipoPacote: "Pacote empresarial",
-    horario: "Hoje às 16:30",
-    observacaoCliente: "Retirar na recepção e entregar no setor de estoque.",
-    origemTipo: "empresa",
-  },
-  {
-    id: "agenda-002",
-    cliente: "Cliente particular",
-    local: "Recife Antigo",
-    endereco: "Rua do Bom Jesus, Recife Antigo",
-    destino: "Jaboatão",
-    tipoPacote: "Frágil / sensível",
-    horario: "Amanhã às 09:00",
-    observacaoCliente: "Produto sensível. Evitar impacto e manter em pé.",
-    origemTipo: "cliente",
-  },
-]
+function texto(valor?: string | null) {
+  return String(valor || "").toLowerCase()
+}
 
-function IconeVeiculo({ tipo, size = 28 }: { tipo: Veiculo; size?: number }) {
-  if (tipo === "moto") return <Bike size={size} />
-  if (tipo === "carro") return <Car size={size} />
-  if (tipo === "van") return <Bus size={size} />
-  return <Truck size={size} />
+function pegarMotoristaId() {
+  const direto = localStorage.getItem("flatauto_motorista_id") || localStorage.getItem("motorista_id")
+  if (direto) return direto
+
+  const possiveis = ["flatauto_motorista_dados", "motoristaLogado", "flatauto_motorista_logado_dados"]
+  for (const chave of possiveis) {
+    const bruto = localStorage.getItem(chave)
+    if (!bruto) continue
+    try {
+      const obj = JSON.parse(bruto)
+      if (obj?.id) return String(obj.id)
+    } catch {}
+  }
+
+  return ""
+}
+
+function formatarMoeda(valor?: number | null) {
+  return Number(valor || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
 }
 
 export default function MotoristaPage() {
-  const [logado, setLogado] = useState(false)
-  const [carregando, setCarregando] = useState(true)
   const [menuAberto, setMenuAberto] = useState(false)
-  const [tipoVeiculo, setTipoVeiculo] = useState<Veiculo>("caminhao")
-  const [corridaSelecionada, setCorridaSelecionada] = useState<Corrida | null>(null)
-  const [agendamentoSelecionado, setAgendamentoSelecionado] = useState<Agendamento | null>(null)
-
-  const corridasRef = useRef<HTMLDivElement | null>(null)
+  const [fretes, setFretes] = useState<Frete[]>([])
+  const [localizacao, setLocalizacao] = useState<Localizacao | null>(null)
+  const [mensagemGps, setMensagemGps] = useState("Aguardando localização")
+  const [erro, setErro] = useState("")
 
   useEffect(() => {
-    try {
-      const motoristaSalvo = localStorage.getItem("motoristaLogado")
-      const veiculoSalvo = localStorage.getItem("tipoVeiculoMotorista") as Veiculo | null
+    carregarPainel()
 
-      if (motoristaSalvo === "true") {
-        setLogado(true)
-      } else {
-        localStorage.setItem("motoristaLogado", "true")
-        localStorage.setItem("tipoVeiculoMotorista", "caminhao")
-        setLogado(true)
-      }
+    const intervalo = setInterval(carregarPainel, 12000)
 
-      if (
-        veiculoSalvo === "moto" ||
-        veiculoSalvo === "carro" ||
-        veiculoSalvo === "van" ||
-        veiculoSalvo === "caminhao"
-      ) {
-        setTipoVeiculo(veiculoSalvo)
-      }
-    } finally {
-      setCarregando(false)
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const loc = { latitude: pos.coords.latitude, longitude: pos.coords.longitude }
+          setLocalizacao(loc)
+          setMensagemGps("Localização em tempo real ativa.")
+          localStorage.setItem("flatauto_motorista_localizacao", JSON.stringify({ ...loc, atualizadoEm: new Date().toISOString() }))
+        },
+        () => setMensagemGps("Permita a localização para ativar o mapa real."),
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 5000 }
+      )
     }
+
+    return () => clearInterval(intervalo)
   }, [])
 
-  function sair() {
-    localStorage.removeItem("motoristaLogado")
-    localStorage.removeItem("tipoVeiculoMotorista")
-    window.location.href = "/"
+  async function carregarPainel() {
+    setErro("")
+
+    const { data, error } = await supabase
+      .from("fretes")
+      .select("id,motorista_id,origem,destino,endereco_origem,endereco_destino,status,data_frete,data_entrega,horario,valor_frete,aceito_em,created_at")
+      .order("created_at", { ascending: false })
+
+    if (error) {
+      setErro(`Erro Supabase: ${error.message}`)
+      setFretes([])
+      return
+    }
+
+    setFretes(Array.isArray(data) ? data : [])
   }
 
-  function irParaCorridasDisponiveis() {
-    setMenuAberto(false)
-    setTimeout(() => {
-      corridasRef.current?.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
-      })
-    }, 150)
-  }
+  const motoristaId = typeof window !== "undefined" ? pegarMotoristaId() : ""
 
-  function abrirPagina(caminho: string) {
-    setMenuAberto(false)
-    window.location.href = caminho
-  }
+  const agendaAceita = useMemo(() => {
+    return fretes.filter((frete) => {
+      const st = texto(frete.status)
+      return frete.motorista_id === motoristaId && (st.includes("agendado_aceito") || st.includes("aceito"))
+    })
+  }, [fretes, motoristaId])
 
-  function aceitarCorrida() {
-    alert("Corrida aceita visualmente. Depois conectamos com o backend.")
-    setCorridaSelecionada(null)
-    window.location.href = "/motorista/em-andamento"
-  }
+  const corridasDisponiveisHoje = useMemo(() => {
+    return fretes.filter((frete) => {
+      const st = texto(frete.status)
+      const disponivel = st.includes("aguardando") || st.includes("disponivel") || st.includes("disponível") || st.includes("pendente")
+      return !frete.motorista_id && dataDoFrete(frete) === hojeISO() && disponivel
+    })
+  }, [fretes])
 
-  function aceitarAgendamento() {
-    alert("Agendamento aceito visualmente. Depois conectamos com o backend.")
-    setAgendamentoSelecionado(null)
-  }
+  const hoje = agendaAceita.filter((frete) => dataDoFrete(frete) === hojeISO()).length
+  const entregaAtiva = fretes.find((frete) => frete.motorista_id === motoristaId && texto(frete.status).includes("andamento"))
+  const agendamentosRegiao = fretes.filter((frete) => {
+    const st = texto(frete.status)
+    const disponivel = st.includes("aguardando") || st.includes("disponivel") || st.includes("disponível") || st.includes("pendente")
+    return !frete.motorista_id && dataDoFrete(frete) > hojeISO() && disponivel
+  }).slice(0, 2)
 
-  if (carregando) {
-    return (
-      <main className="flex min-h-screen items-center justify-center bg-[#020507] text-white">
-        <p className="text-sm text-white/60">Carregando motorista...</p>
-      </main>
-    )
-  }
-
-  if (!logado) {
-    return (
-      <main className="flex min-h-screen items-center justify-center bg-[#020507] text-white">
-        <p className="text-sm text-white/60">Redirecionando...</p>
-      </main>
-    )
-  }
+  const mapaUrl = localizacao
+    ? `https://www.openstreetmap.org/export/embed.html?bbox=${localizacao.longitude - 0.01}%2C${localizacao.latitude - 0.01}%2C${localizacao.longitude + 0.01}%2C${localizacao.latitude + 0.01}&layer=mapnik&marker=${localizacao.latitude}%2C${localizacao.longitude}`
+    : "https://www.openstreetmap.org/export/embed.html?bbox=-35.05%2C-8.16%2C-34.85%2C-8.02&layer=mapnik"
 
   return (
     <main className="min-h-screen bg-[#020507] text-white">
-      <header className="fixed left-0 right-0 top-0 z-40 flex h-16 items-center justify-between border-b border-white/10 bg-[#10171b] px-4">
-        <button
-          onClick={() => setMenuAberto(true)}
-          className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04]"
-        >
-          <Menu size={24} />
-        </button>
+      <div className="mx-auto min-h-screen max-w-[430px] bg-[#020507]">
+        <header className="sticky top-0 z-40 flex items-center justify-between bg-[#10171b] px-4 py-4">
+          <button onClick={() => setMenuAberto(true)} className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04]">
+            <Menu size={25} />
+          </button>
 
-        <div className="text-center">
-          <p className="text-xs font-black text-[#ffc400]">FLATAUTO</p>
-          <h1 className="text-sm font-black">Motorista</h1>
-        </div>
-
-        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#ffc400] text-black">
-          <IconeVeiculo tipo={tipoVeiculo} size={25} />
-        </div>
-      </header>
-
-      {menuAberto && (
-        <div className="fixed inset-0 z-50">
-          <div className="absolute inset-0 bg-black/70" onClick={() => setMenuAberto(false)} />
-
-          <aside className="absolute left-0 top-0 h-full w-[82%] max-w-[320px] border-r border-white/10 bg-[#10171b] p-5">
-            <div className="mb-7 flex items-center justify-between">
-              <div>
-                <p className="text-xl font-black text-[#ffc400]">FLATAUTO</p>
-                <p className="text-xs font-bold text-white/50">MOTORISTA</p>
-              </div>
-
-              <button
-                onClick={() => setMenuAberto(false)}
-                className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04]"
-              >
-                <X size={20} />
-              </button>
-            </div>
-
-            <nav className="space-y-2">
-              <MenuItem icon={<Navigation size={18} />} label="Corridas disponíveis" onClick={irParaCorridasDisponiveis} />
-              <MenuItem icon={<CalendarDays size={18} />} label="Agendamentos" onClick={() => abrirPagina("/motorista/agendamentos")} />
-              <MenuItem icon={<Clock size={18} />} label="Em andamento" onClick={() => abrirPagina("/motorista/em-andamento")} />
-              <MenuItem icon={<CheckCircle2 size={18} />} label="Concluídas" onClick={() => abrirPagina("/motorista/concluidas")} />
-              <MenuItem icon={<DollarSign size={18} />} label="Ganhos" onClick={() => abrirPagina("/motorista/ganhos")} />
-              <MenuItem icon={<UserRound size={18} />} label="Perfil" onClick={() => abrirPagina("/motorista/perfil")} />
-              <MenuItem icon={<Settings size={18} />} label="Configurações" onClick={() => abrirPagina("/motorista/configuracoes")} />
-
-              <button
-                onClick={sair}
-                className="mt-5 flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm font-black text-red-400 hover:bg-red-500/10"
-              >
-                <LogOut size={18} />
-                Sair
-              </button>
-            </nav>
-          </aside>
-        </div>
-      )}
-
-      {corridaSelecionada && (
-        <ModalBase titulo="DETALHES DA CORRIDA" subtitulo="Corrida disponível" onFechar={() => setCorridaSelecionada(null)}>
-          <div className="space-y-3">
-            <DetalheLinha titulo="Origem" valor={corridaSelecionada.origem} icone="📍" />
-            <DetalheLinha titulo="Destino" valor={corridaSelecionada.destino} icone="🏁" />
-            <DetalheLinha titulo="Tipo de carga" valor={corridaSelecionada.tipoCarga} icone="📦" />
-            <DetalheLinha titulo="Tempo estimado" valor={corridaSelecionada.tempoEstimado} icone="⏱" />
-            <DetalheLinha titulo="Valor estimado" valor={corridaSelecionada.valorEstimado} icone="💰" />
-            <Observacao texto={corridaSelecionada.observacaoCliente} />
+          <div className="text-center">
+            <p className="font-black leading-none text-[#ffc400]">FLATAUTO</p>
+            <p className="text-sm font-black">Motorista</p>
           </div>
 
-          <button onClick={aceitarCorrida} className="mt-5 h-12 w-full rounded-2xl bg-[#ffc400] font-black text-black">
-            Aceitar corrida
-          </button>
-        </ModalBase>
-      )}
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#ffc400] text-black">
+            <Navigation size={24} />
+          </div>
+        </header>
 
-      {agendamentoSelecionado && (
-        <ModalBase titulo="DETALHES DO AGENDAMENTO" subtitulo="Agendamento na região" onFechar={() => setAgendamentoSelecionado(null)}>
-          <div className="space-y-3">
-            <DetalheLinha titulo="Local" valor={agendamentoSelecionado.local} icone="📍" />
-            <DetalheLinha titulo="Endereço" valor={agendamentoSelecionado.endereco} icone="🗺️" />
-            <DetalheLinha titulo="Destino" valor={agendamentoSelecionado.destino} icone="🏁" />
-            <DetalheLinha titulo="Tipo de pacote" valor={agendamentoSelecionado.tipoPacote} icone="📦" />
-            <DetalheLinha titulo="Horário" valor={agendamentoSelecionado.horario} icone="🗓️" />
-            <Observacao texto={agendamentoSelecionado.observacaoCliente} />
+        <section className="relative h-[300px] overflow-hidden bg-[#10171b]">
+          <iframe title="Mapa do motorista" src={mapaUrl} className="h-full w-full border-0 opacity-90" />
+          <div className="absolute left-4 right-4 top-5 rounded-[28px] bg-black/70 p-5 backdrop-blur-md">
+            <p className="text-xs font-black text-[#ffc400]">MAPA REAL DO MOTORISTA</p>
+            <h1 className="mt-2 text-xl font-black">{entregaAtiva ? "Entrega ativa" : "Sem entrega ativa"}</h1>
+            <p className="mt-2 text-sm text-white/70">{mensagemGps}</p>
+            {localizacao && <p className="mt-2 text-xs font-black text-[#ffc400]">Lat: {localizacao.latitude.toFixed(5)} • Long: {localizacao.longitude.toFixed(5)}</p>}
+          </div>
+        </section>
+
+        <section className="-mt-8 space-y-4 px-4 pb-8">
+          <div className="relative rounded-[28px] border border-white/10 bg-[#10171b] p-5 shadow-xl">
+            {entregaAtiva ? (
+              <>
+                <span className="rounded-full bg-[#ffc400]/15 px-3 py-1 text-xs font-black text-[#ffc400]">Em andamento</span>
+                <h2 className="mt-4 text-2xl font-black">Entrega ativa</h2>
+                <p className="mt-2 text-sm text-white/60">{entregaAtiva.origem || entregaAtiva.endereco_origem} → {entregaAtiva.destino || entregaAtiva.endereco_destino}</p>
+                <p className="mt-3 text-lg font-black text-[#ffc400]">{formatarMoeda(entregaAtiva.valor_frete)}</p>
+              </>
+            ) : (
+              <>
+                <p className="text-xs font-black text-white/45">ENTREGA ATIVA</p>
+                <h2 className="mt-2 text-2xl font-black">Sem entrega ativa</h2>
+                <p className="mt-2 text-sm text-white/60">Quando você aceitar uma corrida do dia, ela aparece aqui.</p>
+                <p className="mt-3 text-sm font-bold text-[#ffc400]">Aguardando corrida</p>
+              </>
+            )}
           </div>
 
-          <button onClick={aceitarAgendamento} className="mt-5 h-12 w-full rounded-2xl bg-[#ffc400] font-black text-black">
-            Aceitar agendamento
-          </button>
-        </ModalBase>
-      )}
-
-      <section className="pt-16">
-        <MapaMotorista />
-       </section>
-
-      <section className="-mt-4 rounded-t-[34px] bg-[#020507] px-4 pb-8 pt-5">
-        <div className="mx-auto max-w-[480px] space-y-4">
           <div className="grid grid-cols-3 gap-3">
-            <Resumo titulo="Corridas" valor={String(corridasDisponiveis.length)} />
-            <Resumo titulo="Agenda" valor={String(agendamentosPrincipais.length)} />
-            <Resumo titulo="Hoje" valor="R$ 120" />
+            <ResumoCard titulo="Corridas" valor={corridasDisponiveisHoje.length} />
+            <ResumoCard titulo="Agenda" valor={agendaAceita.length} />
+            <ResumoCard titulo="Hoje" valor={hoje} />
           </div>
 
-          <section ref={corridasRef} className="scroll-mt-20">
-            <h2 className="mb-3 text-lg font-black">Corridas disponíveis</h2>
+          {erro && <div className="rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-sm font-bold text-red-400">{erro}</div>}
 
-            <div className="space-y-3">
-              {corridasDisponiveis.map((corrida) => (
-                <article
-                  key={corrida.id}
-                  onClick={() => setCorridaSelecionada(corrida)}
-                  className="cursor-pointer rounded-[28px] border border-white/10 bg-[#10171b] p-4 transition hover:border-[#ffc400]/40"
-                >
-                  <div className="flex items-start gap-3">
-                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#ffc400] text-black">
-                      <Navigation size={28} />
-                    </div>
-
-                    <div className="flex-1">
-                      <h3 className="text-lg font-black">Corrida disponível</h3>
-                      <p className="mt-1 text-sm text-white/60">Cliente quer uma entrega próxima da sua região.</p>
-
-                      <div className="mt-4 grid gap-2 text-sm font-bold">
-                        <span>📍 Origem: {corrida.origem}</span>
-                        <span>🏁 Destino: {corrida.destino}</span>
-                        <span>⏱ Estimativa: {corrida.tempoEstimado}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <button
-                    onClick={(event) => {
-                      event.stopPropagation()
-                      setCorridaSelecionada(corrida)
-                    }}
-                    className="mt-4 h-12 w-full rounded-2xl bg-[#ffc400] font-black text-black"
-                  >
-                    Ver detalhes
-                  </button>
-                </article>
-              ))}
+          <section>
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="text-lg font-black">Corridas disponíveis</h2>
+              <Link href="/motorista/corridas" className="text-xs font-black text-[#ffc400]">Ver todas</Link>
             </div>
+            {corridasDisponiveisHoje.length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-white/10 bg-[#10171b] p-5 text-center text-sm text-white/60">Nenhuma corrida disponível agora.</div>
+            ) : (
+              <div className="space-y-3">
+                {corridasDisponiveisHoje.slice(0, 2).map((frete) => <MiniCard key={frete.id} frete={frete} />)}
+              </div>
+            )}
           </section>
 
           <section>
-            <div className="mb-3 flex items-center justify-between gap-3">
+            <div className="mb-3 flex items-center justify-between">
               <h2 className="text-lg font-black">Agendamentos na região</h2>
-
-              <button onClick={() => abrirPagina("/motorista/agendamentos")} className="text-xs font-black text-[#ffc400]">
-                Ver todos
-              </button>
+              <Link href="/motorista/agendamentos" className="text-xs font-black text-[#ffc400]">Ver todos</Link>
             </div>
-
-            <div className="space-y-3">
-              {agendamentosPrincipais.map((agendamento) => (
-                <AgendaCard
-                  key={agendamento.id}
-                  agendamento={agendamento}
-                  onClick={() => setAgendamentoSelecionado(agendamento)}
-                />
-              ))}
-            </div>
+            {agendamentosRegiao.length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-white/10 bg-[#10171b] p-5 text-center text-sm text-white/60">Nenhum agendamento disponível.</div>
+            ) : (
+              <div className="space-y-3">
+                {agendamentosRegiao.map((frete) => <MiniCard key={frete.id} frete={frete} />)}
+              </div>
+            )}
           </section>
-        </div>
-      </section>
+
+          <section>
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="text-lg font-black">Minha agenda aceita</h2>
+              <span className="text-xs font-black text-[#ffc400]">{agendaAceita.length}</span>
+            </div>
+            {agendaAceita.length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-white/10 bg-[#10171b] p-5 text-center text-sm text-white/60">Nenhum agendamento aceito ainda.</div>
+            ) : (
+              <div className="space-y-3">
+                {agendaAceita.slice(0, 3).map((frete) => <MiniCard key={frete.id} frete={frete} />)}
+              </div>
+            )}
+          </section>
+        </section>
+      </div>
+
+      {menuAberto && <MenuMotorista fechar={() => setMenuAberto(false)} />}
     </main>
   )
 }
 
-function ModalBase({ titulo, subtitulo, onFechar, children }: any) {
+function ResumoCard({ titulo, valor }: { titulo: string; valor: number }) {
   return (
-    <div className="fixed inset-0 z-[60] flex items-end justify-center bg-black/70 px-4 pb-5 sm:items-center sm:pb-0">
-      <div className="w-full max-w-[430px] rounded-[28px] border border-white/10 bg-[#10171b] p-5 shadow-[0_20px_60px_rgba(0,0,0,0.55)]">
-        <div className="mb-4 flex items-start justify-between gap-3">
-          <div>
-            <p className="text-xs font-black text-[#ffc400]">{titulo}</p>
-            <h2 className="mt-1 text-xl font-black">{subtitulo}</h2>
-          </div>
+    <div className="rounded-2xl border border-white/10 bg-[#10171b] p-4 text-center">
+      <p className="text-xs font-black text-white/55">{titulo}</p>
+      <p className="mt-2 text-xl font-black text-[#ffc400]">{valor}</p>
+    </div>
+  )
+}
 
-          <button onClick={onFechar} className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04]">
-            <X size={20} />
+function MiniCard({ frete }: { frete: Frete }) {
+  const aceito = Boolean(frete.motorista_id) && texto(frete.status).includes("aceito")
+
+  return (
+    <article className={`rounded-2xl border p-4 ${aceito ? "border-green-500/40 bg-green-500/10" : "border-white/10 bg-[#10171b]"}`}>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h3 className="font-black">Solicitação de frete</h3>
+          <p className="mt-1 text-sm text-white/60">{frete.origem || frete.endereco_origem || "Origem"} → {frete.destino || frete.endereco_destino || "Destino"}</p>
+          <p className="mt-2 text-sm font-black text-[#ffc400]">{dataDoFrete(frete)} {frete.horario || ""}</p>
+        </div>
+        {aceito && <span className="rounded-full bg-green-500/20 px-3 py-1 text-[10px] font-black text-green-300">Aceito</span>}
+      </div>
+    </article>
+  )
+}
+
+function MenuMotorista({ fechar }: { fechar: () => void }) {
+  const links = [
+    ["Corridas disponíveis", "/motorista/corridas"],
+    ["Agendamentos", "/motorista/agendamentos"],
+    ["Em andamento", "/motorista/em-andamento"],
+    ["Concluídas", "/motorista/concluidas"],
+    ["Ganhos", "/motorista/ganhos"],
+    ["Perfil", "/motorista/perfil"],
+    ["Configurações", "/motorista/configuracoes"],
+  ]
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/70">
+      <aside className="h-full w-[82%] max-w-[340px] bg-[#10171b] p-5">
+        <div className="mb-6 flex items-center justify-between">
+          <div>
+            <p className="text-2xl font-black text-[#ffc400]">FLATAUTO</p>
+            <p className="font-bold">MOTORISTA</p>
+          </div>
+          <button onClick={fechar} className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04]">
+            <X size={22} />
           </button>
         </div>
 
-        {children}
-
-        <button onClick={onFechar} className="mt-3 h-11 w-full rounded-2xl border border-white/10 bg-white/[0.04] font-black text-white">
-          Fechar
-        </button>
-      </div>
+        <nav className="space-y-3">
+          {links.map(([texto, href]) => (
+            <Link key={href} href={href} className="block rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-4 font-black text-white">
+              {texto}
+            </Link>
+          ))}
+          <Link href="/" className="block rounded-2xl px-4 py-4 font-black text-red-400">Sair</Link>
+        </nav>
+      </aside>
     </div>
-  )
-}
-
-function MenuItem({ icon, label, onClick }: any) {
-  return (
-    <button onClick={onClick} className="flex w-full items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-left text-sm font-black">
-      <span className="text-[#ffc400]">{icon}</span>
-      {label}
-    </button>
-  )
-}
-
-function Resumo({ titulo, valor }: any) {
-  return (
-    <div className="rounded-2xl border border-white/10 bg-[#10171b] p-3 text-center">
-      <p className="text-xs font-bold text-white/50">{titulo}</p>
-      <h3 className="mt-1 text-lg font-black text-[#ffc400]">{valor}</h3>
-    </div>
-  )
-}
-
-function DetalheLinha({ titulo, valor, icone }: any) {
-  return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
-      <p className="text-xs font-black uppercase text-white/45">{icone} {titulo}</p>
-      <p className="mt-1 text-sm font-black text-white">{valor}</p>
-    </div>
-  )
-}
-
-function Observacao({ texto }: { texto: string }) {
-  return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
-      <p className="text-xs font-black uppercase text-white/45">📝 Observação do cliente</p>
-      <p className="mt-2 text-sm font-bold leading-relaxed text-white">{texto}</p>
-    </div>
-  )
-}
-
-function AgendaCard({ agendamento, onClick }: { agendamento: Agendamento; onClick: () => void }) {
-  return (
-    <article onClick={onClick} className="cursor-pointer rounded-2xl border border-white/10 bg-[#10171b] p-4 transition hover:border-[#ffc400]/40">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h3 className="font-black">{agendamento.cliente}</h3>
-          <p className="mt-1 text-sm text-white/60">{agendamento.local} → {agendamento.destino}</p>
-          <p className="mt-2 text-sm font-bold text-[#ffc400]">{agendamento.horario}</p>
-          <p className="mt-2 text-xs font-bold text-white/45">{agendamento.tipoPacote}</p>
-        </div>
-
-        <span className="rounded-full bg-[#ffc400]/15 px-3 py-1 text-xs font-black text-[#ffc400]">Agendado</span>
-      </div>
-    </article>
   )
 }

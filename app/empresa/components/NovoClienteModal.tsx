@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { supabase } from "../../../lib/supabase"
 import {
   X,
   Save,
@@ -16,24 +17,13 @@ import {
 type TipoCliente = "Empresa" | "Pessoa física"
 type StatusCliente = "Ativo" | "Inativo"
 
-type NovoCliente = {
-  nome: string
-  responsavel: string
-  tipo: TipoCliente
-  documento: string
-  telefone: string
-  email: string
-  cidade: string
-  status: StatusCliente
-}
-
 type Props = {
   ui: any
   fechar: () => void
-  salvar: (cliente: NovoCliente) => void
+  onClienteSalvo: () => void
 }
 
-export default function NovoClienteModal({ ui, fechar, salvar }: Props) {
+export default function NovoClienteModal({ ui, fechar, onClienteSalvo }: Props) {
   const [tipo, setTipo] = useState<TipoCliente>("Empresa")
   const [nome, setNome] = useState("")
   const [responsavel, setResponsavel] = useState("")
@@ -48,32 +38,58 @@ export default function NovoClienteModal({ ui, fechar, salvar }: Props) {
   const [estado, setEstado] = useState("")
   const [status, setStatus] = useState<StatusCliente>("Ativo")
   const [observacoes, setObservacoes] = useState("")
+  const [salvando, setSalvando] = useState(false)
+  const [mensagem, setMensagem] = useState("")
 
   useEffect(() => {
     const original = document.body.style.overflow
     document.body.style.overflow = "hidden"
-
     return () => {
       document.body.style.overflow = original
     }
   }, [])
 
-  function salvarCliente() {
+  async function salvarCliente() {
+    if (salvando) return
+
+    setMensagem("")
+
     if (!nome.trim()) {
-      alert("Preencha o nome do cliente.")
+      setMensagem("Preencha o nome do cliente.")
       return
     }
 
-    salvar({
+
+    setSalvando(true)
+
+    const empresaId = localStorage.getItem("flatauto_empresa_id")
+
+    const { error } = await supabase.from("clientes_empresa").insert({
+      empresa_id: empresaId || null,
       nome: nome.trim(),
       responsavel: responsavel.trim() || nome.trim(),
       tipo,
-      documento: documento.trim() || "Não informado",
-      telefone: telefone.trim() || "Não informado",
-      email: email.trim() || "Não informado",
-      cidade: cidade.trim() || estado.trim() || "Não informado",
+      documento: documento.trim() || null,
+      telefone: telefone.trim() || null,
+      email: email.trim().toLowerCase(),
+      cep: cep.trim() || null,
+      rua: rua.trim() || null,
+      numero: numero.trim() || null,
+      bairro: bairro.trim() || null,
+      cidade: cidade.trim() || null,
+      estado: estado.trim() || null,
       status,
+      observacoes: observacoes.trim() || null,
     })
+
+    if (error) {
+      setMensagem(`Erro Supabase: ${error.message}`)
+      setSalvando(false)
+      return
+    }
+
+    setSalvando(false)
+    onClienteSalvo()
   }
 
   return (
@@ -83,7 +99,7 @@ export default function NovoClienteModal({ ui, fechar, salvar }: Props) {
           <div>
             <h2 className="text-xl font-black sm:text-2xl">Novo Cliente</h2>
             <p className={`mt-1 text-xs sm:text-sm ${ui.textoFraco}`}>
-              Cadastre clientes e empresas atendidas pela transportadora.
+              Cadastre clientes reais da transportadora no Supabase.
             </p>
           </div>
 
@@ -128,7 +144,7 @@ export default function NovoClienteModal({ ui, fechar, salvar }: Props) {
                 <Campo ui={ui} icon={<MapPin size={18} />} label="Rua" placeholder="Rua / Avenida" value={rua} onChange={setRua} />
                 <Campo ui={ui} icon={<MapPin size={18} />} label="Número" placeholder="Ex: 120" value={numero} onChange={setNumero} />
                 <Campo ui={ui} icon={<MapPin size={18} />} label="Bairro" placeholder="Ex: Boa Viagem" value={bairro} onChange={setBairro} />
-                <Campo ui={ui} icon={<MapPin size={18} />} label="Cidade" placeholder="Ex: Recife - PE" value={cidade} onChange={setCidade} />
+                <Campo ui={ui} icon={<MapPin size={18} />} label="Cidade" placeholder="Ex: Recife" value={cidade} onChange={setCidade} />
                 <Campo ui={ui} icon={<MapPin size={18} />} label="Estado" placeholder="Ex: PE" value={estado} onChange={setEstado} />
               </div>
 
@@ -156,7 +172,7 @@ export default function NovoClienteModal({ ui, fechar, salvar }: Props) {
 
               <h3 className="mt-5 text-xl font-black">Resumo do cliente</h3>
               <p className={`mt-2 text-sm ${ui.textoFraco}`}>
-                Depois o backend vai salvar esse cadastro no banco e conectar com as entregas.
+                Ao salvar, este cliente ficará disponível na tela Nova Entrega.
               </p>
 
               <div className={`mt-5 space-y-3 border-t pt-5 ${ui.linha}`}>
@@ -168,12 +184,19 @@ export default function NovoClienteModal({ ui, fechar, salvar }: Props) {
                 <ResumoLinha label="Status" valor={status} />
               </div>
 
+              {mensagem && (
+                <p className="mt-4 rounded-xl border border-[#ffc400]/40 bg-[#ffc400]/10 p-3 text-center text-sm font-bold text-[#ffc400]">
+                  {mensagem}
+                </p>
+              )}
+
               <button
                 onClick={salvarCliente}
-                className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#ffc400] font-black text-black"
+                disabled={salvando}
+                className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#ffc400] font-black text-black disabled:opacity-60"
               >
                 <Save size={19} />
-                Salvar Cliente
+                {salvando ? "Salvando..." : "Salvar Cliente"}
               </button>
 
               <button onClick={fechar} className={`mt-3 h-12 w-full rounded-xl border font-bold ${ui.card2}`}>
@@ -190,18 +213,10 @@ export default function NovoClienteModal({ ui, fechar, salvar }: Props) {
 function Campo({ ui, icon, label, placeholder, value, onChange }: any) {
   return (
     <label>
-      <span className={`mb-2 block text-xs font-bold sm:text-sm ${ui.textoFraco}`}>
-        {label}
-      </span>
-
+      <span className={`mb-2 block text-xs font-bold sm:text-sm ${ui.textoFraco}`}>{label}</span>
       <div className={`flex h-12 items-center gap-3 rounded-2xl border px-4 ${ui.card2}`}>
         <span className="text-[#ffc400]">{icon}</span>
-        <input
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={placeholder}
-          className="w-full bg-transparent text-sm outline-none"
-        />
+        <input value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} className="w-full bg-transparent text-sm outline-none" />
       </div>
     </label>
   )
@@ -210,17 +225,10 @@ function Campo({ ui, icon, label, placeholder, value, onChange }: any) {
 function SelectCampo({ ui, label, value, onChange, options, icon }: any) {
   return (
     <label>
-      <span className={`mb-2 block text-xs font-bold sm:text-sm ${ui.textoFraco}`}>
-        {label}
-      </span>
-
+      <span className={`mb-2 block text-xs font-bold sm:text-sm ${ui.textoFraco}`}>{label}</span>
       <div className={`flex h-12 items-center gap-3 rounded-2xl border px-4 ${ui.card2}`}>
         <span className="text-[#ffc400]">{icon}</span>
-        <select
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          className="w-full bg-transparent text-sm outline-none"
-        >
+        <select value={value} onChange={(e) => onChange(e.target.value)} className="w-full bg-transparent text-sm outline-none">
           {options.map((option: string) => (
             <option key={option} value={option} className="bg-black text-white">
               {option}

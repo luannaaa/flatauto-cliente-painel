@@ -13,28 +13,15 @@ import {
   FileText,
   UserRound,
   ClipboardList,
-  ImagePlus,
 } from "lucide-react"
+import { supabase } from "../../../lib/supabase"
 
-const tiposVeiculo = [
-  "Moto",
-  "Carro",
-  "Fiorino",
-  "Van",
-  "VUC",
-  "Truck",
-  "Toco",
-  "Carreta",
-]
+const tiposVeiculo = ["Moto", "Carro", "Fiorino", "Van", "VUC", "Truck", "Toco", "Carreta"]
 
-const statusVeiculo = ["Disponível", "Em rota", "Manutenção"]
-
-const motoristas = [
-  "João Carlos Silva",
-  "Marcos Antônio",
-  "Carlos Eduardo",
-  "Roberto Lima",
-]
+type Motorista = {
+  id: string
+  nome: string | null
+}
 
 function IconeTipo({ tipo, size = 18 }: { tipo: string; size?: number }) {
   if (tipo === "Moto") return <Bike size={size} />
@@ -43,31 +30,99 @@ function IconeTipo({ tipo, size = 18 }: { tipo: string; size?: number }) {
   return <Truck size={size} />
 }
 
-export default function NovoVeiculoModal({ ui, fechar }: any) {
+export default function NovoVeiculoModal({ ui, fechar, aoSalvar }: any) {
   const [tipo, setTipo] = useState("Moto")
   const [placa, setPlaca] = useState("")
   const [marca, setMarca] = useState("")
   const [modelo, setModelo] = useState("")
   const [ano, setAno] = useState("")
   const [cor, setCor] = useState("")
-  const [renavam, setRenavam] = useState("")
-  const [motorista, setMotorista] = useState("")
-  const [status, setStatus] = useState("Disponível")
+  const [capacidadeKg, setCapacidadeKg] = useState("")
+  const [motoristaId, setMotoristaId] = useState("")
+  const [ativo, setAtivo] = useState("true")
   const [observacoes, setObservacoes] = useState("")
+  const [motoristas, setMotoristas] = useState<Motorista[]>([])
+  const [carregandoMotoristas, setCarregandoMotoristas] = useState(false)
+  const [salvando, setSalvando] = useState(false)
+  const [erro, setErro] = useState("")
 
   useEffect(() => {
     const original = document.body.style.overflow
     document.body.style.overflow = "hidden"
+
+    carregarMotoristas()
 
     return () => {
       document.body.style.overflow = original
     }
   }, [])
 
-  function salvarVeiculo() {
-    alert("Veículo salvo visualmente. Depois vamos ligar no backend.")
+  async function carregarMotoristas() {
+    setCarregandoMotoristas(true)
+    setErro("")
+
+    const { data, error } = await supabase
+      .from("motoristas")
+      .select("id,nome")
+      .order("nome", { ascending: true })
+
+    if (error) {
+      setErro(`Erro Supabase: ${error.message}`)
+      setMotoristas([])
+      setCarregandoMotoristas(false)
+      return
+    }
+
+    setMotoristas((data || []) as Motorista[])
+    setCarregandoMotoristas(false)
+  }
+
+  async function salvarVeiculo() {
+    if (!tipo.trim()) {
+      setErro("Selecione o tipo do veículo.")
+      return
+    }
+
+    if (!placa.trim()) {
+      setErro("Preencha a placa do veículo.")
+      return
+    }
+
+    setSalvando(true)
+    setErro("")
+
+    const anoNumero = Number(ano)
+    const capacidadeNumero = Number(String(capacidadeKg).replace(",", "."))
+
+    const { error } = await supabase.from("veiculos").insert({
+      motorista_id: motoristaId || null,
+      tipo_veiculo: tipo.trim(),
+      marca: marca.trim() || null,
+      modelo: modelo.trim() || null,
+      ano: Number.isFinite(anoNumero) && anoNumero > 0 ? anoNumero : null,
+      placa: placa.trim(),
+      cor: cor.trim() || null,
+      capacidade_kg:
+        Number.isFinite(capacidadeNumero) && capacidadeNumero > 0 ? capacidadeNumero : null,
+      ativo: ativo === "true",
+      created_at: new Date().toISOString(),
+    })
+
+    setSalvando(false)
+
+    if (error) {
+      setErro(`Erro Supabase: ${error.message}`)
+      return
+    }
+
+    if (typeof aoSalvar === "function") {
+      await aoSalvar()
+    }
+
     fechar()
   }
+
+  const motoristaSelecionado = motoristas.find((motorista) => motorista.id === motoristaId)
 
   return (
     <div className="fixed inset-0 z-[999] flex items-end justify-center bg-black/70 p-0 backdrop-blur-sm sm:items-center sm:p-4">
@@ -76,7 +131,7 @@ export default function NovoVeiculoModal({ ui, fechar }: any) {
           <div>
             <h2 className="text-xl font-black sm:text-2xl">Novo Veículo</h2>
             <p className={`mt-1 text-xs sm:text-sm ${ui.textoFraco}`}>
-              Cadastre um veículo da frota da empresa.
+              Cadastre um veículo real da frota e vincule a um motorista quando quiser.
             </p>
           </div>
 
@@ -93,7 +148,7 @@ export default function NovoVeiculoModal({ ui, fechar }: any) {
                 label="Tipo do veículo"
                 value={tipo}
                 onChange={setTipo}
-                options={tiposVeiculo}
+                options={tiposVeiculo.map((item) => ({ value: item, label: item }))}
                 icon={<IconeTipo tipo={tipo} />}
               />
 
@@ -103,34 +158,43 @@ export default function NovoVeiculoModal({ ui, fechar }: any) {
                 <Campo ui={ui} icon={<Truck size={18} />} label="Modelo" placeholder="Ex: CG 160, Fiorino, VUC" value={modelo} onChange={setModelo} />
                 <Campo ui={ui} icon={<CalendarDays size={18} />} label="Ano" placeholder="Ex: 2024" value={ano} onChange={setAno} />
                 <Campo ui={ui} icon={<Palette size={18} />} label="Cor" placeholder="Ex: Branco" value={cor} onChange={setCor} />
-                <Campo ui={ui} icon={<FileText size={18} />} label="RENAVAM" placeholder="Opcional" value={renavam} onChange={setRenavam} />
+                <Campo ui={ui} icon={<Truck size={18} />} label="Capacidade KG" placeholder="Ex: 800" value={capacidadeKg} onChange={setCapacidadeKg} />
               </div>
 
               <div className="grid gap-3 sm:grid-cols-2">
                 <SelectCampo
                   ui={ui}
                   label="Motorista vinculado"
-                  value={motorista}
-                  onChange={setMotorista}
-                  options={motoristas}
+                  value={motoristaId}
+                  onChange={setMotoristaId}
+                  options={[
+                    { value: "", label: carregandoMotoristas ? "Carregando..." : "Sem motorista vinculado" },
+                    ...motoristas.map((motorista) => ({
+                      value: motorista.id,
+                      label: motorista.nome || "Motorista sem nome",
+                    })),
+                  ]}
                   icon={<UserRound size={18} />}
-                  placeholder="Selecionar motorista"
                 />
 
                 <SelectCampo
                   ui={ui}
                   label="Status"
-                  value={status}
-                  onChange={setStatus}
-                  options={statusVeiculo}
+                  value={ativo}
+                  onChange={setAtivo}
+                  options={[
+                    { value: "true", label: "Disponível / Ativo" },
+                    { value: "false", label: "Inativo / Manutenção" },
+                  ]}
                   icon={<ClipboardList size={18} />}
                 />
               </div>
 
-              <button className={`flex h-14 w-full items-center justify-center gap-3 rounded-2xl border border-dashed font-black ${ui.card2}`}>
-                <ImagePlus size={22} className="text-[#d4af37]" />
-                Adicionar foto do veículo
-              </button>
+              {motoristas.length === 0 && !carregandoMotoristas && (
+                <p className="text-xs font-bold text-[#d4af37]">
+                  Nenhum motorista cadastrado ainda. O veículo pode ser salvo sem motorista e vinculado depois.
+                </p>
+              )}
 
               <div>
                 <label className={`mb-2 block text-sm font-bold ${ui.textoFraco}`}>
@@ -141,8 +205,8 @@ export default function NovoVeiculoModal({ ui, fechar }: any) {
                   <ClipboardList size={18} className="mt-1 text-[#d4af37]" />
                   <textarea
                     value={observacoes}
-                    onChange={(e) => setObservacoes(e.target.value)}
-                    placeholder="Ex: veículo revisado, baú refrigerado, capacidade de carga..."
+                    onChange={(event) => setObservacoes(event.target.value)}
+                    placeholder="Observação visual por enquanto. Depois podemos criar uma coluna para salvar isso."
                     className="min-h-[80px] flex-1 resize-none bg-transparent text-sm outline-none"
                   />
                 </div>
@@ -160,16 +224,23 @@ export default function NovoVeiculoModal({ ui, fechar }: any) {
                 <ResumoLinha label="Tipo" valor={tipo} />
                 <ResumoLinha label="Placa" valor={placa || "A preencher"} />
                 <ResumoLinha label="Modelo" valor={modelo || "A preencher"} />
-                <ResumoLinha label="Motorista" valor={motorista || "Não vinculado"} />
-                <ResumoLinha label="Status" valor={status} />
+                <ResumoLinha label="Motorista" valor={motoristaSelecionado?.nome || "Não vinculado"} />
+                <ResumoLinha label="Status" valor={ativo === "true" ? "Disponível" : "Inativo"} />
               </div>
+
+              {erro && (
+                <div className="mt-4 rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-xs font-bold text-red-400">
+                  {erro}
+                </div>
+              )}
 
               <button
                 onClick={salvarVeiculo}
-                className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#d4af37] font-black text-white"
+                disabled={salvando}
+                className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#d4af37] font-black text-white disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <Save size={19} />
-                Salvar Veículo
+                {salvando ? "Salvando..." : "Salvar Veículo"}
               </button>
 
               <button onClick={fechar} className={`mt-3 h-12 w-full rounded-xl border font-bold ${ui.card2}`}>
@@ -194,7 +265,7 @@ function Campo({ ui, icon, label, placeholder, value, onChange }: any) {
         <span className="text-[#d4af37]">{icon}</span>
         <input
           value={value}
-          onChange={(e) => onChange(e.target.value)}
+          onChange={(event) => onChange(event.target.value)}
           placeholder={placeholder}
           className="w-full bg-transparent text-sm outline-none"
         />
@@ -203,7 +274,7 @@ function Campo({ ui, icon, label, placeholder, value, onChange }: any) {
   )
 }
 
-function SelectCampo({ ui, label, value, onChange, options, icon, placeholder }: any) {
+function SelectCampo({ ui, label, value, onChange, options, icon }: any) {
   return (
     <label>
       <span className={`mb-2 block text-xs font-bold sm:text-sm ${ui.textoFraco}`}>
@@ -215,18 +286,12 @@ function SelectCampo({ ui, label, value, onChange, options, icon, placeholder }:
 
         <select
           value={value}
-          onChange={(e) => onChange(e.target.value)}
+          onChange={(event) => onChange(event.target.value)}
           className="w-full bg-transparent text-sm outline-none"
         >
-          {placeholder && (
-            <option value="" className="bg-black text-white">
-              {placeholder}
-            </option>
-          )}
-
-          {options.map((option: string) => (
-            <option key={option} value={option} className="bg-black text-white">
-              {option}
+          {options.map((option: { value: string; label: string }) => (
+            <option key={option.value} value={option.value} className="bg-black text-white">
+              {option.label}
             </option>
           ))}
         </select>

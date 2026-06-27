@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import NovaEntregaModal from "./components/NovaEntregaModal"
+import { supabase } from "../../lib/supabase"
 import {
   Home,
   Truck,
@@ -31,39 +32,102 @@ import {
 type Tema = "dark" | "light"
 type StatusEntrega = "Concluída" | "Em Andamento" | "Cancelada"
 
+type EmpresaReal = {
+  id?: string
+  nome_empresa?: string
+  responsavel?: string
+  email?: string
+  telefone?: string
+  cnpj?: string
+  logo_empresa?: string
+  foto_documento?: string
+  created_at?: string
+}
+
+type EntregaEmpresa = {
+  id: string
+  data: string
+  cliente: string
+  origem: string
+  destino: string
+  motorista: string
+  valor: string
+  status: StatusEntrega
+}
+
+type DestinoEmpresa = { cidade: string; total: number }
+
+type CRMColuna = {
+  nome: string
+  total: number
+  cor: string
+  itens: { nome: string; local: string; valor: string }[]
+}
+
+type FinanceiroResumo = {
+  faturamentoBruto: number
+  repasseMotorista: number
+  faturamentoLiquido: number
+  despesas: number
+  lucroLiquido: number
+}
+
 const imagens = {
   logoEmpresa: "/empresa_logo.png",
   mapaSaoPaulo: "/SP-removebg-preview.png",
 }
 
-const entregas = [
-  { id: "#1287", data: "18/05/2026", cliente: "Auto Peças Brasil", origem: "São Paulo - SP", destino: "Campinas - SP", motorista: "Marcos Vinícius", valor: "R$ 1.250,00", status: "Concluída" as StatusEntrega },
-  { id: "#1286", data: "18/05/2026", cliente: "Construtora Nova", origem: "Santos - SP", destino: "Ribeirão Preto - SP", motorista: "João Silva", valor: "R$ 2.340,00", status: "Em Andamento" as StatusEntrega },
-  { id: "#1285", data: "17/05/2026", cliente: "Mercado Central", origem: "Campinas - SP", destino: "São Paulo - SP", motorista: "Carlos Alberto", valor: "R$ 980,00", status: "Concluída" as StatusEntrega },
-  { id: "#1284", data: "17/05/2026", cliente: "Indústria ABC", origem: "São Paulo - SP", destino: "Sorocaba - SP", motorista: "Rafael Costa", valor: "R$ 1.870,00", status: "Cancelada" as StatusEntrega },
-  { id: "#1283", data: "16/05/2026", cliente: "Lojas Silva", origem: "Ribeirão Preto - SP", destino: "Santos - SP", motorista: "Lucas Martins", valor: "R$ 1.450,00", status: "Concluída" as StatusEntrega },
-]
+const entregasIniciais: EntregaEmpresa[] = []
+const destinosIniciais: DestinoEmpresa[] = []
+const crmColunasIniciais: CRMColuna[] = []
 
-const destinos = [
-  { cidade: "São Paulo - SP", total: 42 },
-  { cidade: "Campinas - SP", total: 18 },
-  { cidade: "Ribeirão Preto - SP", total: 12 },
-  { cidade: "Sorocaba - SP", total: 10 },
-  { cidade: "Santos - SP", total: 8 },
-]
+function formatarMoeda(valor: number) {
+  return valor.toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  })
+}
 
-const crmColunas = [
-  { nome: "Novos Leads", total: 8, cor: "border-[#ffc400]/35 bg-[#ffc400]/8", itens: [{ nome: "Empresa ABC", local: "São Paulo - SP", valor: "R$ 12.500" }, { nome: "Indústria Lima", local: "Campinas - SP", valor: "R$ 8.750" }] },
-  { nome: "Contato Inicial", total: 5, cor: "border-[#d89711]/35 bg-[#d89711]/8", itens: [{ nome: "Comércio Forte", local: "Santos - SP", valor: "R$ 23.000" }, { nome: "Log Express", local: "São Paulo - SP", valor: "R$ 15.400" }] },
-  { nome: "Em andamento", total: 7, cor: "border-sky-500/35 bg-sky-500/8", itens: [{ nome: "Distribuidora X", local: "Ribeirão Preto - SP", valor: "R$ 27.800" }, { nome: "Transportes Betta", local: "Sorocaba - SP", valor: "R$ 16.600" }] },
-  { nome: "Negócio Fechado", total: 12, cor: "border-green-500/35 bg-green-500/8", itens: [{ nome: "Mercado Central", local: "São Paulo - SP", valor: "R$ 31.200" }, { nome: "Global Foods", local: "Curitiba - PR", valor: "R$ 22.500" }] },
-]
+function formatarDataCriacao(data?: string) {
+  if (!data) return "data de criação não encontrada"
+
+  const dataConta = new Date(data)
+
+  if (Number.isNaN(dataConta.getTime())) {
+    return "data de criação não encontrada"
+  }
+
+  return dataConta.toLocaleDateString("pt-BR")
+}
+
+function formatarDataAcessoAtual() {
+  return new Date().toLocaleDateString("pt-BR")
+}
+
+function normalizarStatus(status?: string | null): StatusEntrega {
+  const texto = String(status || "").toLowerCase()
+
+  if (texto.includes("conclu") || texto.includes("entreg")) return "Concluída"
+  if (texto.includes("cancel")) return "Cancelada"
+
+  return "Em Andamento"
+}
 
 export default function PainelEmpresa() {
   const [tema, setTema] = useState<Tema>("dark")
-  const [periodo, setPeriodo] = useState("12/05/2026 - 18/05/2026")
   const [modalNovaEntrega, setModalNovaEntrega] = useState(false)
   const [menuMobileAberto, setMenuMobileAberto] = useState(false)
+  const [empresa, setEmpresa] = useState<EmpresaReal | null>(null)
+  const [entregas, setEntregas] = useState<EntregaEmpresa[]>(entregasIniciais)
+  const [destinos, setDestinos] = useState<DestinoEmpresa[]>(destinosIniciais)
+  const [crmColunas, setCrmColunas] = useState<CRMColuna[]>(crmColunasIniciais)
+  const [financeiroResumo, setFinanceiroResumo] = useState<FinanceiroResumo>({
+    faturamentoBruto: 0,
+    repasseMotorista: 0,
+    faturamentoLiquido: 0,
+    despesas: 0,
+    lucroLiquido: 0,
+  })
 
   useEffect(() => {
     function carregarTemaEmpresa() {
@@ -87,6 +151,214 @@ export default function PainelEmpresa() {
     }
   }, [])
 
+  useEffect(() => {
+    async function carregarEmpresaReal() {
+      if (typeof window === "undefined") return
+
+      const dadosSalvos = localStorage.getItem("flatauto_empresa_dados")
+      const empresaIdSalvo = localStorage.getItem("flatauto_empresa_id")
+      const emailUsuarioSalvo = localStorage.getItem("flatauto_usuario_email")
+      const emailEmpresaSalvo = localStorage.getItem("flatauto_empresa_email")
+
+      let dadosLocais: EmpresaReal | null = null
+
+      if (dadosSalvos) {
+        try {
+          dadosLocais = JSON.parse(dadosSalvos)
+          setEmpresa(dadosLocais)
+
+          if (dadosLocais?.id) {
+            await carregarDadosDashboard(dadosLocais.id)
+          }
+        } catch {
+          localStorage.removeItem("flatauto_empresa_dados")
+        }
+      }
+
+      const idParaBuscar = empresaIdSalvo || dadosLocais?.id || ""
+      const emailParaBuscar = (emailUsuarioSalvo || emailEmpresaSalvo || dadosLocais?.email || "")
+        .trim()
+        .toLowerCase()
+
+      if (!idParaBuscar && !emailParaBuscar) return
+
+      let consulta = supabase
+        .from("empresas")
+        .select("id,nome_empresa,email,senha,telefone,cnpj,logo_empresa,responsavel,foto_documento,created_at")
+
+      if (idParaBuscar) {
+        consulta = consulta.eq("id", idParaBuscar)
+      } else {
+        consulta = consulta.eq("email", emailParaBuscar)
+      }
+
+      const { data, error } = await consulta.maybeSingle()
+
+      if (error) {
+        console.error("Erro ao buscar empresa no Supabase:", error.message)
+        return
+      }
+
+      if (data) {
+        setEmpresa(data)
+        localStorage.setItem("flatauto_empresa_logada", "true")
+        localStorage.setItem("flatauto_empresa_dados", JSON.stringify(data))
+
+        if (data.id) {
+          localStorage.setItem("flatauto_empresa_id", data.id)
+          await carregarDadosDashboard(data.id)
+        }
+
+        if (data.email) {
+          localStorage.setItem("flatauto_empresa_email", data.email)
+          localStorage.setItem("flatauto_usuario_email", data.email)
+        }
+      }
+    }
+
+    carregarEmpresaReal()
+  }, [])
+
+  async function carregarDadosDashboard(empresaId: string) {
+    const [fretesResp, financeiroResp, clientesResp, motoristasResp, crmResp] =
+      await Promise.all([
+        supabase
+          .from("fretes")
+          .select("*")
+          .eq("empresa_id", empresaId)
+          .order("created_at", { ascending: false }),
+
+        supabase
+          .from("financeiro")
+          .select("*")
+          .eq("empresa_id", empresaId)
+          .order("created_at", { ascending: false }),
+
+        supabase
+          .from("clientes_empresa")
+          .select("*")
+          .eq("empresa_id", empresaId),
+
+        supabase
+          .from("motoristas")
+          .select("*"),
+
+        supabase
+          .from("crm_integracoes")
+          .select("*")
+          .eq("empresa_id", empresaId),
+      ])
+
+    if (fretesResp.error) console.error("Erro ao buscar fretes:", fretesResp.error.message)
+    if (financeiroResp.error) console.error("Erro ao buscar financeiro:", financeiroResp.error.message)
+    if (clientesResp.error) console.error("Erro ao buscar clientes:", clientesResp.error.message)
+    if (motoristasResp.error) console.error("Erro ao buscar motoristas:", motoristasResp.error.message)
+    if (crmResp.error) console.error("Erro ao buscar CRM:", crmResp.error.message)
+
+    const fretes = Array.isArray(fretesResp.data) ? fretesResp.data : []
+    const financeiro = Array.isArray(financeiroResp.data) ? financeiroResp.data : []
+    const clientes = Array.isArray(clientesResp.data) ? clientesResp.data : []
+    const motoristas = Array.isArray(motoristasResp.data) ? motoristasResp.data : []
+    const crm = Array.isArray(crmResp.data) ? crmResp.data : []
+
+    const clientesPorId = new Map(
+      clientes.map((cliente: any) => [
+        cliente.id,
+        cliente.nome || cliente.responsavel || "Cliente",
+      ])
+    )
+
+    const motoristasPorId = new Map(
+      motoristas.map((motorista: any) => [
+        motorista.id,
+        motorista.nome || "Motorista",
+      ])
+    )
+
+    const entregasFormatadas: EntregaEmpresa[] = fretes.map((frete: any) => {
+      return {
+        id: frete.codigo || frete.id,
+        data: frete.created_at
+          ? new Date(frete.created_at).toLocaleDateString("pt-BR")
+          : "Sem data",
+        cliente: clientesPorId.get(frete.cliente_id) || "Não informado",
+        origem: frete.origem || frete.endereco_origem || "Não informado",
+        destino: frete.destino || frete.endereco_destino || "Não informado",
+        motorista: motoristasPorId.get(frete.motorista_id) || "Não vinculado",
+        valor: formatarMoeda(Number(frete.valor_frete || 0)),
+        status: normalizarStatus(frete.status),
+      }
+    })
+
+    const destinosMap = new Map<string, number>()
+
+    fretes.forEach((frete: any) => {
+      const destinoCompleto = frete.destino || frete.endereco_destino || "Não informado"
+      const destinoCurto = String(destinoCompleto).split(",")[0].trim() || "Não informado"
+
+      destinosMap.set(destinoCurto, (destinosMap.get(destinoCurto) || 0) + 1)
+    })
+
+    const destinosFormatados: DestinoEmpresa[] = Array.from(destinosMap.entries()).map(
+      ([cidade, total]) => ({
+        cidade,
+        total,
+      })
+    )
+
+    const faturamentoBruto = financeiro.reduce(
+      (total: number, item: any) => total + Number(item.valor_frete || 0),
+      0
+    )
+
+    const repasseMotorista = financeiro.reduce(
+      (total: number, item: any) => total + Number(item.valor_motorista || 0),
+      0
+    )
+
+    const faturamentoLiquido = financeiro.reduce(
+      (total: number, item: any) =>
+        total + Number(item.valor_empresa || 0) + Number(item.valor_app || 0),
+      0
+    )
+
+    const despesas = financeiro.reduce(
+      (total: number, item: any) => total + Number(item.despesas || 0),
+      0
+    )
+
+    const lucroLiquido = financeiro.reduce(
+      (total: number, item: any) => total + Number(item.lucro_liquido || 0),
+      0
+    )
+
+    const crmFormatado: CRMColuna[] = crm.length
+      ? [
+          {
+            nome: "Integrações",
+            total: crm.length,
+            cor: "border-[#ffc400]/30 bg-[#ffc400]/5",
+            itens: crm.map((item: any) => ({
+              nome: item.crm || "CRM",
+              local: item.conectado ? "Conectado" : "Desconectado",
+              valor: item.conectado ? "Ativo" : "Off",
+            })),
+          },
+        ]
+      : []
+
+    setEntregas(entregasFormatadas)
+    setDestinos(destinosFormatados)
+    setCrmColunas(crmFormatado)
+    setFinanceiroResumo({
+      faturamentoBruto,
+      repasseMotorista,
+      faturamentoLiquido,
+      despesas,
+      lucroLiquido,
+    })
+  }
+
   function mudarTema(novoTema: Tema) {
     setTema(novoTema)
     localStorage.setItem("temaEmpresa", novoTema)
@@ -105,42 +377,69 @@ export default function PainelEmpresa() {
     linha: claro ? "border-[#dfd0a5]" : "border-white/10",
   }), [claro])
 
+  const nomeEmpresa = empresa?.nome_empresa || "Empresa"
+  const responsavelEmpresa = empresa?.responsavel || "Empresa"
+  const emailEmpresa = empresa?.email || ""
+  const dataCriacaoEmpresa = formatarDataCriacao(empresa?.created_at)
+  const dataAcessoAtual = formatarDataAcessoAtual()
+  const periodoConta = `${dataCriacaoEmpresa} - ${dataAcessoAtual}`
+
+  const totalEntregas = entregas.length
+  const concluidas = entregas.filter((entrega) => entrega.status === "Concluída").length
+  const emAndamento = entregas.filter((entrega) => entrega.status === "Em Andamento").length
+  const canceladas = entregas.filter((entrega) => entrega.status === "Cancelada").length
+
   return (
     <main className={`min-h-screen ${ui.pagina}`}>
-      <div className="pointer-events-none fixed inset-0 overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_78%_0%,rgba(255,196,0,0.14),transparent_34%)]" />
-        <div className="absolute -left-44 top-44 h-[480px] w-[480px] rounded-full bg-[#ffc400]/10 blur-[150px]" />
-        <div className="absolute bottom-[-150px] right-[-70px] h-[460px] w-[460px] rounded-full bg-[#ffc400]/8 blur-[160px]" />
-      </div>
+      <div className="pointer-events-none fixed inset-0 overflow-hidden" />
 
-      <section className="relative hidden min-h-screen grid-cols-[286px_1fr] xl:grid">
-        <MenuLateral ui={ui} tema={tema} setTema={mudarTema} />
+      <section className="relative hidden min-h-screen grid-cols-[286px_1fr] md:grid">
+        <MenuLateral ui={ui} tema={tema} setTema={mudarTema} nomeEmpresa={nomeEmpresa} responsavelEmpresa={responsavelEmpresa} emailEmpresa={emailEmpresa} />
+
         <section className="min-w-0 px-7 py-6">
-          <Topo periodo={periodo} setPeriodo={setPeriodo} ui={ui} abrirNovaEntrega={() => setModalNovaEntrega(true)} />
+          <Topo periodoConta={periodoConta} ui={ui} nomeEmpresa={nomeEmpresa} dataAcessoAtual={dataAcessoAtual} abrirNovaEntrega={() => setModalNovaEntrega(true)} />
+
           <div className="mt-6 grid grid-cols-5 gap-4">
-            <Indicador ui={ui} titulo="Total de Entregas" valor="128" detalhe="↑ 18% vs período anterior" icon={<Package />} />
-            <Indicador ui={ui} titulo="Concluídas" valor="96" detalhe="75% do total" icon={<CheckCircle2 />} verde />
-            <Indicador ui={ui} titulo="Em Andamento" valor="18" detalhe="14% do total" icon={<Truck />} azul />
-            <Indicador ui={ui} titulo="Canceladas" valor="14" detalhe="11% do total" icon={<XCircle />} vermelho />
-            <Indicador ui={ui} titulo="Receita Líquida" valor="R$ 16.220,00" detalhe="Após repasse motorista" icon={<DollarSign />} />
+            <Indicador ui={ui} titulo="Total de Entregas" valor={String(totalEntregas)} detalhe={totalEntregas ? "Dados reais do Supabase" : "Sem dados cadastrados"} icon={<Package />} />
+            <Indicador ui={ui} titulo="Concluídas" valor={String(concluidas)} detalhe={concluidas ? "Entregas finalizadas" : "Sem dados cadastrados"} icon={<CheckCircle2 />} verde />
+            <Indicador ui={ui} titulo="Em Andamento" valor={String(emAndamento)} detalhe={emAndamento ? "Entregas ativas" : "Sem dados cadastrados"} icon={<Truck />} azul />
+            <Indicador ui={ui} titulo="Canceladas" valor={String(canceladas)} detalhe={canceladas ? "Entregas canceladas" : "Sem dados cadastrados"} icon={<XCircle />} vermelho />
+            <Indicador ui={ui} titulo="Receita Líquida" valor={formatarMoeda(financeiroResumo.faturamentoLiquido)} detalhe={financeiroResumo.faturamentoLiquido ? "Financeiro real" : "Sem financeiro cadastrado"} icon={<DollarSign />} />
           </div>
 
           <div className="mt-5 grid grid-cols-[0.86fr_1.34fr_0.58fr] gap-5">
-            <Card ui={ui} titulo="Entregas por Período" acao="7 dias"><GraficoLinha /></Card>
-            <Card ui={ui} titulo="CRM - Pipeline de Negócios"><CRM ui={ui} /></Card>
-            <Card ui={ui} titulo="Exportar Relatórios"><Exportar ui={ui} /></Card>
+            <Card ui={ui} titulo="Entregas por Período" acao="7 dias">
+              <GraficoLinha entregas={entregas} />
+            </Card>
+
+            <Card ui={ui} titulo="CRM - Pipeline de Negócios">
+              <CRM ui={ui} colunas={crmColunas} />
+            </Card>
+
+            <Card ui={ui} titulo="Exportar Relatórios">
+              <Exportar ui={ui} />
+            </Card>
           </div>
 
           <div className="mt-5 grid grid-cols-[1.25fr_0.75fr] gap-5">
-            <Card ui={ui} titulo="Resumo Financeiro" acao="Este mês"><Financeiro ui={ui} /></Card>
-            <Card ui={ui} titulo="Entregas Capital SP" acao="Capital SP"><MapaSaoPaulo ui={ui} /></Card>
+            <Card ui={ui} titulo="Resumo Financeiro" acao="Este mês">
+              <Financeiro ui={ui} resumo={financeiroResumo} />
+            </Card>
+
+            <Card ui={ui} titulo="Entregas por Região">
+              <MapaSaoPaulo ui={ui} destinos={destinos} />
+            </Card>
           </div>
 
-          <div className="mt-5"><Card ui={ui} titulo="Entregas Recentes" acao="Ver todas"><Tabela ui={ui} /></Card></div>
+          <div className="mt-5">
+            <Card ui={ui} titulo="Entregas Recentes" acao="Ver todas">
+              <Tabela ui={ui} entregas={entregas} />
+            </Card>
+          </div>
         </section>
       </section>
 
-      <section className="relative min-h-screen px-4 pb-28 pt-5 xl:hidden">
+      <section className="relative min-h-screen px-4 pb-28 pt-5 md:hidden">
         <div className="mx-auto max-w-[430px]">
           <header className="flex items-center justify-between">
             <button
@@ -150,49 +449,86 @@ export default function PainelEmpresa() {
             >
               <Menu size={28} />
             </button>
+
             <LogoMarca compacto />
-            <button className={`relative ${claro ? "text-black/80" : "text-white/80"}`}><Bell size={24} /><span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-[#ffc400]" /></button>
+
+            <button className={`relative ${claro ? "text-black/80" : "text-white/80"}`}>
+              <Bell size={24} />
+              <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-[#ffc400]" />
+            </button>
           </header>
 
           <div className="mt-7">
-            <h1 className="text-[25px] font-black leading-tight">Olá, Transportes Silva LTDA 👋</h1>
-            <p className={`mt-2 text-sm ${ui.textoFraco}`}>Acompanhe sua operação em tempo real.</p>
-            <p className={`mt-1 text-xs ${ui.textoFraco}`}>Última atualização: 18/05/2026 16:42</p>
+            <h1 className="text-[25px] font-black leading-tight">Olá, {nomeEmpresa} 👋</h1>
+            <p className={`mt-2 text-sm ${ui.textoFraco}`}>Acompanhe o desempenho da sua operação em tempo real.</p>
+            <p className={`mt-1 text-xs ${ui.textoFraco}`}>Atualização da conta: {dataAcessoAtual}</p>
           </div>
 
           <div className="mt-5 grid grid-cols-[1fr_auto] gap-3">
-            <div className={`flex h-12 items-center gap-2 rounded-xl border px-3 text-sm ${ui.card2}`}><CalendarDays size={18} /><input value={periodo} onChange={(e) => setPeriodo(e.target.value)} className="min-w-0 flex-1 bg-transparent outline-none" /></div>
-            <button onClick={() => setModalNovaEntrega(true)} className="flex h-12 items-center gap-1 rounded-xl bg-[#ffc400] px-4 font-black text-black"><Plus size={18} />Nova</button>
+            <div className={`flex h-12 items-center gap-2 rounded-xl border px-3 text-xs font-bold ${ui.card2}`}>
+              <CalendarDays size={18} />
+              <span className="min-w-0 flex-1">{periodoConta}</span>
+            </div>
+
+            <button onClick={() => setModalNovaEntrega(true)} className="flex h-12 items-center gap-1 rounded-xl bg-[#ffc400] px-4 font-black text-black">
+              <Plus size={18} />
+              Nova
+            </button>
           </div>
 
           <div className="mt-5 grid grid-cols-2 gap-3">
-            <Indicador ui={ui} titulo="Total de Entregas" valor="128" detalhe="↑ 18%" icon={<Package />} mobile />
-            <Indicador ui={ui} titulo="Concluídas" valor="96" detalhe="75% do total" icon={<CheckCircle2 />} verde mobile />
-            <Indicador ui={ui} titulo="Em Andamento" valor="18" detalhe="14% do total" icon={<Truck />} azul mobile />
-            <Indicador ui={ui} titulo="Canceladas" valor="14" detalhe="11% do total" icon={<XCircle />} vermelho mobile />
+            <Indicador ui={ui} titulo="Total de Entregas" valor={String(totalEntregas)} detalhe="Supabase" icon={<Package />} mobile />
+            <Indicador ui={ui} titulo="Concluídas" valor={String(concluidas)} detalhe="Supabase" icon={<CheckCircle2 />} verde mobile />
+            <Indicador ui={ui} titulo="Em Andamento" valor={String(emAndamento)} detalhe="Supabase" icon={<Truck />} azul mobile />
+            <Indicador ui={ui} titulo="Canceladas" valor={String(canceladas)} detalhe="Supabase" icon={<XCircle />} vermelho mobile />
           </div>
 
-          <div className="mt-4"><Card ui={ui} titulo="Entregas por Período" acao="7 dias"><GraficoLinha mobile /></Card></div>
-          <div className="mt-4"><Card ui={ui} titulo="CRM - Pipeline" acao="Ver tudo"><CRM ui={ui} mobile /></Card></div>
-          <div className="mt-4"><Card ui={ui} titulo="Entregas Capital SP"><MapaSaoPaulo ui={ui} mobile /></Card></div>
-          <div className="mt-4"><Card ui={ui} titulo="Resumo Financeiro" acao="Este mês"><Financeiro ui={ui} mobile /></Card></div>
-          <div className="mt-4"><Card ui={ui} titulo="Entregas Recentes"><ListaMobile ui={ui} /></Card></div>
+          <div className="mt-4">
+            <Card ui={ui} titulo="Entregas por Período" acao="7 dias">
+              <GraficoLinha mobile entregas={entregas} />
+            </Card>
+          </div>
+
+          <div className="mt-4">
+            <Card ui={ui} titulo="CRM - Pipeline" acao="Ver tudo">
+              <CRM ui={ui} colunas={crmColunas} mobile />
+            </Card>
+          </div>
+
+          <div className="mt-4">
+            <Card ui={ui} titulo="Entregas por Região">
+              <MapaSaoPaulo ui={ui} destinos={destinos} mobile />
+            </Card>
+          </div>
+
+          <div className="mt-4">
+            <Card ui={ui} titulo="Resumo Financeiro" acao="Este mês">
+              <Financeiro ui={ui} mobile resumo={financeiroResumo} />
+            </Card>
+          </div>
+
+          <div className="mt-4">
+            <Card ui={ui} titulo="Entregas Recentes">
+              <ListaMobile ui={ui} entregas={entregas} />
+            </Card>
+          </div>
         </div>
 
         <nav className={`fixed bottom-0 left-0 right-0 border-t px-5 py-3 backdrop-blur-2xl ${ui.card2}`}>
           <div className="mx-auto flex max-w-[430px] items-center justify-between">
             <NavMobile icon={<Home />} texto="Dashboard" href="/empresa" ativo claro={claro} />
             <NavMobile icon={<Truck />} texto="Entregas" href="/empresa/entregas" claro={claro} />
-            <Link href="/empresa/entregas" className="flex h-16 w-16 items-center justify-center rounded-full bg-[#ffc400] text-black shadow-[0_0_45px_rgba(255,196,0,0.45)]"><Plus size={34} strokeWidth={2.8} /></Link>
+            <Link href="/empresa/entregas" className="flex h-16 w-16 items-center justify-center rounded-full bg-[#ffc400] text-black shadow-[0_0_45px_rgba(255,196,0,0.45)]">
+              <Plus size={34} strokeWidth={2.8} />
+            </Link>
             <NavMobile icon={<UserRound />} texto="Motoristas" href="/empresa/motoristas" claro={claro} />
             <NavMobile icon={<MoreHorizontal />} texto="Mais" href="/empresa/configuracoes" claro={claro} />
           </div>
         </nav>
       </section>
 
-
       {menuMobileAberto && (
-        <div className="fixed inset-0 z-[999] xl:hidden">
+        <div className="fixed inset-0 z-[999] md:hidden">
           <button
             type="button"
             aria-label="Fechar menu"
@@ -258,14 +594,61 @@ export default function PainelEmpresa() {
 }
 
 function LogoMarca({ compacto = false }: { compacto?: boolean }) {
-  return <div className="flex items-center gap-3"><img src={imagens.logoEmpresa} alt="FlatAuto" className={`${compacto ? "h-11 w-11" : "h-14 w-14"} object-contain drop-shadow-[0_0_18px_rgba(255,196,0,0.25)]`} /><div><p className={`${compacto ? "text-[18px]" : "text-[21px]"} font-black leading-none tracking-wide`}>FLAT<span className="text-[#ffc400]">AUTO</span></p><p className={`${compacto ? "text-[9px]" : "text-xs"} mt-1 font-bold tracking-[0.18em] text-[#ffc400]`}>EMPRESA</p></div></div>
+  return (
+    <div className="flex items-center gap-3">
+      <img
+        src={imagens.logoEmpresa}
+        alt="FlatAuto"
+        className={`${compacto ? "h-11 w-11" : "h-14 w-14"} object-contain drop-shadow-[0_0_18px_rgba(255,196,0,0.25)]`}
+      />
+      <div>
+        <p className={`${compacto ? "text-[18px]" : "text-[21px]"} font-black leading-none tracking-wide`}>
+          FLAT<span className="text-[#ffc400]">AUTO</span>
+        </p>
+        <p className={`${compacto ? "text-[9px]" : "text-xs"} mt-1 font-bold tracking-[0.18em] text-[#ffc400]`}>
+          EMPRESA
+        </p>
+      </div>
+    </div>
+  )
 }
 
-function Topo({ periodo, setPeriodo, ui, abrirNovaEntrega }: any) {
-  return <header className="flex items-start justify-between gap-6"><div><h1 className="text-[36px] font-black leading-tight tracking-[-0.035em]">Olá, Transportes Silva LTDA 👋</h1><p className={`mt-2 text-[16px] ${ui.textoFraco}`}>Acompanhe o desempenho da sua operação em tempo real.</p><p className={`mt-1 text-[13px] ${ui.textoFraco}`}>Última atualização: 18/05/2026 16:42</p></div><div className="flex items-center gap-4"><div className={`flex h-12 w-[255px] items-center gap-3 rounded-xl border px-4 text-sm ${ui.card2}`}><CalendarDays size={18} /><input value={periodo} onChange={(e) => setPeriodo(e.target.value)} className="min-w-0 flex-1 bg-transparent outline-none" /></div><button onClick={abrirNovaEntrega} className="flex h-12 items-center gap-2 rounded-xl bg-[#ffc400] px-7 font-black text-black shadow-[0_0_28px_rgba(255,196,0,0.38)]"><Plus size={18} />Nova Entrega</button><button className={`relative flex h-12 w-12 items-center justify-center rounded-xl border ${ui.card2}`}><Bell size={21} /><span className="absolute right-3 top-3 h-2 w-2 rounded-full bg-[#ffc400]" /></button></div></header>
+function Topo({ periodoConta, ui, nomeEmpresa, dataAcessoAtual, abrirNovaEntrega }: any) {
+  return (
+    <header className="flex items-start justify-between gap-6">
+      <div>
+        <h1 className="text-[36px] font-black leading-tight tracking-[-0.035em]">
+          Olá, {nomeEmpresa} 👋
+        </h1>
+        <p className={`mt-2 text-[16px] ${ui.textoFraco}`}>
+          Acompanhe o desempenho da sua operação em tempo real.
+        </p>
+        <p className={`mt-1 text-[13px] ${ui.textoFraco}`}>
+          Atualização da conta: {dataAcessoAtual}
+        </p>
+      </div>
+
+      <div className="flex items-center gap-4">
+        <div className={`flex h-12 w-[255px] items-center gap-3 rounded-xl border px-4 text-sm font-bold ${ui.card2}`}>
+          <CalendarDays size={18} />
+          <span className="min-w-0 flex-1">{periodoConta}</span>
+        </div>
+
+        <button onClick={abrirNovaEntrega} className="flex h-12 items-center gap-2 rounded-xl bg-[#ffc400] px-7 font-black text-black shadow-[0_0_28px_rgba(255,196,0,0.38)]">
+          <Plus size={18} />
+          Nova Entrega
+        </button>
+
+        <button className={`relative flex h-12 w-12 items-center justify-center rounded-xl border ${ui.card2}`}>
+          <Bell size={21} />
+          <span className="absolute right-3 top-3 h-2 w-2 rounded-full bg-[#ffc400]" />
+        </button>
+      </div>
+    </header>
+  )
 }
 
-function MenuLateral({ ui, tema, setTema }: any) {
+function MenuLateral({ ui, tema, setTema, nomeEmpresa }: any) {
   const menu = [
     { texto: "Dashboard", href: "/empresa", icon: <Home />, ativo: true },
     { texto: "Entregas", href: "/empresa/entregas", icon: <Truck /> },
@@ -310,10 +693,12 @@ function MenuLateral({ ui, tema, setTema }: any) {
 
       <div className={`mt-8 rounded-2xl border p-4 ${ui.card}`}>
         <div className="flex items-center gap-3">
-          <div className="text-[#ffc400]"><Package size={35} /></div>
+          <div className="text-[#ffc400]">
+            <Package size={35} />
+          </div>
           <div>
-            <p className="text-sm font-bold leading-tight">Transportes Silva LTDA</p>
-            <p className={`mt-1 text-xs ${ui.textoFraco}`}>Plano Empresarial</p>
+            <p className="text-sm font-bold leading-tight">{nomeEmpresa}</p>
+            <p className={`mt-1 text-xs ${ui.textoFraco}`}>Área Empresa</p>
           </div>
         </div>
       </div>
@@ -333,30 +718,76 @@ function MenuLateral({ ui, tema, setTema }: any) {
 }
 
 function Card({ titulo, acao, children, ui }: any) {
-  return <section className={`relative overflow-hidden rounded-[26px] border p-5 backdrop-blur-xl ${ui.card}`}><div className="pointer-events-none absolute -right-10 -top-10 h-28 w-28 rounded-full bg-[#ffc400]/10 blur-[38px]" /><div className="relative mb-5 flex items-center justify-between"><h2 className="font-black">{titulo}</h2>{acao && <button className={`rounded-lg border px-3 py-2 text-sm text-[#ffc400] ${ui.card2}`}>{acao}</button>}</div><div className="relative">{children}</div></section>
+  return (
+    <section className={`relative overflow-hidden rounded-[26px] border p-5 backdrop-blur-xl ${ui.card}`}>
+      <div className="pointer-events-none absolute -right-10 -top-10 h-28 w-28 rounded-full bg-[#ffc400]/10 blur-[38px]" />
+      <div className="relative mb-5 flex items-center justify-between">
+        <h2 className="font-black">{titulo}</h2>
+        {acao && <button className={`rounded-lg border px-3 py-2 text-sm text-[#ffc400] ${ui.card2}`}>{acao}</button>}
+      </div>
+      <div className="relative">{children}</div>
+    </section>
+  )
 }
 
 function Indicador({ titulo, valor, detalhe, icon, ui, azul, vermelho, verde, mobile }: any) {
-  const corTexto = vermelho ? "text-red-400" : azul ? "text-sky-400" : "text-green-400"
+  const corTexto = vermelho ? "text-red-400" : azul ? "text-sky-400" : verde ? "text-lime-400" : "text-[#ffc400]"
   const corIcone = vermelho ? "text-red-500" : azul ? "text-sky-400" : verde ? "text-lime-400" : "text-[#ffc400]"
-  return <div className={`relative overflow-hidden rounded-[24px] border ${ui.card} ${mobile ? "p-4" : "p-5"}`}><div className="absolute -right-5 -top-5 h-20 w-20 rounded-full bg-[#ffc400]/10 blur-[28px]" /><div className="relative flex justify-between gap-3"><div><p className={`${mobile ? "text-xs" : "text-sm"} ${ui.textoFraco}`}>{titulo}</p><p className={`${mobile ? "mt-3 text-[32px]" : "mt-4 text-[34px]"} font-black leading-none`}>{valor}</p></div><div className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] ${corIcone}`}>{icon}</div></div><p className={`relative mt-4 text-sm ${corTexto}`}>{detalhe}</p></div>
+
+  return (
+    <div className={`relative overflow-hidden rounded-[24px] border ${ui.card} ${mobile ? "p-4" : "p-5"}`}>
+      <div className="absolute -right-5 -top-5 h-20 w-20 rounded-full bg-[#ffc400]/10 blur-[28px]" />
+      <div className="relative flex justify-between gap-3">
+        <div>
+          <p className={`${mobile ? "text-xs" : "text-sm"} ${ui.textoFraco}`}>{titulo}</p>
+          <p className={`${mobile ? "mt-3 text-[32px]" : "mt-4 text-[34px]"} font-black leading-none`}>{valor}</p>
+        </div>
+        <div className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] ${corIcone}`}>
+          {icon}
+        </div>
+      </div>
+      <p className={`relative mt-4 text-sm ${corTexto}`}>{detalhe}</p>
+    </div>
+  )
 }
 
-function GraficoLinha({ mobile = false }: { mobile?: boolean }) {
-  return <div className={`${mobile ? "h-[190px]" : "h-[260px]"} relative`}><div className="absolute inset-0 rounded-2xl bg-[linear-gradient(rgba(255,255,255,0.04)_1px,transparent_1px)] bg-[size:100%_52px]" /><svg viewBox="0 0 700 260" className="relative h-full w-full overflow-visible"><defs><linearGradient id="graficoAreaEmpresa" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stopColor="#ffc400" stopOpacity="0.55" /><stop offset="100%" stopColor="#ffc400" stopOpacity="0.03" /></linearGradient></defs><path d="M30 215 L130 160 L230 190 L330 128 L430 62 L530 118 L630 52 L630 230 L30 230 Z" fill="url(#graficoAreaEmpresa)" /><polyline points="30,215 130,160 230,190 330,128 430,62 530,118 630,52" fill="none" stroke="#ffc400" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" />{[30, 130, 230, 330, 430, 530, 630].map((x, i) => <circle key={x} cx={x} cy={[215, 160, 190, 128, 62, 118, 52][i]} r="8" fill="#ffc400" />)}</svg><div className="-mt-4 grid grid-cols-7 text-center text-xs opacity-55">{["12/05", "13/05", "14/05", "15/05", "16/05", "17/05", "18/05"].map((d) => <span key={d}>{d}</span>)}</div></div>
+function GraficoLinha({ mobile = false, entregas = [] }: { mobile?: boolean; entregas?: EntregaEmpresa[] }) {
+  if (!entregas.length) {
+    return (
+      <div className={`${mobile ? "h-[190px]" : "h-[260px]"} relative flex items-center justify-center rounded-2xl border border-dashed border-white/10`}>
+        <div className="absolute inset-0 rounded-2xl bg-[linear-gradient(rgba(255,255,255,0.04)_1px,transparent_1px)] bg-[size:100%_52px]" />
+        <p className="relative text-center text-sm opacity-55">Nenhum dado de entregas para montar o gráfico.</p>
+      </div>
+    )
+  }
+
+  const ultimas = entregas.slice(0, 7).reverse()
+
+  return (
+    <div className={`${mobile ? "h-[190px]" : "h-[260px]"} relative rounded-2xl border border-white/10 p-4`}>
+      <div className="flex h-full items-end gap-3">
+        {ultimas.map((entrega) => (
+          <div key={entrega.id} className="flex flex-1 flex-col items-center gap-2">
+            <div className="w-full rounded-t-xl bg-[#ffc400]" style={{ height: "55%" }} />
+            <span className="max-w-[60px] truncate text-[10px] opacity-60">{entrega.data}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
 }
 
-function CRM({ ui, mobile }: any) {
+function CRM({ ui, colunas = [], mobile }: any) {
+  if (!colunas.length) {
+    return <Vazio ui={ui} texto="Nenhum CRM conectado ainda." />
+  }
+
   return (
     <div className={mobile ? "flex flex-col gap-4" : "grid grid-cols-4 gap-4"}>
-      {crmColunas.map((coluna) => (
-        <div
-          key={coluna.nome}
-          className={`rounded-2xl border p-4 ${coluna.cor} ${mobile ? "w-full" : ""}`}
-        >
+      {colunas.map((coluna: CRMColuna) => (
+        <div key={coluna.nome} className={`rounded-2xl border p-4 ${coluna.cor} ${mobile ? "w-full" : ""}`}>
           <div className="mb-3 flex items-center justify-between gap-3">
             <h3 className="text-sm font-black md:text-base">{coluna.nome}</h3>
-
             <span className="rounded-full bg-[#d4af37]/20 px-2 py-1 text-xs font-bold text-[#d4af37]">
               {coluna.total}
             </span>
@@ -364,19 +795,10 @@ function CRM({ ui, mobile }: any) {
 
           <div className="space-y-3">
             {coluna.itens.map((item) => (
-              <div
-                key={item.nome}
-                className={`rounded-xl border p-3 ${ui.card2}`}
-              >
+              <div key={item.nome} className={`rounded-xl border p-3 ${ui.card2}`}>
                 <p className="text-sm font-bold">{item.nome}</p>
-
-                <p className={`mt-1 text-xs ${ui.textoFraco}`}>
-                  {item.local}
-                </p>
-
-                <p className="mt-2 text-sm font-black text-[#d4af37]">
-                  {item.valor}
-                </p>
+                <p className={`mt-1 text-xs ${ui.textoFraco}`}>{item.local}</p>
+                <p className="mt-2 text-sm font-black text-[#d4af37]">{item.valor}</p>
               </div>
             ))}
           </div>
@@ -387,72 +809,70 @@ function CRM({ ui, mobile }: any) {
 }
 
 function Exportar({ ui }: any) {
-  return <div><p className={`text-sm ${ui.textoFraco}`}>Gere relatórios personalizados por cliente ou geral da operação.</p><select className={`mt-4 h-11 w-full rounded-xl border px-3 text-sm outline-none ${ui.card2}`}><option>Relatório Geral</option><option>Por Cliente</option><option>Financeiro</option></select><div className="mt-5 grid grid-cols-2 gap-3"><button className="flex h-12 items-center justify-center gap-2 rounded-xl bg-[#ffc400] font-black text-black"><Download size={18} />PDF</button><button className="flex h-12 items-center justify-center gap-2 rounded-xl bg-green-600 font-black text-white"><FileText size={18} />Excel</button></div></div>
-}
-
-function MapaSaoPaulo({ ui, mobile }: any) {
   return (
-    <div className={`grid ${mobile ? "grid-cols-1" : "grid-cols-[1fr_0.9fr]"} gap-4`}>
-      <div className={`relative h-[260px] overflow-hidden rounded-2xl border ${ui.card2}`}>
-        <img
-          src={imagens.mapaSaoPaulo}
-          alt="Mapa da capital de São Paulo"
-          className="absolute inset-0 h-full w-full object-contain p-4 opacity-95"
-          onError={(e) => {
-            e.currentTarget.style.display = "none"
-          }}
-        />
-
-        <div className="absolute left-4 top-4 rounded-xl bg-black/45 px-3 py-2 text-xs text-white">
-          Capital SP
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <p className={`text-sm font-bold ${ui.textoFraco}`}>Entregas Capital SP</p>
-
-        {destinos.map((destino) => (
-          <div key={destino.cidade} className="flex items-center justify-between text-sm">
-            <span>{destino.cidade}</span>
-            <strong>{destino.total}</strong>
-          </div>
-        ))}
-
-        <button className="pt-1 text-sm font-bold text-[#ffc400]">Ver mapa completo</button>
+    <div>
+      <p className={`text-sm ${ui.textoFraco}`}>Gere relatórios personalizados por cliente ou geral da operação.</p>
+      <select className={`mt-4 h-11 w-full rounded-xl border px-3 text-sm outline-none ${ui.card2}`}>
+        <option>Relatório Geral</option>
+        <option>Por Cliente</option>
+        <option>Financeiro</option>
+      </select>
+      <div className="mt-5 grid grid-cols-2 gap-3">
+        <button className="flex h-12 items-center justify-center gap-2 rounded-xl bg-[#ffc400] font-black text-black">
+          <Download size={18} />
+          PDF
+        </button>
+        <button className="flex h-12 items-center justify-center gap-2 rounded-xl bg-green-600 font-black text-white">
+          <FileText size={18} />
+          Excel
+        </button>
       </div>
     </div>
   )
 }
 
-function Financeiro({ ui, mobile }: any) {
-  const faturamentoBruto = 24560
-  const repasseMotorista = 8340
-  const faturamentoLiquido = faturamentoBruto - repasseMotorista
-  const despesas = 5420
-  const lucroLiquido = faturamentoLiquido - despesas
+function MapaSaoPaulo({ ui, destinos = [], mobile }: any) {
+  return (
+    <div className={`grid ${mobile ? "grid-cols-1" : "grid-cols-[1fr_0.9fr]"} gap-4`}>
+      <div className={`relative h-[260px] overflow-hidden rounded-2xl border ${ui.card2}`}>
+        <div className="absolute left-3 top-3 z-10 rounded-lg bg-black/70 px-3 py-1 text-[10px] font-black text-white backdrop-blur">
+          Regiões
+        </div>
 
-  const percentualRepasse = ((repasseMotorista / faturamentoBruto) * 100)
-    .toFixed(2)
-    .replace(".", ",")
+        <img
+          src={imagens.mapaSaoPaulo}
+          alt="Mapa"
+          className="absolute left-1/2 top-1/2 h-[82%] w-[82%] -translate-x-1/2 -translate-y-1/2 object-contain opacity-75"
+        />
 
-  const percentualLiquido = ((faturamentoLiquido / faturamentoBruto) * 100)
-    .toFixed(2)
-    .replace(".", ",")
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#10171b] to-transparent" />
+      </div>
 
-  const percentualDespesas = ((despesas / faturamentoBruto) * 100)
-    .toFixed(2)
-    .replace(".", ",")
+      <div className="space-y-2">
+        <p className={`text-sm font-bold ${ui.textoFraco}`}>Entregas por região</p>
 
-  const percentualLucro = ((lucroLiquido / faturamentoBruto) * 100)
-    .toFixed(2)
-    .replace(".", ",")
+        {destinos.length ? destinos.map((destino: DestinoEmpresa) => (
+          <div key={destino.cidade} className="flex items-center justify-between text-sm">
+            <span>{destino.cidade}</span>
+            <strong>{destino.total}</strong>
+          </div>
+        )) : <Vazio ui={ui} texto="Nenhuma região com entregas ainda." compacto />}
 
+        <Link href="/empresa/mapa" className="block pt-1 text-sm font-bold text-[#ffc400]">
+          Ver mapa completo
+        </Link>
+      </div>
+    </div>
+  )
+}
+
+function Financeiro({ ui, mobile, resumo }: any) {
   const itens = [
-    ["Faturamento Bruto", "R$ 24.560,00", "+ entrada total do período", "text-green-400"],
-    ["Repasse Motorista", "R$ 8.340,00", percentualRepasse + "% do faturamento bruto", "text-red-400"],
-    ["Faturamento Líquido", "R$ 16.220,00", percentualLiquido + "% do faturamento bruto", "text-green-400"],
-    ["Despesas", "R$ 5.420,00", percentualDespesas + "% do faturamento bruto", "text-red-400"],
-    ["Lucro Líquido", "R$ 10.800,00", percentualLucro + "% do faturamento bruto", "text-green-400"],
+    ["Faturamento Bruto", formatarMoeda(resumo.faturamentoBruto), resumo.faturamentoBruto ? "Total dos fretes" : "Sem dados financeiros", "text-[#ffc400]"],
+    ["Repasse Motorista", formatarMoeda(resumo.repasseMotorista), resumo.repasseMotorista ? "Total repassado" : "Sem repasses cadastrados", "text-sky-400"],
+    ["Faturamento Líquido", formatarMoeda(resumo.faturamentoLiquido), resumo.faturamentoLiquido ? "Empresa + app" : "Sem dados financeiros", "text-green-400"],
+    ["Despesas", formatarMoeda(resumo.despesas), resumo.despesas ? "Despesas registradas" : "Sem despesas cadastradas", "text-red-400"],
+    ["Lucro Líquido", formatarMoeda(resumo.lucroLiquido), resumo.lucroLiquido ? "Lucro final" : "Sem dados financeiros", "text-lime-400"],
   ]
 
   return (
@@ -468,17 +888,86 @@ function Financeiro({ ui, mobile }: any) {
   )
 }
 
-function Tabela({ ui }: any) {
-  return <div className="overflow-x-auto"><table className="w-full min-w-[980px] text-left text-sm"><thead><tr className={`border-b ${ui.linha} ${ui.textoFraco}`}><th className="pb-4">ID</th><th className="pb-4">Data</th><th className="pb-4">Cliente</th><th className="pb-4">Origem</th><th className="pb-4">Destino</th><th className="pb-4">Motorista</th><th className="pb-4">Valor</th><th className="pb-4">Status</th></tr></thead><tbody>{entregas.map((entrega) => <tr key={entrega.id} className={`border-b ${ui.linha}`}><td className="py-4">{entrega.id}</td><td>{entrega.data}</td><td>{entrega.cliente}</td><td>{entrega.origem}</td><td>{entrega.destino}</td><td>{entrega.motorista}</td><td>{entrega.valor}</td><td><Status status={entrega.status} /></td></tr>)}</tbody></table></div>
+function Tabela({ ui, entregas = [] }: any) {
+  if (!entregas.length) {
+    return <Vazio ui={ui} texto="Nenhuma entrega cadastrada ainda." />
+  }
+
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full min-w-[980px] text-left text-sm">
+        <thead>
+          <tr className={`border-b ${ui.linha} ${ui.textoFraco}`}>
+            <th className="pb-4">ID</th>
+            <th className="pb-4">Data</th>
+            <th className="pb-4">Cliente</th>
+            <th className="pb-4">Origem</th>
+            <th className="pb-4">Destino</th>
+            <th className="pb-4">Motorista</th>
+            <th className="pb-4">Valor</th>
+            <th className="pb-4">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {entregas.map((entrega: EntregaEmpresa) => (
+            <tr key={entrega.id} className={`border-b ${ui.linha}`}>
+              <td className="py-4">{entrega.id}</td>
+              <td>{entrega.data}</td>
+              <td>{entrega.cliente}</td>
+              <td>{entrega.origem}</td>
+              <td>{entrega.destino}</td>
+              <td>{entrega.motorista}</td>
+              <td>{entrega.valor}</td>
+              <td><Status status={entrega.status} /></td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
 }
 
-function ListaMobile({ ui }: any) {
-  return <div className="space-y-3">{entregas.map((entrega) => <div key={entrega.id} className={`rounded-xl border p-4 ${ui.card2}`}><div className="flex items-start justify-between gap-3"><div><p className={`text-sm ${ui.textoFraco}`}>{entrega.id} • {entrega.data}</p><p className="mt-1 font-bold">{entrega.cliente}</p><p className={`mt-1 text-sm ${ui.textoFraco}`}>{entrega.origem} → {entrega.destino}</p><p className="mt-2 text-sm font-bold">{entrega.valor}</p></div><Status status={entrega.status} /></div></div>)}</div>
+function ListaMobile({ ui, entregas = [] }: any) {
+  if (!entregas.length) {
+    return <Vazio ui={ui} texto="Nenhuma entrega cadastrada ainda." />
+  }
+
+  return (
+    <div className="space-y-3">
+      {entregas.map((entrega: EntregaEmpresa) => (
+        <div key={entrega.id} className={`rounded-xl border p-4 ${ui.card2}`}>
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className={`text-sm ${ui.textoFraco}`}>{entrega.id} • {entrega.data}</p>
+              <p className="mt-1 font-bold">{entrega.cliente}</p>
+              <p className={`mt-1 text-sm ${ui.textoFraco}`}>{entrega.origem} → {entrega.destino}</p>
+              <p className="mt-2 text-sm font-bold">{entrega.valor}</p>
+            </div>
+            <Status status={entrega.status} />
+          </div>
+        </div>
+      ))}
+    </div>
+  )
 }
 
 function Status({ status }: { status: StatusEntrega }) {
-  const classe = status === "Concluída" ? "bg-green-600" : status === "Em Andamento" ? "bg-blue-600" : "bg-red-600"
+  const classe =
+    status === "Concluída"
+      ? "bg-green-600"
+      : status === "Em Andamento"
+        ? "bg-blue-600"
+        : "bg-red-600"
+
   return <span className={`rounded-md px-3 py-1 text-xs font-bold text-white ${classe}`}>{status}</span>
+}
+
+function Vazio({ ui, texto, compacto = false }: any) {
+  return (
+    <div className={`flex ${compacto ? "min-h-[74px]" : "min-h-[180px]"} items-center justify-center rounded-2xl border border-dashed p-5 text-center ${ui.card2}`}>
+      <p className={`max-w-[320px] text-sm ${ui.textoFraco}`}>{texto}</p>
+    </div>
+  )
 }
 
 function NavMobile({ icon, texto, ativo, claro, href = "/empresa" }: any) {

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState, type ChangeEvent, type ReactNode } from "react"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
+import { supabase } from "../../../lib/supabase"
 
 const banners = ["/carosel3.png", "/carosel2.png", "/coleta1.png"]
 const yellow = "#ffc400"
@@ -14,8 +15,87 @@ type PainelClienteMobileProps = {
 
 type AbaMenu = "inicio" | "buscar" | "meusFretes" | "perfil"
 
+type FreteCliente = {
+  id: string
+  codigo?: string | null
+  cliente_id?: string | null
+  origem?: string | null
+  destino?: string | null
+  endereco_origem?: string | null
+  endereco_destino?: string | null
+  status?: string | null
+  valor_frete?: number | null
+  valor?: string | null
+  tipo_carga?: string | null
+  tipo_transporte?: string | null
+  data_frete?: string | null
+  data_entrega?: string | null
+  horario?: string | null
+  created_at?: string | null
+}
+
 function pegarPrimeiroNome(nomeCompleto: string) {
   return nomeCompleto.trim().split(" ").filter(Boolean)[0] || "Cliente"
+}
+
+function textoStatus(status?: string | null) {
+  return String(status || "").toLowerCase()
+}
+
+function statusEmAndamento(status?: string | null) {
+  const s = textoStatus(status)
+  return s.includes("andamento") || s.includes("rota") || s.includes("aceito") || s.includes("agendado")
+}
+
+function statusConcluido(status?: string | null) {
+  const s = textoStatus(status)
+  return s.includes("conclu") || s.includes("entregue") || s.includes("finaliz")
+}
+
+function formatarMoeda(valor?: number | null) {
+  return Number(valor || 0).toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  })
+}
+
+function valorNumerico(frete: FreteCliente) {
+  if (typeof frete.valor_frete === "number") return frete.valor_frete
+
+  const bruto = String(frete.valor || "0")
+    .replace("R$", "")
+    .replace(/\./g, "")
+    .replace(",", ".")
+    .trim()
+
+  const numero = Number(bruto)
+  return Number.isNaN(numero) ? 0 : numero
+}
+
+function horaDoFrete(frete: FreteCliente) {
+  if (frete.horario) return frete.horario
+  const data = frete.data_frete || frete.data_entrega || frete.created_at
+  if (!data) return "--"
+  const d = new Date(data)
+  if (Number.isNaN(d.getTime())) return "--"
+  return d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
+}
+
+function textoCurto(valor?: string | null) {
+  const limpo = String(valor || "").trim()
+  return limpo || "Não informado"
+}
+
+function tipoVisualFrete(status?: string | null): "yellow" | "green" | "blue" {
+  if (statusConcluido(status)) return "green"
+  if (statusEmAndamento(status)) return "blue"
+  return "yellow"
+}
+
+function labelStatus(status?: string | null) {
+  if (statusConcluido(status)) return "Concluído"
+  if (statusEmAndamento(status)) return "Em andamento"
+  return "Aguardando"
 }
 
 export default function PainelClienteMobile({ nomeCompleto }: PainelClienteMobileProps) {
@@ -24,6 +104,9 @@ export default function PainelClienteMobile({ nomeCompleto }: PainelClienteMobil
   const [fotoPerfil, setFotoPerfil] = useState("/foto_perfil_cadastro.png")
   const [bannerAtual, setBannerAtual] = useState(0)
   const [abaAtiva, setAbaAtiva] = useState<AbaMenu>("inicio")
+  const [fretes, setFretes] = useState<FreteCliente[]>([])
+  const [carregandoFretes, setCarregandoFretes] = useState(true)
+  const [erroFretes, setErroFretes] = useState("")
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -32,6 +115,39 @@ export default function PainelClienteMobile({ nomeCompleto }: PainelClienteMobil
 
     return () => clearInterval(timer)
   }, [])
+
+  useEffect(() => {
+    carregarFretesCliente()
+  }, [])
+
+  async function carregarFretesCliente() {
+    setCarregandoFretes(true)
+    setErroFretes("")
+
+    const clienteId = localStorage.getItem("flatauto_cliente_id")
+
+    if (!clienteId) {
+      setFretes([])
+      setCarregandoFretes(false)
+      return
+    }
+
+    const { data, error } = await supabase
+      .from("fretes")
+      .select("*")
+      .eq("cliente_id", clienteId)
+      .order("created_at", { ascending: false })
+
+    if (error) {
+      setErroFretes(`Erro Supabase: ${error.message}`)
+      setFretes([])
+      setCarregandoFretes(false)
+      return
+    }
+
+    setFretes(Array.isArray(data) ? data : [])
+    setCarregandoFretes(false)
+  }
 
   function trocarFoto(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0]
@@ -135,7 +251,7 @@ export default function PainelClienteMobile({ nomeCompleto }: PainelClienteMobil
           />
         </section>
 
-        <MiniDashboard />
+        <MiniDashboard fretes={fretes} carregando={carregandoFretes} />
 
         <section className="mt-7">
           <div className="mb-3 flex items-center justify-between">
@@ -149,44 +265,36 @@ export default function PainelClienteMobile({ nomeCompleto }: PainelClienteMobil
           </div>
 
           <div className="overflow-hidden rounded-[24px] border border-white/10 bg-[#080808]">
-            <Frete
-              id="#1287"
-              type="yellow"
-              icon={<PinIcon />}
-              origem="São Paulo - SP"
-              destino="Campinas - SP"
-              valor="R$ 1.250,00"
-              status="Em andamento"
-              solicitado="10:20"
-              retirado="11:00"
-              entregue="Pendente"
-            />
+            {carregandoFretes ? (
+              <FretesVazio texto="Carregando seus fretes..." />
+            ) : erroFretes ? (
+              <FretesVazio texto={erroFretes} />
+            ) : fretes.length === 0 ? (
+              <FretesVazio texto="Você ainda não solicitou nenhum frete." />
+            ) : (
+              fretes.slice(0, 3).map((frete) => {
+                const type = tipoVisualFrete(frete.status)
+                const origem = frete.origem || frete.endereco_origem || "Origem não informada"
+                const destino = frete.destino || frete.endereco_destino || "Destino não informado"
+                const entregue = statusConcluido(frete.status) ? horaDoFrete(frete) : "Pendente"
 
-            <Frete
-              id="#1286"
-              type="green"
-              icon={<CheckIcon />}
-              origem="Rio de Janeiro - RJ"
-              destino="Belo Horizonte - MG"
-              valor="R$ 980,00"
-              status="Concluído"
-              solicitado="08:40"
-              retirado="09:15"
-              entregue="13:30"
-            />
-
-            <Frete
-              id="#1285"
-              type="blue"
-              icon={<TruckImageIcon tipo="azul" />}
-              origem="Curitiba - PR"
-              destino="São Paulo - SP"
-              valor="R$ 1.430,00"
-              status="A caminho"
-              solicitado="07:55"
-              retirado="08:35"
-              entregue="Pendente"
-            />
+                return (
+                  <Frete
+                    key={frete.id}
+                    id={frete.codigo ? `#${frete.codigo}` : `#${String(frete.id).slice(0, 4)}`}
+                    type={type}
+                    icon={type === "green" ? <CheckIcon /> : type === "blue" ? <TruckImageIcon tipo="azul" /> : <PinIcon />}
+                    origem={origem}
+                    destino={destino}
+                    valor={formatarMoeda(valorNumerico(frete))}
+                    status={labelStatus(frete.status)}
+                    solicitado={horaDoFrete(frete)}
+                    retirado={statusEmAndamento(frete.status) || statusConcluido(frete.status) ? horaDoFrete(frete) : "Pendente"}
+                    entregue={entregue}
+                  />
+                )
+              })
+            )}
           </div>
         </section>
 
@@ -222,7 +330,17 @@ export default function PainelClienteMobile({ nomeCompleto }: PainelClienteMobil
   )
 }
 
-function MiniDashboard() {
+function MiniDashboard({
+  fretes,
+  carregando,
+}: {
+  fretes: FreteCliente[]
+  carregando: boolean
+}) {
+  const totalGasto = fretes.reduce((total, frete) => total + valorNumerico(frete), 0)
+  const emAndamento = fretes.filter((frete) => statusEmAndamento(frete.status)).length
+  const concluidos = fretes.filter((frete) => statusConcluido(frete.status)).length
+
   return (
     <section className="mt-6 rounded-[24px] border border-white/10 bg-[#080808] p-4 shadow-[0_0_25px_rgba(0,0,0,0.65)]">
       <div className="mb-3 flex items-center justify-between">
@@ -233,10 +351,10 @@ function MiniDashboard() {
       </div>
 
       <div className="grid grid-cols-2 gap-3">
-        <ResumoCard titulo="Total gasto" valor="R$ 3.660" detalhe="em fretes" cor="yellow" />
-        <ResumoCard titulo="Fretes" valor="3" detalhe="solicitados" cor="blue" />
-        <ResumoCard titulo="Andamento" valor="2" detalhe="em rota" cor="orange" />
-        <ResumoCard titulo="Concluídos" valor="1" detalhe="finalizado" cor="green" />
+        <ResumoCard titulo="Total gasto" valor={carregando ? "..." : formatarMoeda(totalGasto)} detalhe="em fretes" cor="yellow" />
+        <ResumoCard titulo="Fretes" valor={carregando ? "..." : String(fretes.length)} detalhe="solicitados" cor="blue" />
+        <ResumoCard titulo="Andamento" valor={carregando ? "..." : String(emAndamento)} detalhe="em rota" cor="orange" />
+        <ResumoCard titulo="Concluídos" valor={carregando ? "..." : String(concluidos)} detalhe="finalizado" cor="green" />
       </div>
     </section>
   )
@@ -393,6 +511,25 @@ function Frete({
     </div>
   )
 }
+
+function FretesVazio({ texto }: { texto: string }) {
+  return (
+    <div className="px-5 py-8 text-center">
+      <div className="mx-auto flex h-[54px] w-[54px] items-center justify-center rounded-full border border-[#ffc400]/35 bg-[#ffc400]/15 text-[#ffc400]">
+        <TruckImageIcon tipo="dourado" />
+      </div>
+
+      <h3 className="mt-4 text-[16px] font-black text-white">
+        Nenhum frete recente
+      </h3>
+
+      <p className="mx-auto mt-2 max-w-[260px] text-sm leading-relaxed text-white/55">
+        {texto}
+      </p>
+    </div>
+  )
+}
+
 
 function HoraCard({ titulo, valor }: { titulo: string; valor: string }) {
   return (

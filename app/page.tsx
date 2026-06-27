@@ -1,12 +1,7 @@
-"use client"
+﻿"use client"
 
-import { useEffect, useState } from 'react'
-import { createClient } from "@supabase/supabase-js"
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || "",
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ""
-)
+import { useEffect, useState } from "react"
+import { supabase } from "../lib/supabase"
 import TelaBloqueio from "./cliente/components/TelaBloqueio"
 import PainelClienteMobile from "./cliente/components/PainelClienteMobile"
 type TipoConta = "cliente" | "motorista"
@@ -126,6 +121,47 @@ function buscarContaLocal(email: string, senha: string) {
   )
 }
 
+
+type DadosClienteSupabase = {
+  nome: string
+  email: string
+  senha: string
+  telefone: string
+  endereco: string
+  documento: string
+}
+
+async function salvarClienteNoSupabase(dados: DadosClienteSupabase) {
+  const emailLimpo = dados.email.trim().toLowerCase()
+  const senhaLimpa = dados.senha.trim()
+  const telefoneLimpo = dados.telefone.trim() || "Não informado"
+  const enderecoLimpo = dados.endereco.trim() || "Não informado"
+  const documentoLimpo = dados.documento.trim() || "Não informado"
+  const nomeLimpo = dados.nome.trim() || "Cliente"
+
+  const payload = {
+    nome: nomeLimpo,
+    email: emailLimpo,
+    senha: senhaLimpa,
+    telefone: telefoneLimpo,
+    cpf: documentoLimpo,
+    cpf_imagem: "cpf-pendente",
+    foto_perfil: "sem-foto",
+  }
+
+  const { data, error } = await supabase
+    .from("clientes")
+    .insert(payload as any)
+    .select("*")
+    .maybeSingle()
+
+  if (error) {
+    throw new Error(error.message || "Não foi possível salvar cliente no Supabase.")
+  }
+
+  return data
+}
+
 function prepararContaReal(tipo: TipoContaReal, nome: string, email: string) {
   localStorage.setItem("flatauto_modo_demo", "false")
   localStorage.setItem("flatauto_usuario_tipo", tipo)
@@ -138,6 +174,7 @@ function prepararContaReal(tipo: TipoContaReal, nome: string, email: string) {
 
   if (tipo === "empresa") {
     localStorage.setItem("flatauto_empresa_logada", "true")
+    localStorage.setItem("flatauto_empresa_email", email.trim().toLowerCase())
   }
 
   if (tipo === "cliente") {
@@ -525,60 +562,89 @@ function LoginForm({
       return
     }
 
-    // LOGIN EMPRESA TESTE / DEMO
-    if (
-      emailLimpo === "luanacat249@gmail.com" &&
-      senhaLimpa === "12345678"
-    ) {
-      localStorage.setItem("flatauto_modo_demo", "true")
+    setLoading(true)
+
+    const { data: empresa, error: erroEmpresa } = await supabase
+      .from("empresas")
+      .select("id,nome_empresa,responsavel,email,senha")
+      .eq("email", emailLimpo)
+      .eq("senha", senhaLimpa)
+      .maybeSingle()
+
+    if (erroEmpresa) {
+      setLoading(false)
+      setMensagem(`Erro Supabase: ${erroEmpresa.message}`)
+      return
+    }
+
+    if (empresa) {
+      const nomeEmpresa = empresa.nome_empresa || empresa.responsavel || "Empresa"
+
+      localStorage.setItem("flatauto_modo_demo", "false")
       localStorage.setItem("flatauto_usuario_tipo", "empresa")
+      localStorage.setItem("flatauto_usuario_nome", nomeEmpresa)
+      localStorage.setItem("flatauto_usuario_email", emailLimpo)
+      localStorage.setItem("flatauto_empresa_id", String(empresa.id || ""))
+      localStorage.setItem("flatauto_empresa_email", emailLimpo)
+      localStorage.setItem("flatauto_empresa_nome", nomeEmpresa)
+      localStorage.setItem("flatauto_empresa_logada", "true")
+      localStorage.removeItem("flatauto_cliente_logado")
+      localStorage.removeItem("motoristaLogado")
+
+      setLoading(false)
       window.location.href = "/empresa"
       return
     }
 
-    // LOGIN MOTORISTA TESTE / DEMO
-    if (
-      emailLimpo === "luanacat249@gmail.com" &&
-      senhaLimpa === "luke2003"
-    ) {
-      localStorage.setItem("flatauto_modo_demo", "true")
-      localStorage.setItem("flatauto_usuario_tipo", "motorista")
-      window.location.href = "/motorista"
+    const { data: motorista, error: erroMotorista } = await supabase
+      .from("motoristas")
+      .select("id,nome,email,senha,telefone,cpf,modelo_caminhao,placa,tipo_caminhao,capacidade,foto_documento_carro,foto_cnh,foto_perfil,created_at")
+      .eq("email", emailLimpo)
+      .eq("senha", senhaLimpa)
+      .maybeSingle()
+
+    if (erroMotorista) {
+      setLoading(false)
+      setMensagem(`Erro Supabase: ${erroMotorista.message}`)
       return
     }
 
-    // LOGIN CLIENTE TESTE / DEMO
-    if (
-      emailLimpo === "luanacat249@gmail.com" &&
-      senhaLimpa === "123456789"
-    ) {
-      localStorage.setItem("flatauto_modo_demo", "true")
-      localStorage.setItem("flatauto_usuario_tipo", "cliente")
+    if (motorista) {
+      const nomeMotorista = motorista.nome || "Motorista"
+
+      localStorage.setItem("flatauto_modo_demo", "false")
+      localStorage.setItem("flatauto_usuario_tipo", "motorista")
+      localStorage.setItem("flatauto_usuario_nome", nomeMotorista)
+      localStorage.setItem("flatauto_usuario_email", emailLimpo)
+      localStorage.setItem("flatauto_motorista_id", String(motorista.id || ""))
+      localStorage.setItem("flatauto_motorista_dados", JSON.stringify(motorista))
+      localStorage.setItem("motoristaLogado", "true")
+      localStorage.setItem("tipoVeiculoMotorista", motorista.tipo_caminhao || "")
+      localStorage.setItem("modeloVeiculoMotorista", motorista.modelo_caminhao || "")
+      localStorage.setItem("placaVeiculoMotorista", motorista.placa || "")
+      localStorage.removeItem("flatauto_empresa_logada")
+      localStorage.removeItem("flatauto_cliente_logado")
+
+      setLoading(false)
 
       if (!isMobile()) {
         setScreen("bloqueado")
         return
       }
 
-      setLoading(true)
-
-      setTimeout(() => {
-        setMensagem("")
-        setLoading(false)
-        onLoginSuccess()
-      }, 400)
-
+      window.location.href = "/motorista"
       return
     }
 
-    // LOGIN REAL CRIADO PELO CADASTRO LOCAL
     const contaLocal = buscarContaLocal(emailLimpo, senhaLimpa)
 
-    if (contaLocal) {
+    if (contaLocal && contaLocal.tipo !== "empresa") {
+      setLoading(false)
       entrarNaContaReal(contaLocal.tipo, contaLocal.nome, contaLocal.email)
       return
     }
 
+    setLoading(false)
     setMensagem("E-mail ou senha inválidos. Verifique os dados ou crie uma conta.")
   }
 
@@ -867,24 +933,42 @@ function CadastroClienteCompleto({
 
     setLoading(true)
     if (ehEmpresa) {
-  const { error } = await supabase.from("empresas").insert({
-  nome_empresa: nomeEmpresa,
-  email: emailLimpo,
-  senha: senhaLimpa,
-  telefone,
-  cnpj: documento,
-  responsavel: nomeResponsavel,
-  foto_documento: documentoCliente ? documentoCliente.name : "",
-  logo_empresa: "",
-})
+      const { error } = await supabase.from("empresas").insert({
+        nome_empresa: nomeEmpresa,
+        responsavel: nomeResponsavel,
+        documento_text: documento,
+        telefone: telefone.trim() || "Não informado",
+        endereco,
+        email: emailLimpo,
+        senha: senhaLimpa,
+      })
 
+      if (error) {
+        setLoading(false)
+        setMensagem(`Erro Supabase: ${error.message}`)
+        return
+      }
+    } else {
+      try {
+        const clienteCriado = await salvarClienteNoSupabase({
+          nome,
+          email: emailLimpo,
+          senha: senhaLimpa,
+          telefone: telefone.trim() || "Não informado",
+          endereco,
+          documento,
+        })
 
-  if (error) {
-    setLoading(false)
-    setMensagem(`Erro Supabase: ${error.message}`)
-    return
-  }
-}
+        if (clienteCriado?.id) {
+          localStorage.setItem("flatauto_cliente_id", String(clienteCriado.id))
+          localStorage.setItem("flatauto_cliente_dados", JSON.stringify(clienteCriado))
+        }
+      } catch (erro: any) {
+        setLoading(false)
+        setMensagem(`Erro Supabase: ${erro.message}`)
+        return
+      }
+    }
 
     const tipoConta: TipoContaReal = ehEmpresa ? "empresa" : "cliente"
     const nomeConta = ehEmpresa ? nomeResponsavel : nome
@@ -900,7 +984,7 @@ function CadastroClienteCompleto({
         documento,
         telefone,
         nome_empresa: ehEmpresa ? nomeEmpresa : "",
-        nome_responsavel: ehEmpresa ? nomeResponsavel : "",
+        responsavel: ehEmpresa ? nomeResponsavel : "",
       },
     })
 
@@ -961,7 +1045,7 @@ function CadastroClienteCompleto({
               </p>
 
               <span className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full bg-[#ffc400] text-lg font-black text-black">
-                ✓
+                
               </span>
             </button>
 
@@ -1098,7 +1182,7 @@ function CadastroClienteCompleto({
             disabled={loading}
             className="mt-8 flex h-16 w-full items-center justify-center gap-3 rounded-xl bg-[#ffc400] text-[19px] font-black text-black shadow-[0_0_35px_rgba(255,196,0,0.55)]"
           >
-            <span className="text-2xl">💾</span>
+            <span className="text-2xl"></span>
             {loading ? "Salvando..." : "Salvar cadastro"}
           </button>
 
@@ -1119,7 +1203,7 @@ function CadastroClienteCompleto({
           onClick={onVoltar}
           className="flex items-center gap-3 text-lg font-bold text-white"
         >
-          <span className="text-3xl text-[#ffc400]">←</span>
+          <span className="text-3xl text-[#ffc400]"></span>
           Voltar para o login
         </button>
 
@@ -1132,7 +1216,7 @@ function CadastroClienteCompleto({
           </button>
 
           <button type="button" className="text-3xl leading-none text-white/80">
-            ⋮
+            
           </button>
         </div>
       </header>
@@ -1296,7 +1380,7 @@ function CadastroClienteCompleto({
 
             <div className="mt-8 flex items-center justify-between border-t border-white/10 pt-6">
               <div className="flex items-center gap-3 text-white/65">
-                <span className="text-xl">🔒</span>
+                <span className="text-xl"></span>
                 <p>Suas informações estão seguras conosco.</p>
               </div>
 
@@ -1326,7 +1410,7 @@ function CadastroClienteCompleto({
   )
 }
 
-/* CADASTRO MOTORISTA APROVADO — NÃO ALTERAR */
+/* CADASTRO MOTORISTA APROVADO  NO ALTERAR */
 function CadastroMotoristaWeb({
   dadosBase,
   onVoltar,
@@ -1340,29 +1424,18 @@ function CadastroMotoristaWeb({
 }) {
   const [nome, setNome] = useState(dadosBase.nome)
   const [cpfMotorista, setCpfMotorista] = useState("")
+  const [telefoneMotorista, setTelefoneMotorista] = useState("")
   const [modeloCaminhao, setModeloCaminhao] = useState("")
   const [placaCaminhao, setPlacaCaminhao] = useState("")
   const [tipoCaminhao, setTipoCaminhao] = useState("")
   const [capacidadeCarga, setCapacidadeCarga] = useState("")
   const [regiaoAtuacao, setRegiaoAtuacao] = useState("")
 
-  const [fotoMotorista, setFotoMotorista] = useState<File | null>(null)
-  const [fotoPreview, setFotoPreview] = useState("")
   const [documentoCaminhao, setDocumentoCaminhao] = useState<File | null>(null)
   const [cnhMotorista, setCnhMotorista] = useState<File | null>(null)
 
   const [loading, setLoading] = useState(false)
   const [mensagem, setMensagem] = useState("")
-
-  function escolherFotoMotorista(file: File | null) {
-    setFotoMotorista(file)
-
-    if (file) {
-      setFotoPreview(URL.createObjectURL(file))
-    } else {
-      setFotoPreview("")
-    }
-  }
 
   async function finalizarCadastroMotorista() {
     setMensagem("")
@@ -1383,17 +1456,65 @@ function CadastroMotoristaWeb({
     if (
       !nome ||
       !cpfMotorista ||
+      !telefoneMotorista ||
       !modeloCaminhao ||
       !placaCaminhao ||
       !tipoCaminhao ||
       !capacidadeCarga ||
-      !regiaoAtuacao
+      !regiaoAtuacao ||
+      !documentoCaminhao ||
+      !cnhMotorista
     ) {
-      setMensagem("Preencha todos os dados do motorista.")
+      setMensagem("Preencha todos os dados do motorista e envie o documento do veículo e a CNH.")
       return
     }
 
     setLoading(true)
+
+    const capacidadeNumero = Number(String(capacidadeCarga).replace(",", ".")) || null
+
+    const { data: motoristaCriado, error: erroMotorista } = await supabase
+      .from("motoristas")
+      .insert({
+        nome,
+        email: emailLimpo,
+        senha: senhaLimpa,
+        telefone: telefoneMotorista,
+        cpf: cpfMotorista,
+        modelo_caminhao: modeloCaminhao,
+        placa: placaCaminhao,
+        tipo_caminhao: tipoCaminhao,
+        capacidade: capacidadeNumero,
+        foto_documento_carro: documentoCaminhao ? documentoCaminhao.name : "documento-veiculo-pendente",
+        foto_cnh: cnhMotorista ? cnhMotorista.name : "cnh-pendente",
+        foto_perfil: null,
+      })
+      .select("id,nome,email,telefone,cpf,modelo_caminhao,placa,tipo_caminhao,capacidade,foto_documento_carro,foto_cnh,foto_perfil,created_at")
+      .maybeSingle()
+
+    if (erroMotorista) {
+      setLoading(false)
+      setMensagem(`Erro Supabase: ${erroMotorista.message}`)
+      return
+    }
+
+    if (motoristaCriado?.id) {
+      const { error: erroVeiculo } = await supabase.from("veiculos").insert({
+        motorista_id: motoristaCriado.id,
+        tipo_veiculo: tipoCaminhao,
+        modelo: modeloCaminhao,
+        placa: placaCaminhao,
+        capacidade_kg: capacidadeNumero,
+        ativo: true,
+      })
+
+      if (erroVeiculo) {
+        console.error("Erro ao cadastrar veículo do motorista:", erroVeiculo.message)
+      }
+
+      localStorage.setItem("flatauto_motorista_id", String(motoristaCriado.id))
+      localStorage.setItem("flatauto_motorista_dados", JSON.stringify(motoristaCriado))
+    }
 
     salvarContaLocal({
       nome,
@@ -1403,6 +1524,7 @@ function CadastroMotoristaWeb({
       criadoEm: new Date().toISOString(),
       dados: {
         cpf: cpfMotorista,
+        telefone: telefoneMotorista,
         modelo_caminhao: modeloCaminhao,
         placa_caminhao: placaCaminhao,
         tipo_caminhao: tipoCaminhao,
@@ -1413,6 +1535,8 @@ function CadastroMotoristaWeb({
 
     prepararContaReal("motorista", nome, emailLimpo)
     localStorage.setItem("tipoVeiculoMotorista", tipoCaminhao)
+    localStorage.setItem("modeloVeiculoMotorista", modeloCaminhao)
+    localStorage.setItem("placaVeiculoMotorista", placaCaminhao)
 
     setLoading(false)
     setMensagem("Conta criada com sucesso! Bem-vindo ao FlatAuto.")
@@ -1487,7 +1611,7 @@ function CadastroMotoristaWeb({
               </p>
 
               <span className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full bg-[#ffc400] text-lg font-black text-black">
-                ✓
+                
               </span>
             </button>
           </div>
@@ -1504,40 +1628,10 @@ function CadastroMotoristaWeb({
                 Complete seu perfil de motorista
               </h2>
               <p className="mt-1 text-sm text-white/60">
-                Informe os dados do seu caminhão e documentos
+                Informe os dados do seu veículo e documentos
               </p>
             </div>
           </div>
-
-          <label className="mt-5 flex min-h-[74px] cursor-pointer items-center gap-4 rounded-xl border border-[#ffc400]/25 bg-[#ffc400]/10 px-4 backdrop-blur-md">
-            <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[#ffc400]/35 bg-black/25">
-              {fotoPreview ? (
-                <img src={fotoPreview} alt="Foto do motorista" className="h-full w-full object-cover" />
-              ) : (
-                <img
-                  src={imagens.fotoPerfilCadastro}
-                  alt=""
-                  className="h-8 w-8 object-contain"
-                />
-              )}
-            </div>
-
-            <div className="flex-1">
-              <p className="text-[17px] font-bold text-white">Foto do motorista</p>
-              <p className="mt-1 text-sm text-white/55">
-                {fotoMotorista ? fotoMotorista.name : "Toque para enviar uma foto"}
-              </p>
-            </div>
-
-            <span className="text-2xl text-[#ffc400]">+</span>
-
-            <input
-              type="file"
-              accept="image/png,image/jpeg,image/jpg"
-              onChange={(event) => escolherFotoMotorista(event.target.files?.[0] || null)}
-              className="hidden"
-            />
-          </label>
 
           <div className="mt-6 space-y-3">
             <MobileDriverInput
@@ -1555,23 +1649,30 @@ function CadastroMotoristaWeb({
             />
 
             <MobileDriverInput
-              icon={imagens.modeloCaminhao}
-              placeholder="Modelo do caminhão"
-              value={modeloCaminhao}
-              onChange={setModeloCaminhao}
-            />
-
-            <MobileDriverInput
-              icon={imagens.placa}
-              placeholder="Placa do caminhão"
-              value={placaCaminhao}
-              onChange={(valor) => setPlacaCaminhao(valor.toUpperCase())}
+              icon={imagens.telefoneWhatsapp}
+              placeholder="Telefone / WhatsApp"
+              value={telefoneMotorista}
+              onChange={setTelefoneMotorista}
             />
 
             <MobileDriverSelect
               icon={imagens.modeloCaminhao}
               value={tipoCaminhao}
               onChange={setTipoCaminhao}
+            />
+
+            <MobileDriverInput
+              icon={imagens.modeloCaminhao}
+              placeholder="Modelo"
+              value={modeloCaminhao}
+              onChange={setModeloCaminhao}
+            />
+
+            <MobileDriverInput
+              icon={imagens.placa}
+              placeholder="Placa"
+              value={placaCaminhao}
+              onChange={(valor) => setPlacaCaminhao(valor.toUpperCase())}
             />
 
             <MobileDriverInput
@@ -1591,8 +1692,8 @@ function CadastroMotoristaWeb({
           <div className="mt-6 space-y-4">
             <MobileUploadCard
               icon={imagens.documento}
-              title="Documento do caminhão"
-              text="Envie o CRLV ou documento do veículo"
+              title="Documento do veículo"
+              text="Envie o CRLV ou foto do documento do veículo"
               file={documentoCaminhao}
               onChange={setDocumentoCaminhao}
             />
@@ -1618,7 +1719,7 @@ function CadastroMotoristaWeb({
             disabled={loading}
             className="mt-8 flex h-16 w-full items-center justify-center gap-3 rounded-xl bg-[#ffc400] text-[19px] font-black text-black shadow-[0_0_35px_rgba(255,196,0,0.55)]"
           >
-            <span className="text-2xl">💾</span>
+            <span className="text-2xl"></span>
             {loading ? "Salvando..." : "Salvar cadastro de motorista"}
           </button>
 
@@ -1639,7 +1740,7 @@ function CadastroMotoristaWeb({
           onClick={onVoltar}
           className="flex items-center gap-3 text-lg font-bold text-white"
         >
-          <span className="text-3xl text-[#ffc400]">←</span>
+          <span className="text-3xl text-[#ffc400]"></span>
           Voltar para o login
         </button>
 
@@ -1652,7 +1753,7 @@ function CadastroMotoristaWeb({
           </button>
 
           <button type="button" className="text-3xl leading-none text-white/80">
-            ⋮
+            
           </button>
         </div>
       </header>
@@ -1696,19 +1797,13 @@ function CadastroMotoristaWeb({
         <section className="flex items-center justify-center px-[4vw] py-9">
           <div className="w-full max-w-[960px] rounded-xl border border-white/20 bg-[#080b0f]/82 p-8 shadow-[0_0_70px_rgba(0,0,0,0.88)] backdrop-blur-md">
             <div className="mb-7 flex items-center gap-5">
-              <ProfilePhotoBox preview={fotoPreview} onChange={escolherFotoMotorista} />
+              <IconBox icon={imagens.nomePerfil} active />
 
               <div>
                 <h2 className="text-[32px] font-bold leading-none">Cadastro de Motorista</h2>
                 <p className="mt-2 text-lg text-white/75">
-                  Preencha seus dados para criar sua conta
+                  Preencha seus dados e documentos para criar sua conta
                 </p>
-
-                {fotoMotorista && (
-                  <p className="mt-1 text-sm font-bold text-[#ffc400]">
-                    Foto selecionada: {fotoMotorista.name}
-                  </p>
-                )}
               </div>
             </div>
 
@@ -1731,8 +1826,25 @@ function CadastroMotoristaWeb({
               />
 
               <DriverField
+                icon={imagens.telefoneWhatsapp}
+                label="Telefone / WhatsApp"
+                placeholder="Digite seu telefone"
+                value={telefoneMotorista}
+                onChange={setTelefoneMotorista}
+                dots
+              />
+
+              <DriverSelect
                 icon={imagens.modeloCaminhao}
-                label="Modelo do caminhão"
+                label="Tipo de veículo"
+                value={tipoCaminhao}
+                onChange={setTipoCaminhao}
+                dots
+              />
+
+              <DriverField
+                icon={imagens.modeloCaminhao}
+                label="Modelo"
                 placeholder="Ex: Volvo FH 540"
                 value={modeloCaminhao}
                 onChange={setModeloCaminhao}
@@ -1741,18 +1853,10 @@ function CadastroMotoristaWeb({
 
               <DriverField
                 icon={imagens.placa}
-                label="Placa do caminhão"
+                label="Placa"
                 placeholder="Ex: ABC1D23"
                 value={placaCaminhao}
                 onChange={(valor) => setPlacaCaminhao(valor.toUpperCase())}
-                dots
-              />
-
-              <DriverSelect
-                icon={imagens.modeloCaminhao}
-                label="Tipo de caminhão"
-                value={tipoCaminhao}
-                onChange={setTipoCaminhao}
                 dots
               />
 
@@ -1775,8 +1879,8 @@ function CadastroMotoristaWeb({
 
               <DriverUpload
                 icon={imagens.documento}
-                label="Documentação do caminhão"
-                placeholder="Envie os documentos do caminhão"
+                label="Documentação do veículo"
+                placeholder="Envie a foto ou PDF do documento do veículo"
                 file={documentoCaminhao}
                 onChange={setDocumentoCaminhao}
                 dots
@@ -1800,7 +1904,7 @@ function CadastroMotoristaWeb({
 
             <div className="mt-8 flex items-center justify-between border-t border-white/10 pt-6">
               <div className="flex items-center gap-3 text-white/65">
-                <span className="text-xl">🔒</span>
+                <span className="text-xl"></span>
                 <p>Suas informações estão seguras conosco.</p>
               </div>
 
@@ -2290,7 +2394,7 @@ function TabelaPedidos() {
   return (
     <div className="rounded-[18px] border border-[#1a2330] bg-[#08111b] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.02)]">
       <div className="mb-5 flex items-center justify-between">
-        <h3 className="text-[20px] font-bold text-white">Últimos pedidos</h3>
+        <h3 className="text-[20px] font-bold text-white">ltimos pedidos</h3>
         <button className="text-sm font-semibold text-[#ffc400]">Ver todos</button>
       </div>
 
@@ -2307,7 +2411,7 @@ function TabelaPedidos() {
 
           <tbody className="text-[15px]">
             <tr className="border-b border-white/6">
-              <td className="py-4 text-white">São Paulo - SP → Campinas - SP</td>
+              <td className="py-4 text-white">São Paulo - SP  Campinas - SP</td>
               <td className="py-4 text-white/65">12/05/2025 08:30</td>
               <td className="py-4">
                 <span className="rounded-full bg-[#103d28] px-3 py-1 text-sm text-[#7ef0ab]">
@@ -2318,7 +2422,7 @@ function TabelaPedidos() {
             </tr>
 
             <tr className="border-b border-white/6">
-              <td className="py-4 text-white">Guarulhos - SP → Sorocaba - SP</td>
+              <td className="py-4 text-white">Guarulhos - SP  Sorocaba - SP</td>
               <td className="py-4 text-white/65">08/05/2025 14:20</td>
               <td className="py-4">
                 <span className="rounded-full bg-[#103d28] px-3 py-1 text-sm text-[#7ef0ab]">
@@ -2329,14 +2433,14 @@ function TabelaPedidos() {
             </tr>
 
             <tr>
-              <td className="py-4 text-white">São Paulo - SP → Santos - SP</td>
+              <td className="py-4 text-white">São Paulo - SP  Santos - SP</td>
               <td className="py-4 text-white/65">04/05/2025 09:15</td>
               <td className="py-4">
                 <span className="rounded-full bg-[#4b1b1b] px-3 py-1 text-sm text-[#ff8f8f]">
                   Cancelado
                 </span>
               </td>
-              <td className="py-4 text-white/60">—</td>
+              <td className="py-4 text-white/60"></td>
             </tr>
           </tbody>
         </table>
@@ -2358,9 +2462,9 @@ function ListaMotoristas() {
       </div>
 
       <div className="space-y-4">
-        <MotoristaItem iniciais="CA" nome="Carlos Alberto" info="12 viagens • 98%" distancia="1,2 km" />
-        <MotoristaItem iniciais="JF" nome="João Ferreira" info="8 viagens • 97%" distancia="1,8 km" />
-        <MotoristaItem iniciais="ML" nome="Marcos Lima" info="15 viagens • 99%" distancia="2,3 km" />
+        <MotoristaItem iniciais="CA" nome="Carlos Alberto" info="12 viagens  98%" distancia="1,2 km" />
+        <MotoristaItem iniciais="JF" nome="João Ferreira" info="8 viagens  97%" distancia="1,8 km" />
+        <MotoristaItem iniciais="ML" nome="Marcos Lima" info="15 viagens  99%" distancia="2,3 km" />
       </div>
     </div>
   )
@@ -2446,46 +2550,13 @@ function IconBox({ icon, active = false }: { icon: string; active?: boolean }) {
   )
 }
 
-function ProfilePhotoBox({
-  preview,
-  onChange,
-}: {
-  preview: string
-  onChange: (file: File | null) => void
-}) {
-  return (
-    <label className="relative flex h-[68px] w-[68px] shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-xl border border-[#ffc400]/35 bg-[#ffc400]/10 transition hover:bg-[#ffc400]/15">
-      {preview ? (
-        <img
-          src={preview}
-          alt="Foto do motorista"
-          className="h-full w-full object-cover"
-        />
-      ) : (
-        <img
-          src={imagens.fotoPerfilCadastro}
-          alt=""
-          className="h-9 w-9 object-contain drop-shadow-[0_0_10px_rgba(255,196,0,0.45)]"
-        />
-      )}
-
-      <input
-        type="file"
-        accept="image/png,image/jpeg,image/jpg"
-        onChange={(event) => onChange(event.target.files?.[0] || null)}
-        className="absolute inset-0 cursor-pointer opacity-0"
-      />
-    </label>
-  )
-}
-
 function DotsButton() {
   return (
     <button
       type="button"
       className="flex h-[48px] w-[48px] shrink-0 items-center justify-center rounded-lg border border-white/10 bg-white/[0.055] text-2xl leading-none text-white/65"
     >
-      ⋯
+      
     </button>
   )
 }
@@ -2550,15 +2621,11 @@ function DriverSelect({
           onChange={(event) => onChange(event.target.value)}
           className="h-[48px] w-full rounded-lg border border-white/15 bg-[#10151b]/90 px-4 text-base text-white outline-none focus:border-[#ffc400]/70"
         >
-          <option value="">Selecione o tipo de caminhão</option>
-          <option value="bau">Baú</option>
-          <option value="carroceria">Carroceria aberta</option>
-          <option value="toco">Toco</option>
-          <option value="truck">Truck</option>
-          <option value="bitruck">Bitruck</option>
-          <option value="carreta">Carreta</option>
-          <option value="refrigerado">Refrigerado</option>
-          <option value="guincho">Guincho</option>
+          <option value="">Selecione o tipo de veículo</option>
+          <option value="moto">Moto</option>
+          <option value="carro">Carro</option>
+          <option value="van">Van</option>
+          <option value="caminhao">Caminhão</option>
         </select>
       </label>
 
@@ -2744,18 +2811,14 @@ function MobileDriverSelect({
         onChange={(event) => onChange(event.target.value)}
         className="h-full flex-1 bg-transparent text-[16px] text-white outline-none"
       >
-        <option value="">Tipo de caminhão</option>
-        <option value="bau">Baú</option>
-        <option value="carroceria">Carroceria aberta</option>
-        <option value="toco">Toco</option>
-        <option value="truck">Truck</option>
-        <option value="bitruck">Bitruck</option>
-        <option value="carreta">Carreta</option>
-        <option value="refrigerado">Refrigerado</option>
-        <option value="guincho">Guincho</option>
+        <option value="">Tipo de veículo</option>
+        <option value="moto">Moto</option>
+        <option value="carro">Carro</option>
+        <option value="van">Van</option>
+        <option value="caminhao">Caminhão</option>
       </select>
 
-      <span className="text-2xl text-white/50">⌄</span>
+      <span className="text-2xl text-white/50"></span>
     </div>
   )
 }
@@ -2787,7 +2850,7 @@ function MobileRegionSelect({
         <option value="outra">Outra região</option>
       </select>
 
-      <span className="text-2xl text-white/50">⌄</span>
+      <span className="text-2xl text-white/50"></span>
     </div>
   )
 }
@@ -2822,7 +2885,7 @@ function MobileClienteSelect({
         ))}
       </select>
 
-      <span className="text-2xl text-white/50">⌄</span>
+      <span className="text-2xl text-white/50"></span>
     </div>
   )
 }
@@ -2852,7 +2915,7 @@ function MobileUploadCard({
       </div>
 
       <div className="text-center text-[#ffc400]">
-        <div className="text-3xl leading-none">☁</div>
+        <div className="text-3xl leading-none"></div>
         <p className="mt-1 text-sm font-bold">Enviar</p>
       </div>
 
@@ -2865,6 +2928,7 @@ function MobileUploadCard({
     </label>
   )
 }
+
 
 
 
