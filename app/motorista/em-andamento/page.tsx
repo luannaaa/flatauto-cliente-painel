@@ -200,36 +200,36 @@ export default function EmAndamentoPage() {
   return (
     <main className="min-h-screen bg-[#020507] text-white">
       <header className="fixed left-0 right-0 top-0 z-40 flex h-16 items-center justify-between border-b border-white/10 bg-[#10171b] px-4">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <a
             href="/motorista"
-            className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04]"
+            className="flex h-11 w-11 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04]"
           >
             <ArrowLeft size={22} />
           </a>
 
           <div>
             <p className="text-xs font-black text-[#ffc400]">FLATAUTO MOTORISTA</p>
-            <h1 className="text-xl font-black">Em andamento</h1>
+            <h1 className="text-lg font-black">Em andamento</h1>
           </div>
         </div>
 
         <button
           onClick={carregarDados}
-          className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] text-[#ffc400]"
+          className="flex h-11 w-11 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-[#ffc400]"
         >
           <RefreshCw size={20} />
         </button>
       </header>
 
-      <section className="relative h-[52vh] overflow-hidden bg-[#d9e4d2] pt-16">
+      <section className="relative h-[46vh] overflow-hidden bg-[#d9e4d2] pt-16">
         <MapaVisual tipoVeiculo={tipoVeiculo} ativo={Boolean(corridaAtual)} />
       </section>
 
-      <section className="-mt-5 rounded-t-[34px] bg-[#020507] px-4 pb-8 pt-5">
-        <div className="mx-auto max-w-[480px] space-y-4">
+      <section className="-mt-4 rounded-t-[34px] bg-[#020507] px-4 pb-6 pt-4">
+        <div className="mx-auto max-w-[480px] space-y-3">
           {erro && (
-            <div className="rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-sm font-bold text-red-400">
+            <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm font-bold text-red-400">
               {erro}
             </div>
           )}
@@ -239,16 +239,16 @@ export default function EmAndamentoPage() {
           ) : corridaAtual ? (
             <button
               onClick={() => setDetalhesAberto(true)}
-              className="w-full rounded-[28px] border border-[#ffc400]/25 bg-[#10171b] p-5 text-left transition hover:border-[#ffc400]/60"
+              className="w-full rounded-[22px] border border-[#ffc400]/25 bg-[#10171b] p-4 text-left transition hover:border-[#ffc400]/60"
             >
-              <div className="flex items-start gap-3">
-                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[#ffc400] text-black">
+              <div className="flex items-start gap-2">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#ffc400] text-black">
                   <IconeVeiculo tipo={tipoVeiculo} size={30} />
                 </div>
 
                 <div className="min-w-0 flex-1">
                   <p className="text-xs font-black text-[#ffc400]">CORRIDA ATUAL</p>
-                  <h2 className="mt-1 text-xl font-black">Entrega em andamento</h2>
+                  <h2 className="mt-1 text-lg font-black">Entrega em andamento</h2>
                   <p className="mt-1 text-sm text-white/60">
                     {origemAtual} → {destinoAtual}
                   </p>
@@ -263,7 +263,7 @@ export default function EmAndamentoPage() {
           )}
 
           {corridaAtual && (
-            <div className="grid gap-3">
+            <div className="grid gap-2">
               <InfoCard icon={<MapPin size={21} />} titulo="Destino" valor={destinoAtual} />
               <InfoCard icon={<Clock size={21} />} titulo="Horário" valor={corridaAtual.horario || "Não informado"} />
               <InfoCard icon={<Package size={21} />} titulo="Tipo de pacote" valor={corridaAtual.tipo_carga || corridaAtual.tipo_transporte || "Não informado"} />
@@ -346,11 +346,11 @@ function MapaVisual({ tipoVeiculo, ativo }: { tipoVeiculo: Veiculo; ativo: boole
         <>
           <div className="absolute left-[24%] top-[52%] h-[5px] w-[52%] -rotate-[8deg] rounded-full bg-[#ffc400]" />
 
-          <div className="absolute left-[20%] top-[49%] z-20 flex h-14 w-14 items-center justify-center rounded-full bg-green-600 text-white shadow-lg">
+          <div className="absolute left-[20%] top-[49%] z-20 flex h-12 w-12 items-center justify-center rounded-full bg-green-600 text-white shadow-lg">
             <MapPin size={27} />
           </div>
 
-          <div className="absolute left-[72%] top-[38%] z-20 flex h-14 w-14 items-center justify-center rounded-full bg-red-600 text-white shadow-lg">
+          <div className="absolute left-[72%] top-[38%] z-20 flex h-12 w-12 items-center justify-center rounded-full bg-red-600 text-white shadow-lg">
             <MapPin size={27} />
           </div>
 
@@ -381,10 +381,10 @@ function DetalhesModal({
 
   return (
     <div className="fixed inset-0 z-[80] flex items-end justify-center bg-black/75 px-4 pb-5 sm:items-center sm:pb-0">
-      <div className="w-full max-w-[430px] rounded-[28px] border border-white/10 bg-[#10171b] p-5 shadow-[0_20px_60px_rgba(0,0,0,0.55)]">
-        <div className="mb-4 flex items-start justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#ffc400] text-black">
+      <div className="w-full max-w-[430px] rounded-[22px] border border-white/10 bg-[#10171b] p-4 shadow-[0_20px_60px_rgba(0,0,0,0.55)]">
+        <div className="mb-4 flex items-start justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#ffc400] text-black">
               <IconeVeiculo tipo={tipoVeiculo} size={26} />
             </div>
 
@@ -415,7 +415,7 @@ function DetalhesModal({
         <button
           onClick={onFinalizar}
           disabled={finalizando}
-          className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl bg-[#ffc400] py-4 font-black text-black disabled:opacity-60"
+          className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-[#ffc400] py-4 font-black text-black disabled:opacity-60"
         >
           <CheckCircle2 size={22} />
           {finalizando ? "Finalizando..." : "Finalizar corrida"}
@@ -439,8 +439,8 @@ function AgendamentoDetalhesModal({
 
   return (
     <div className="fixed inset-0 z-[80] flex items-end justify-center bg-black/75 px-4 pb-5 sm:items-center sm:pb-0">
-      <div className="w-full max-w-[420px] rounded-[26px] border border-white/10 bg-[#10171b] p-5 shadow-[0_20px_60px_rgba(0,0,0,0.55)]">
-        <div className="mb-4 flex items-start justify-between gap-3">
+      <div className="w-full max-w-[420px] rounded-[26px] border border-white/10 bg-[#10171b] p-4 shadow-[0_20px_60px_rgba(0,0,0,0.55)]">
+        <div className="mb-4 flex items-start justify-between gap-2">
           <div>
             <p className="text-xs font-black text-[#ffc400]">DETALHES DO AGENDAMENTO</p>
             <h2 className="mt-1 text-lg font-black">Corrida agendada</h2>
@@ -469,7 +469,7 @@ function AgendamentoDetalhesModal({
 
         <button
           onClick={onIniciar}
-          className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl bg-[#ffc400] py-4 font-black text-black"
+          className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-[#ffc400] py-4 font-black text-black"
         >
           <CheckCircle2 size={22} />
           Iniciar corrida
@@ -477,7 +477,7 @@ function AgendamentoDetalhesModal({
 
         <button
           onClick={onFechar}
-          className="mt-3 h-11 w-full rounded-2xl border border-white/10 bg-white/[0.04] font-black text-white"
+          className="mt-3 h-11 w-full rounded-xl border border-white/10 bg-white/[0.04] font-black text-white"
         >
           Fechar
         </button>
@@ -493,9 +493,9 @@ function AgendamentoCard({ frete, onAbrir }: { frete: Frete; onAbrir: () => void
   return (
     <button
       onClick={onAbrir}
-      className="w-full rounded-2xl border border-white/10 bg-[#10171b] p-4 text-left transition hover:border-[#ffc400]/50"
+      className="w-full rounded-xl border border-white/10 bg-[#10171b] p-4 text-left transition hover:border-[#ffc400]/50"
     >
-      <div className="flex items-start gap-3">
+      <div className="flex items-start gap-2">
         <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#ffc400]/15 text-[#ffc400]">
           <CalendarDays size={21} />
         </div>
@@ -517,15 +517,15 @@ function AgendamentoCard({ frete, onAbrir }: { frete: Frete; onAbrir: () => void
 
 function InfoCard({ icon, titulo, valor, maior }: any) {
   return (
-    <article className="rounded-2xl border border-white/10 bg-[#10171b] p-4">
-      <div className="flex items-start gap-3">
+    <article className="rounded-xl border border-white/10 bg-[#10171b] p-4">
+      <div className="flex items-start gap-2">
         <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#ffc400]/15 text-[#ffc400]">
           {icon}
         </div>
 
         <div>
           <p className="text-xs font-black uppercase text-white/45">{titulo}</p>
-          <p className={`mt-1 font-black text-white ${maior ? "text-sm leading-relaxed" : "text-base"}`}>
+          <p className={`mt-1 font-black text-white ${maior ? "text-sm leading-snug" : "text-base"}`}>
             {valor}
           </p>
         </div>
@@ -536,7 +536,7 @@ function InfoCard({ icon, titulo, valor, maior }: any) {
 
 function CardVazio({ texto, menor = false }: { texto: string; menor?: boolean }) {
   return (
-    <div className={`rounded-2xl border border-dashed border-white/10 bg-[#10171b] ${menor ? "p-4" : "p-6"} text-center`}>
+    <div className={`rounded-xl border border-dashed border-white/10 bg-[#10171b] ${menor ? "p-4" : "p-6"} text-center`}>
       <Package className="mx-auto text-[#ffc400]" size={menor ? 26 : 34} />
       <p className="mt-3 text-sm font-bold text-white/60">{texto}</p>
     </div>
