@@ -32,16 +32,9 @@ type FreteAtivo = {
   tipo_transporte?: string | null
   horario?: string | null
   valor_frete?: number | null
+  valor?: string | null
   status?: string | null
   observacoes?: string | null
-  tipo_contratante?: string | null
-}
-
-function formatarMoeda(valor?: number | null) {
-  return Number(valor || 0).toLocaleString("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  })
 }
 
 function texto(valor?: string | null) {
@@ -50,7 +43,20 @@ function texto(valor?: string | null) {
 
 function ehEmAndamento(status?: string | null) {
   const s = texto(status)
-  return s.includes("andamento") || s.includes("em rota") || s.includes("rota")
+  return s.includes("andamento") || s.includes("rota") || s.includes("em_rota")
+}
+
+function formatarMoeda(frete?: FreteAtivo | null) {
+  if (!frete) return "R$ 0,00"
+
+  if (typeof frete.valor_frete === "number" && frete.valor_frete > 0) {
+    return frete.valor_frete.toLocaleString("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+    })
+  }
+
+  return frete.valor || "A calcular"
 }
 
 export default function MapaMotorista() {
@@ -63,57 +69,18 @@ export default function MapaMotorista() {
   const [erro, setErro] = useState("")
   const [salvando, setSalvando] = useState(false)
   const ultimaGravacaoRef = useRef(0)
+  const freteAtivoRef = useRef<FreteAtivo | null>(null)
+
+  useEffect(() => {
+    freteAtivoRef.current = freteAtivo
+  }, [freteAtivo])
 
   useEffect(() => {
     const tipoSalvo = localStorage.getItem("tipoVeiculoMotorista") || "caminhao"
     setTipoVeiculo(tipoSalvo)
 
     carregarFreteAtivo()
-
-    if (!navigator.geolocation) {
-      setMensagemLocalizacao("Este celular não suporta localização.")
-      return
-    }
-
-    const watcherId = navigator.geolocation.watchPosition(
-      async (position) => {
-        const novaLocalizacao = {
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
-          accuracy: position.coords.accuracy,
-        }
-
-        setLocalizacao(novaLocalizacao)
-        setMensagemLocalizacao("Localização em tempo real ativa.")
-
-        localStorage.setItem(
-          "flatauto_motorista_localizacao",
-          JSON.stringify({
-            ...novaLocalizacao,
-            tipoVeiculo: tipoSalvo,
-            atualizadoEm: new Date().toISOString(),
-          })
-        )
-
-        const agora = Date.now()
-        if (agora - ultimaGravacaoRef.current > 7000) {
-          ultimaGravacaoRef.current = agora
-          await salvarLocalizacaoSupabase(novaLocalizacao, tipoSalvo)
-        }
-      },
-      () => {
-        setMensagemLocalizacao("Permissão de localização negada. Ative o GPS do celular.")
-      },
-      {
-        enableHighAccuracy: true,
-        maximumAge: 5000,
-        timeout: 15000,
-      }
-    )
-
-    return () => {
-      navigator.geolocation.clearWatch(watcherId)
-    }
+    iniciarGps(tipoSalvo)
   }, [])
 
   async function carregarFreteAtivo() {
@@ -138,8 +105,61 @@ export default function MapaMotorista() {
     }
 
     const lista = Array.isArray(data) ? data : []
-    const ativo = lista.find((frete: FreteAtivo) => ehEmAndamento(frete.status)) || null
+    const ativo =
+      lista.find((frete: FreteAtivo) => ehEmAndamento(frete.status)) || null
+
     setFreteAtivo(ativo)
+    freteAtivoRef.current = ativo
+  }
+
+  function iniciarGps(tipoSalvo: string) {
+    if (!navigator.geolocation) {
+      setMensagemLocalizacao("Este celular não suporta localização.")
+      return
+    }
+
+    setMensagemLocalizacao("Pedindo permissão do GPS...")
+
+    const watcherId = navigator.geolocation.watchPosition(
+      async (position) => {
+        const novaLocalizacao = {
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+          accuracy: position.coords.accuracy,
+        }
+
+        setLocalizacao(novaLocalizacao)
+        setMensagemLocalizacao("Localização em tempo real ativa.")
+
+        localStorage.setItem(
+          "flatauto_motorista_localizacao",
+          JSON.stringify({
+            ...novaLocalizacao,
+            tipoVeiculo: tipoSalvo,
+            atualizadoEm: new Date().toISOString(),
+          })
+        )
+
+        const agora = Date.now()
+
+        if (agora - ultimaGravacaoRef.current > 7000) {
+          ultimaGravacaoRef.current = agora
+          await salvarLocalizacaoSupabase(novaLocalizacao, tipoSalvo)
+        }
+      },
+      () => {
+        setMensagemLocalizacao("Permissão de localização negada. Ative o GPS do celular.")
+      },
+      {
+        enableHighAccuracy: true,
+        maximumAge: 5000,
+        timeout: 15000,
+      }
+    )
+
+    return () => {
+      navigator.geolocation.clearWatch(watcherId)
+    }
   }
 
   async function salvarLocalizacaoSupabase(
@@ -150,22 +170,24 @@ export default function MapaMotorista() {
 
     if (!motoristaId) return
 
+    const freteAtual = freteAtivoRef.current
+
     setSalvando(true)
 
     const payload = {
       motorista_id: motoristaId,
-      frete_id: freteAtivo?.id || null,
+      frete_id: freteAtual?.id || null,
       latitude: novaLocalizacao.latitude,
       longitude: novaLocalizacao.longitude,
       accuracy: novaLocalizacao.accuracy || null,
       tipo_veiculo: tipoSalvo,
-      status: freteAtivo ? "em_andamento" : "online",
+      status: freteAtual ? "em_andamento" : "online",
       atualizado_em: new Date().toISOString(),
     }
 
     const { error } = await supabase
       .from("corridas_tempo_real")
-      .upsert(payload, {
+      .upsert(payload as any, {
         onConflict: "motorista_id",
       })
 
@@ -176,9 +198,9 @@ export default function MapaMotorista() {
     }
   }
 
-  const origem = freteAtivo?.origem || freteAtivo?.endereco_origem || "Origem não informada"
-  const destino = freteAtivo?.destino || freteAtivo?.endereco_destino || "Destino não informado"
-  const tipoPacote = freteAtivo?.tipo_carga || freteAtivo?.tipo_transporte || "Tipo não informado"
+  const origem = freteAtivo?.origem || freteAtivo?.endereco_origem || "Sem rota ativa"
+  const destino = freteAtivo?.destino || freteAtivo?.endereco_destino || "Sem rota ativa"
+  const tipoPacote = freteAtivo?.tipo_carga || freteAtivo?.tipo_transporte || "Sem pacote"
 
   const mapaUrl = localizacao
     ? `https://www.openstreetmap.org/export/embed.html?bbox=${localizacao.longitude - 0.01}%2C${localizacao.latitude - 0.01}%2C${localizacao.longitude + 0.01}%2C${localizacao.latitude + 0.01}&layer=mapnik&marker=${localizacao.latitude}%2C${localizacao.longitude}`
@@ -215,7 +237,7 @@ export default function MapaMotorista() {
               <h2 className="mt-5 text-2xl font-black">Aguardando localização</h2>
 
               <p className="mt-3 text-sm text-white/60">
-                Permita o acesso ao GPS para mostrar o motorista no mapa real.
+                Permita o acesso ao GPS para mostrar sua localização assim que entrar.
               </p>
             </div>
           </div>
@@ -224,11 +246,11 @@ export default function MapaMotorista() {
 
       <div className="absolute left-4 right-4 top-4 rounded-[24px] border border-white/10 bg-black/75 p-4 backdrop-blur-xl">
         <p className="text-xs font-black uppercase text-[#ffc400]">
-          Mapa real do motorista
+          Localização do motorista
         </p>
 
         <h2 className="mt-1 text-xl font-black">
-          {freteAtivo?.codigo || "Motorista online"}
+          {freteAtivo?.codigo ? `Frete #${freteAtivo.codigo}` : "Motorista online"}
         </h2>
 
         <p className="mt-1 text-sm text-white/60">{mensagemLocalizacao}</p>
@@ -243,7 +265,9 @@ export default function MapaMotorista() {
         )}
 
         <p className="mt-1 text-[11px] font-bold text-white/45">
-          {salvando ? "Salvando no Supabase..." : "Localização pronta para empresa acompanhar."}
+          {salvando
+            ? "Salvando localização no Supabase..."
+            : "GPS pronto para acompanhamento."}
         </p>
       </div>
 
@@ -255,11 +279,11 @@ export default function MapaMotorista() {
             </p>
 
             <h3 className="mt-1 text-2xl font-black">
-              {freteAtivo?.tipo_contratante || "Aguardando corrida"}
+              {freteAtivo ? "Corrida em andamento" : "Motorista disponível"}
             </h3>
 
             <p className="mt-1 text-sm font-bold text-[#ffc400]">
-              {formatarMoeda(freteAtivo?.valor_frete)}
+              {formatarMoeda(freteAtivo)}
             </p>
           </div>
 
@@ -269,8 +293,8 @@ export default function MapaMotorista() {
         </div>
 
         <div className="mt-4 space-y-3">
-          <LinhaMapa label="Origem" valor={freteAtivo ? origem : "Sem rota ativa"} cor="text-green-400" />
-          <LinhaMapa label="Destino" valor={freteAtivo ? destino : "Sem rota ativa"} cor="text-red-400" />
+          <LinhaMapa label="Origem" valor={origem} cor="text-green-400" />
+          <LinhaMapa label="Destino" valor={destino} cor="text-red-400" />
         </div>
 
         <div className="mt-4 grid grid-cols-3 gap-2">
