@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState, type ReactNode } from "react"
 import {
   ArrowLeft,
   Bike,
@@ -10,7 +10,9 @@ import {
   Clock,
   FileText,
   MapPin,
+  Navigation,
   Package,
+  Play,
   Truck,
   UserRound,
 } from "lucide-react"
@@ -21,6 +23,7 @@ type Veiculo = "moto" | "carro" | "van" | "caminhao"
 type Frete = {
   id: string
   codigo?: string | null
+  empresa_id?: string | null
   cliente_id?: string | null
   motorista_id?: string | null
   origem?: string | null
@@ -47,20 +50,104 @@ type Cliente = {
   email?: string | null
 }
 
-function IconeVeiculo({ tipo, size = 28 }: { tipo: Veiculo; size?: number }) {
-  if (tipo === "moto") return <Bike size={size} />
-  if (tipo === "carro") return <Car size={size} />
-  if (tipo === "van") return <Bus size={size} />
-  return <Truck size={size} />
+type Localizacao = {
+  latitude: number
+  longitude: number
+  accuracy?: number
+}
+
+const etapas = [
+  { id: "aceito", titulo: "Aceito", texto: "Solicitação aceita" },
+  { id: "coleta", titulo: "Buscar pacote", texto: "Indo para coleta" },
+  { id: "em_rota", titulo: "Pacote pego", texto: "Indo entregar" },
+  { id: "entregue", titulo: "Entregue", texto: "Finalizado" },
+]
+
+function MotoNova({ size = 30 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 64 64" fill="none">
+      <circle cx="17" cy="45" r="9" stroke="currentColor" strokeWidth="5" />
+      <circle cx="48" cy="45" r="9" stroke="currentColor" strokeWidth="5" />
+      <path
+        d="M18 45h10l8-16h8l6 16M28 45l-9-16h11l8 16M37 29l8-8h8"
+        stroke="currentColor"
+        strokeWidth="5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M31 21h10"
+        stroke="currentColor"
+        strokeWidth="5"
+        strokeLinecap="round"
+      />
+    </svg>
+  )
+}
+
+function IconeVeiculo({
+  tipo,
+  size = 28,
+}: {
+  tipo: Veiculo | string
+  size?: number
+}) {
+  const limpo = String(tipo || "").toLowerCase()
+
+  const estilo = {
+    fontSize: `${size}px`,
+    lineHeight: 1,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  } as const
+
+  if (limpo.includes("moto")) return <span style={estilo}>🏍️</span>
+  if (limpo.includes("carro")) return <span style={estilo}>🚗</span>
+  if (limpo.includes("suv")) return <span style={estilo}>🚙</span>
+  if (limpo.includes("van")) return <span style={estilo}>🚐</span>
+  if (limpo.includes("vuc")) return <span style={estilo}>🚚</span>
+  if (limpo.includes("bike")) return <span style={estilo}>🚲</span>
+
+  return <span style={estilo}>🚛</span>
 }
 
 function texto(valor?: string | null) {
   return String(valor || "").toLowerCase()
 }
 
-function ehEmAndamento(status?: string | null) {
+function etapaAtual(status?: string | null) {
   const s = texto(status)
-  return s.includes("andamento") || s.includes("rota") || s.includes("em_rota")
+
+  if (s.includes("entregue") || s.includes("conclu") || s.includes("finaliz")) return "entregue"
+  if (s.includes("rota") || s.includes("caminho")) return "em_rota"
+  if (s.includes("coleta") || s.includes("buscar") || s.includes("pegando")) return "coleta"
+  if (s.includes("aceito") || s.includes("aceita") || s.includes("andamento")) return "aceito"
+
+  return "aceito"
+}
+
+function progresso(status?: string | null) {
+  const etapa = etapaAtual(status)
+
+  if (etapa === "entregue") return 100
+  if (etapa === "em_rota") return 70
+  if (etapa === "coleta") return 42
+  return 18
+}
+
+function etapaAtiva(status: string | null | undefined, etapa: string) {
+  const ordem = ["aceito", "coleta", "em_rota", "entregue"]
+  return ordem.indexOf(etapa) <= ordem.indexOf(etapaAtual(status))
+}
+
+function statusTexto(status?: string | null) {
+  const etapa = etapaAtual(status)
+
+  if (etapa === "entregue") return "Entrega concluída"
+  if (etapa === "em_rota") return "Pacote pego • Em caminho"
+  if (etapa === "coleta") return "Buscando pacote"
+  return "Solicitação aceita"
 }
 
 function origemFrete(frete?: Frete | null) {
@@ -84,7 +171,7 @@ function formatarMoeda(frete?: Frete | null) {
   return frete.valor || "A calcular"
 }
 
-function hojeBR(data?: string | null) {
+function dataBR(data?: string | null) {
   if (!data) return "--"
   const limpa = String(data).slice(0, 10)
   const partes = limpa.split("-")
@@ -96,9 +183,14 @@ export default function EmAndamentoPage() {
   const [tipoVeiculo, setTipoVeiculo] = useState<Veiculo>("caminhao")
   const [frete, setFrete] = useState<Frete | null>(null)
   const [cliente, setCliente] = useState<Cliente | null>(null)
+  const [localizacao, setLocalizacao] = useState<Localizacao | null>(null)
+  const [gpsAtivo, setGpsAtivo] = useState(false)
   const [carregando, setCarregando] = useState(true)
   const [erro, setErro] = useState("")
-  const [finalizando, setFinalizando] = useState(false)
+  const [salvando, setSalvando] = useState(false)
+
+  const watcherRef = useRef<number | null>(null)
+  const freteRef = useRef<Frete | null>(null)
 
   useEffect(() => {
     const veiculoSalvo = localStorage.getItem("tipoVeiculoMotorista") as Veiculo | null
@@ -113,7 +205,17 @@ export default function EmAndamentoPage() {
     }
 
     carregarCorridaAtual()
+
+    return () => {
+      if (watcherRef.current) {
+        navigator.geolocation.clearWatch(watcherRef.current)
+      }
+    }
   }, [])
+
+  useEffect(() => {
+    freteRef.current = frete
+  }, [frete])
 
   async function carregarCorridaAtual() {
     setCarregando(true)
@@ -131,6 +233,7 @@ export default function EmAndamentoPage() {
       .from("fretes")
       .select("*")
       .eq("motorista_id", motoristaId)
+      .not("status", "in", "(concluido,concluído,entregue,cancelado)")
       .order("created_at", { ascending: false })
 
     if (error) {
@@ -140,10 +243,10 @@ export default function EmAndamentoPage() {
     }
 
     const lista = Array.isArray(data) ? data : []
-    const corridaAtual =
-      lista.find((item: Frete) => ehEmAndamento(item.status)) || lista[0] || null
+    const corridaAtual = lista[0] || null
 
     setFrete(corridaAtual)
+    freteRef.current = corridaAtual
 
     if (corridaAtual?.cliente_id) {
       const { data: clienteData } = await supabase
@@ -158,28 +261,172 @@ export default function EmAndamentoPage() {
     setCarregando(false)
   }
 
-  async function finalizarCorrida() {
-    if (!frete || finalizando) return
+  async function criarNotificacao(titulo: string, mensagem: string, statusNovo: string) {
+    const corrida = freteRef.current
+    if (!corrida) return
 
-    setFinalizando(true)
-    setErro("")
+    const payload = {
+      frete_id: corrida.id,
+      cliente_id: corrida.cliente_id || null,
+      empresa_id: corrida.empresa_id || null,
+      motorista_id: corrida.motorista_id || localStorage.getItem("flatauto_motorista_id"),
+      titulo,
+      mensagem,
+      status: statusNovo,
+      lida: false,
+      criado_em: new Date().toISOString(),
+    }
 
-    const { error } = await supabase
-      .from("fretes")
-      .update({
-        status: "concluido",
-      })
-      .eq("id", frete.id)
-
-    setFinalizando(false)
+    const { error } = await supabase.from("notificacoes").insert(payload as any)
 
     if (error) {
-      setErro(`Erro ao finalizar: ${error.message}`)
+      console.warn("Notificação não salva:", error.message)
+    }
+  }
+
+  async function salvarLocalizacaoTempoReal(novaLocalizacao: Localizacao, statusAtual: string) {
+    const corrida = freteRef.current
+    const motoristaId = localStorage.getItem("flatauto_motorista_id")
+
+    if (!corrida || !motoristaId) return
+
+    const payload = {
+      frete_id: corrida.id,
+      corrida_id: corrida.id,
+      empresa_id: corrida.empresa_id || null,
+      cliente_id: corrida.cliente_id || null,
+      motorista_id: motoristaId,
+      origem: origemFrete(corrida),
+      destino: destinoFrete(corrida),
+      tipo_carga: corrida.tipo_carga || corrida.tipo_transporte || null,
+      valor_frete: corrida.valor_frete || null,
+      latitude: novaLocalizacao.latitude,
+      longitude: novaLocalizacao.longitude,
+      latitude_motorista: novaLocalizacao.latitude,
+      longitude_motorista: novaLocalizacao.longitude,
+      accuracy: novaLocalizacao.accuracy || null,
+      tipo_veiculo: tipoVeiculo,
+      veiculo_tipo: tipoVeiculo,
+      veiculo_modelo: localStorage.getItem("modeloVeiculoMotorista") || null,
+      veiculo_placa: localStorage.getItem("placaVeiculoMotorista") || null,
+      status: statusAtual,
+      atualizado_em: new Date().toISOString(),
+    }
+
+    const { error } = await supabase
+      .from("corridas_tempo_real")
+      .upsert(payload as any, { onConflict: "motorista_id" })
+
+    if (error) {
+      setErro(`Erro ao salvar tempo real: ${error.message}`)
+    }
+  }
+
+  function iniciarGps(statusAtual: string) {
+    if (watcherRef.current) return
+
+    if (!navigator.geolocation) {
+      setErro("Este celular não suporta GPS.")
       return
     }
 
-    window.location.replace("/motorista/concluidas")
+    setGpsAtivo(true)
+
+    watcherRef.current = navigator.geolocation.watchPosition(
+      async (position) => {
+        const novaLocalizacao = {
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+          accuracy: position.coords.accuracy,
+        }
+
+        setLocalizacao(novaLocalizacao)
+        await salvarLocalizacaoTempoReal(novaLocalizacao, statusAtual)
+      },
+      () => {
+        setGpsAtivo(false)
+        setErro("GPS negado. Ative a localização do celular para acompanhar em tempo real.")
+      },
+      {
+        enableHighAccuracy: true,
+        maximumAge: 4000,
+        timeout: 15000,
+      }
+    )
   }
+
+  async function atualizarEtapa(statusNovo: string, titulo: string, mensagem: string) {
+    if (!frete || salvando) return
+
+    setSalvando(true)
+    setErro("")
+
+    const { data, error } = await supabase
+      .from("fretes")
+      .update({
+        status: statusNovo,
+      })
+      .eq("id", frete.id)
+      .select("*")
+      .maybeSingle()
+
+    if (error) {
+      setSalvando(false)
+      setErro(`Erro Supabase: ${error.message}`)
+      return
+    }
+
+    const freteAtualizado = (data as Frete) || { ...frete, status: statusNovo }
+
+    setFrete(freteAtualizado)
+    freteRef.current = freteAtualizado
+
+    await criarNotificacao(titulo, mensagem, statusNovo)
+
+    if (statusNovo === "coleta" || statusNovo === "em_rota") {
+      iniciarGps(statusNovo)
+    }
+
+    if (localizacao) {
+      await salvarLocalizacaoTempoReal(localizacao, statusNovo)
+    }
+
+    setSalvando(false)
+  }
+
+  async function iniciarCorrida() {
+    await atualizarEtapa(
+      "coleta",
+      "Motorista iniciou a coleta",
+      "O motorista iniciou a corrida e está indo buscar o pacote."
+    )
+  }
+
+  async function pacoteColetado() {
+    await atualizarEtapa(
+      "em_rota",
+      "Pacote pego com sucesso",
+      "O pacote foi coletado e o motorista está indo para a entrega."
+    )
+  }
+
+  async function finalizarCorrida() {
+    await atualizarEtapa(
+      "entregue",
+      "Entrega concluída",
+      "A entrega foi marcada como concluída pelo motorista."
+    )
+
+    setTimeout(() => {
+      window.location.replace("/motorista/concluidas")
+    }, 800)
+  }
+
+  const statusAtual = etapaAtual(frete?.status)
+  const porcentagem = progresso(frete?.status)
+  const origem = origemFrete(frete)
+  const destino = destinoFrete(frete)
+  const pacote = frete?.tipo_carga || frete?.tipo_transporte || "Pacote não informado"
 
   return (
     <main className="min-h-screen bg-[#020507] text-white">
@@ -197,34 +444,68 @@ export default function EmAndamentoPage() {
         </div>
       </header>
 
-      <section className="relative h-[36vh] min-h-[250px] overflow-hidden bg-[#d9e4d2] pt-14">
-        <div className="absolute left-[7%] top-[28%] z-20 rounded-lg bg-green-600 px-3 py-1 text-xs font-black text-white">
-          Origem
-        </div>
-
-        <div className="absolute right-[8%] top-[35%] z-20 rounded-lg bg-red-600 px-3 py-1 text-xs font-black text-white">
-          Destino
-        </div>
-
+      <section className="relative h-[42vh] min-h-[300px] overflow-hidden bg-[#05070b] pt-14">
         <div className="absolute inset-0 opacity-80">
-          <div className="absolute left-[-5%] top-[34%] h-[3px] w-[115%] rotate-[12deg] bg-white/90" />
-          <div className="absolute left-[-5%] top-[62%] h-[3px] w-[115%] -rotate-[7deg] bg-white/90" />
-          <div className="absolute left-[23%] top-[10%] h-[100%] w-[3px] rotate-[8deg] bg-white/90" />
-          <div className="absolute left-[70%] top-[0%] h-[100%] w-[3px] -rotate-[9deg] bg-white/90" />
+          <div className="absolute left-[-10%] top-[28%] h-[2px] w-[120%] rotate-[11deg] bg-white/10" />
+          <div className="absolute left-[-10%] top-[62%] h-[2px] w-[120%] -rotate-[8deg] bg-white/10" />
+          <div className="absolute left-[23%] top-0 h-full w-[2px] rotate-[7deg] bg-white/10" />
+          <div className="absolute left-[72%] top-0 h-full w-[2px] -rotate-[9deg] bg-white/10" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_35%_34%,rgba(255,196,0,0.13),transparent_20%),radial-gradient(circle_at_75%_60%,rgba(255,196,0,0.08),transparent_18%)]" />
         </div>
 
-        <div className="absolute left-[24%] top-[54%] h-[4px] w-[52%] -rotate-[8deg] rounded-full bg-[#ffc400]" />
-
-        <div className="absolute left-[20%] top-[50%] z-20 flex h-10 w-10 items-center justify-center rounded-full bg-green-600 text-white shadow-lg">
-          <MapPin size={20} />
+        <div className="absolute left-[13%] top-[66%] z-20 flex -translate-y-1/2 flex-col items-center">
+          <div className="flex h-11 w-11 items-center justify-center rounded-full bg-green-500 text-white shadow-[0_0_25px_rgba(34,197,94,0.6)]">
+            <MapPin size={23} />
+          </div>
+          <span className="mt-2 rounded-lg bg-black/80 px-3 py-1 text-[10px] font-black text-white">
+            Coleta
+          </span>
         </div>
 
-        <div className="absolute left-[72%] top-[40%] z-20 flex h-10 w-10 items-center justify-center rounded-full bg-red-600 text-white shadow-lg">
-          <MapPin size={20} />
+        <div className="absolute right-[13%] top-[34%] z-20 flex -translate-y-1/2 flex-col items-center">
+          <div className="flex h-11 w-11 items-center justify-center rounded-full bg-red-500 text-white shadow-[0_0_25px_rgba(239,68,68,0.6)]">
+            <MapPin size={23} />
+          </div>
+          <span className="mt-2 rounded-lg bg-black/80 px-3 py-1 text-[10px] font-black text-white">
+            Entrega
+          </span>
         </div>
 
-        <div className="absolute left-[43%] top-[43%] z-30 flex h-14 w-14 animate-pulse items-center justify-center rounded-2xl bg-[#ffc400] text-black shadow-[0_10px_35px_rgba(255,196,0,0.45)]">
-          <IconeVeiculo tipo={tipoVeiculo} size={30} />
+        <div className="absolute left-[16%] top-[60%] h-[5px] w-[66%] -rotate-[18deg] rounded-full bg-white/15" />
+        <div
+          className="absolute left-[16%] top-[60%] h-[5px] -rotate-[18deg] rounded-full bg-[#ffc400] shadow-[0_0_18px_rgba(255,196,0,0.75)] transition-all duration-700"
+          style={{ width: `${Math.max(8, porcentagem * 0.66)}%` }}
+        />
+
+        <div
+          className="absolute top-[49%] z-30 flex h-16 w-16 -translate-y-1/2 items-center justify-center rounded-2xl bg-[#ffc400] text-black shadow-[0_0_35px_rgba(255,196,0,0.75)] transition-all duration-700"
+          style={{ left: `${Math.min(78, Math.max(16, 16 + porcentagem * 0.62))}%` }}
+        >
+          <IconeVeiculo tipo={tipoVeiculo} size={34} />
+        </div>
+
+        <div className="absolute bottom-4 left-4 right-4 rounded-2xl border border-white/10 bg-black/75 p-3 backdrop-blur-md">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-[10px] font-black uppercase text-white/40">
+                Status da corrida
+              </p>
+              <h2 className="mt-1 text-lg font-black text-[#ffc400]">
+                {statusTexto(frete?.status)}
+              </h2>
+            </div>
+
+            <span className="rounded-full bg-[#ffc400]/15 px-3 py-1 text-xs font-black text-[#ffc400]">
+              {porcentagem}%
+            </span>
+          </div>
+
+          <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/10">
+            <div
+              className="h-full rounded-full bg-[#ffc400] transition-all duration-700"
+              style={{ width: `${porcentagem}%` }}
+            />
+          </div>
         </div>
       </section>
 
@@ -253,7 +534,7 @@ export default function EmAndamentoPage() {
               <article className="rounded-[22px] border border-[#ffc400]/25 bg-[#10171b] p-4">
                 <div className="flex items-start gap-3">
                   <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#ffc400] text-black">
-                    <IconeVeiculo tipo={tipoVeiculo} size={26} />
+                    <IconeVeiculo tipo={tipoVeiculo} size={28} />
                   </div>
 
                   <div className="min-w-0 flex-1">
@@ -264,12 +545,12 @@ export default function EmAndamentoPage() {
                       {frete.codigo ? `Frete #${frete.codigo}` : "Entrega em andamento"}
                     </h2>
                     <p className="mt-1 text-xs font-bold text-white/50">
-                      {frete.status || "em_andamento"}
+                      {gpsAtivo ? "GPS enviando localização em tempo real" : "GPS inicia quando apertar iniciar corrida"}
                     </p>
                   </div>
 
                   <span className="rounded-full bg-[#ffc400]/15 px-3 py-1 text-[10px] font-black text-[#ffc400]">
-                    Em rota
+                    {statusTexto(frete.status)}
                   </span>
                 </div>
               </article>
@@ -279,14 +560,14 @@ export default function EmAndamentoPage() {
                   <LinhaCompleta
                     icon={<MapPin size={18} />}
                     titulo="Onde pegar"
-                    valor={origemFrete(frete)}
+                    valor={origem}
                     cor="text-green-400"
                   />
 
                   <LinhaCompleta
                     icon={<MapPin size={18} />}
                     titulo="Onde entregar"
-                    valor={destinoFrete(frete)}
+                    valor={destino}
                     cor="text-red-400"
                   />
 
@@ -294,7 +575,7 @@ export default function EmAndamentoPage() {
                     <MiniInfo
                       icon={<Package size={17} />}
                       titulo="Pacote"
-                      valor={frete.tipo_carga || frete.tipo_transporte || "Não informado"}
+                      valor={pacote}
                     />
 
                     <MiniInfo
@@ -310,24 +591,22 @@ export default function EmAndamentoPage() {
                     />
 
                     <MiniInfo
-                      icon={<Package size={17} />}
+                      icon={<Navigation size={17} />}
                       titulo="Valor"
                       valor={formatarMoeda(frete)}
                       destaque
                     />
-                  </div>
 
-                  <div className="grid grid-cols-2 gap-2">
                     <MiniInfo
-                      icon={<CalendarIcon />}
+                      icon={<span className="text-sm">📅</span>}
                       titulo="Coleta"
-                      valor={hojeBR(frete.data_frete)}
+                      valor={dataBR(frete.data_frete)}
                     />
 
                     <MiniInfo
-                      icon={<CalendarIcon />}
-                      titulo="Entrega"
-                      valor={hojeBR(frete.data_entrega)}
+                      icon={<span className="text-sm">📍</span>}
+                      titulo="GPS"
+                      valor={localizacao ? "Ativo" : "Aguardando"}
                     />
                   </div>
 
@@ -350,19 +629,77 @@ export default function EmAndamentoPage() {
                 </div>
               </article>
 
-              <button
-                onClick={finalizarCorrida}
-                disabled={finalizando}
-                className="sticky bottom-3 flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[#ffc400] text-base font-black text-black shadow-[0_0_28px_rgba(255,196,0,0.25)] disabled:opacity-60"
-              >
-                <CheckCircle2 size={21} />
-                {finalizando ? "Finalizando..." : "Finalizar corrida"}
-              </button>
+              <article className="rounded-[22px] border border-white/10 bg-[#10171b] p-4">
+                <p className="mb-3 text-xs font-black uppercase text-white/40">
+                  Etapas da entrega
+                </p>
+
+                <div className="grid grid-cols-4 gap-2">
+                  {etapas.map((etapa) => (
+                    <EtapaCard
+                      key={etapa.id}
+                      ativa={etapaAtiva(frete.status, etapa.id)}
+                      titulo={etapa.titulo}
+                      texto={etapa.texto}
+                    />
+                  ))}
+                </div>
+              </article>
+
+              {statusAtual === "aceito" && (
+                <BotaoPrincipal
+                  icon={<Play size={21} />}
+                  texto={salvando ? "Iniciando..." : "Iniciar corrida"}
+                  onClick={iniciarCorrida}
+                  disabled={salvando}
+                />
+              )}
+
+              {statusAtual === "coleta" && (
+                <BotaoPrincipal
+                  icon={<Package size={21} />}
+                  texto={salvando ? "Salvando..." : "Pacote pego com sucesso"}
+                  onClick={pacoteColetado}
+                  disabled={salvando}
+                />
+              )}
+
+              {statusAtual === "em_rota" && (
+                <BotaoPrincipal
+                  icon={<CheckCircle2 size={21} />}
+                  texto={salvando ? "Finalizando..." : "Finalizar entrega"}
+                  onClick={finalizarCorrida}
+                  disabled={salvando}
+                />
+              )}
             </>
           )}
         </div>
       </section>
     </main>
+  )
+}
+
+function BotaoPrincipal({
+  icon,
+  texto,
+  onClick,
+  disabled,
+}: {
+  icon: ReactNode
+  texto: string
+  onClick: () => void
+  disabled?: boolean
+}) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className="sticky bottom-3 flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[#ffc400] text-base font-black text-black shadow-[0_0_28px_rgba(255,196,0,0.25)] disabled:opacity-60"
+    >
+      {icon}
+      {texto}
+    </button>
   )
 }
 
@@ -372,7 +709,7 @@ function LinhaCompleta({
   valor,
   cor,
 }: {
-  icon: React.ReactNode
+  icon: ReactNode
   titulo: string
   valor: string
   cor: string
@@ -401,7 +738,7 @@ function MiniInfo({
   valor,
   destaque,
 }: {
-  icon: React.ReactNode
+  icon: ReactNode
   titulo: string
   valor: string
   destaque?: boolean
@@ -424,8 +761,31 @@ function MiniInfo({
   )
 }
 
-function CalendarIcon() {
+function EtapaCard({
+  ativa,
+  titulo,
+  texto,
+}: {
+  ativa: boolean
+  titulo: string
+  texto: string
+}) {
   return (
-    <span className="text-sm">📅</span>
+    <div className="text-center">
+      <div
+        className={`mx-auto flex h-10 w-10 items-center justify-center rounded-full border ${
+          ativa
+            ? "border-[#ffc400] bg-[#ffc400] text-black shadow-[0_0_18px_rgba(255,196,0,0.35)]"
+            : "border-white/15 bg-white/[0.04] text-white/30"
+        }`}
+      >
+        <CheckCircle2 size={18} />
+      </div>
+
+      <p className={`mt-2 text-[10px] font-black leading-tight ${ativa ? "text-[#ffc400]" : "text-white/35"}`}>
+        {titulo}
+      </p>
+      <p className="mt-1 text-[9px] leading-tight text-white/30">{texto}</p>
+    </div>
   )
 }
