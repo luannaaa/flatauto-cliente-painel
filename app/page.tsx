@@ -636,6 +636,48 @@ function LoginForm({
       return
     }
 
+    const { data: cliente, error: erroCliente } = await supabase
+      .from("clientes")
+      .select("id,nome,email,senha,telefone,cpf,foto_perfil,created_at")
+      .eq("email", emailLimpo)
+      .eq("senha", senhaLimpa)
+      .maybeSingle()
+
+    if (erroCliente) {
+      setLoading(false)
+      setMensagem(`Erro Supabase: ${erroCliente.message}`)
+      return
+    }
+
+    if (cliente) {
+      const nomeCliente = cliente.nome || "Cliente"
+
+      localStorage.setItem("flatauto_modo_demo", "false")
+      localStorage.setItem("flatauto_usuario_tipo", "cliente")
+      localStorage.setItem("flatauto_usuario_nome", nomeCliente)
+      localStorage.setItem("flatauto_usuario_email", emailLimpo)
+
+      localStorage.setItem("flatauto_cliente_logado", "true")
+      localStorage.setItem("flatauto_cliente_id", String(cliente.id || ""))
+      localStorage.setItem("flatauto_cliente_nome", nomeCliente)
+      localStorage.setItem("flatauto_cliente_email", emailLimpo)
+      localStorage.setItem("flatauto_cliente_telefone", cliente.telefone || "")
+      localStorage.setItem("flatauto_cliente_dados", JSON.stringify(cliente))
+
+      localStorage.removeItem("flatauto_empresa_logada")
+      localStorage.removeItem("motoristaLogado")
+
+      setLoading(false)
+
+      if (!isMobile()) {
+        setScreen("bloqueado")
+        return
+      }
+
+      window.location.href = "/cliente"
+      return
+    }
+
     const contaLocal = buscarContaLocal(emailLimpo, senhaLimpa)
 
     if (contaLocal && contaLocal.tipo !== "empresa") {
